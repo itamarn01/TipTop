@@ -59,7 +59,7 @@ export default function Home({ navigation }) {
 
     return (
         <View style={{
-            flex: 1, backgroundColor: "yellow",
+            flex: 1,
         }}>
             {user.package === "free" && <BannerAd
                 //    ref={bannerRef}
@@ -71,6 +71,9 @@ export default function Home({ navigation }) {
                 }}
             />}
             <Text>{`hello ${user.name}`}</Text>
+            <View>
+                <Text></Text>
+            </View>
         </View>
     );
 }
