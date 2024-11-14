@@ -13,7 +13,7 @@ export default function Profile({ navigation }) {
             await AsyncStorage.removeItem('userToken');
             //  dispatch(clearAuth());
         }
-        catch (e) { Alert.alert("Error to log out try again") } finally { navigation.navigate("Auth") }
+        catch (e) { Alert.alert("Error to log out try again") } finally { navigation.navigate("Auth", { screen: "SignIn" }) }
     }
     return (
         <View style={{

@@ -6,9 +6,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import Icon from 'react-native-vector-icons/Ionicons';
 import Home from '../screens/Home';
-import Clients from '../screens/Clients';
+
 import Calendar from '../screens/Calendar';
 import Profile from '../screens/Profile';
+import ClientStack from './ClientStack';
+
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
@@ -20,7 +22,7 @@ function TabNavigator() {
 
                     if (route.name === 'Home') {
                         iconName = focused ? 'home' : 'home-outline';
-                    } else if (route.name === 'Clients') {
+                    } else if (route.name === 'ClientStack') {
                         iconName = focused ? 'people' : 'people-outline';
                     } else if (route.name === 'Calendar') {
                         iconName = focused ? 'calendar' : 'calendar-outline';
@@ -32,10 +34,30 @@ function TabNavigator() {
                 },
             })}
         >
-            <Tab.Screen name="Home" component={Home} />
-            <Tab.Screen name="Clients" component={Clients} />
-            <Tab.Screen name="Calendar" component={Calendar} />
-            <Tab.Screen name="Profile" component={Profile} />
+            <Tab.Screen name="Home" component={Home} options={{
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1F609A' },
+                headerTintColor: '#fff', // This changes the text color to white
+                headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
+            }} />
+            <Tab.Screen name="ClientStack" component={ClientStack} options={{
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1F609A' },
+                headerTintColor: '#fff', // This changes the text color to white
+                headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
+            }} />
+            <Tab.Screen name="Calendar" component={Calendar} options={{
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1F609A' },
+                headerTintColor: '#fff', // This changes the text color to white
+                headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
+            }} />
+            <Tab.Screen name="Profile" component={Profile} options={{
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1F609A' },
+                headerTintColor: '#fff', // This changes the text color to white
+                headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
+            }} />
         </Tab.Navigator>
     );
 }

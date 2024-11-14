@@ -25,9 +25,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#014495"
       },
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "package": "com.gigtunetry.TipTop"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -67,9 +66,7 @@
           "iosAppId": "ca-app-pub-8754599705550429~7718527397"
         }
       ],
-      [
-        "expo-apple-authentication"
-      ],
+      ["expo-apple-authentication"],
       "expo-localization",
       "expo-font"
     ],

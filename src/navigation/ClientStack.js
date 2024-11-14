@@ -45,3 +45,38 @@ export default function StackNavigation() {
     );
 }
  */
+import { createStackNavigator } from "@react-navigation/stack";
+import Clients from "../screens/Clients";
+import Treatments from "../screens/Treatments";
+import TreatmentForm from "../screens/TreatmentForm";
+
+const Stack = createStackNavigator();
+
+const ClientStack = () => (
+    <Stack.Navigator>
+        <Stack.Screen name="Clients" component={Clients} options={{
+            headerShown: false,
+            headerStyle: { backgroundColor: '#1F609A' },
+            headerTintColor: '#fff',
+        }}
+        />
+        <Stack.Screen
+            name="Treatments"
+            component={Treatments}
+            options={{
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1F609A' },
+                headerTintColor: '#fff', // This changes the text color to white
+                headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
+            }}
+        />
+        <Stack.Screen name="TreatmentForm" component={TreatmentForm} options={{
+            headerShown: true,
+            headerStyle: { backgroundColor: '#1F609A' },
+            headerTintColor: '#fff',
+        }}
+        />
+    </Stack.Navigator>
+);
+
+export default ClientStack;
