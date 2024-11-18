@@ -402,7 +402,7 @@ export default function Clients({ navigation }) {
             ) : (
                 // Main Clients View
                 <>
-                    {clients.length === 0 ? (
+                    {clients.length === 0 && !isLoading ? (
                         <NoClientsComponent onAddClient={handleAddClient} />
                     ) : (
                         <>

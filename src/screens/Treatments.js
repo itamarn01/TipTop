@@ -20,6 +20,7 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     Linking,
+    KeyboardAvoidingView,
 } from "react-native";
 import {
     BannerAd,
@@ -51,6 +52,9 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import Feather from '@expo/vector-icons/Feather';
 import PagerView from 'react-native-pager-view';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import * as Animatable from 'react-native-animatable';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import LinearGradient from 'react-native-linear-gradient';
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -67,6 +71,220 @@ const productionID1 =
     Platform.OS === "android" ? androidAdmobBanner1 : iosAdmobBanner1;
 
 const adUnitId1 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID1;
+
+// Add this helper function at the top level, outside of any component
+const formatTime = (date) => {
+    const treatmentDate = new Date(date);
+    return treatmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+function calculateAge(birthday) {
+    const birthDate = new Date(birthday);
+    const today = new Date();
+
+    let ageYears = today.getFullYear() - birthDate.getFullYear();
+    let ageMonths = today.getMonth() - birthDate.getMonth();
+
+    // If the current month is before the birth month, or it's the birth month but the current day is before the birth day
+    if (ageMonths < 0 || (ageMonths === 0 && today.getDate() < birthDate.getDate())) {
+        ageYears--;
+        ageMonths += 12;
+    }
+
+    if (today.getDate() < birthDate.getDate()) {
+        ageMonths--;
+    }
+
+    return `${ageYears}:${ageMonths < 10 ? '0' : ''}${ageMonths}`;
+}
+// First, define DeleteConfirmationModal as a separate component
+const DeleteConfirmationModal = ({
+    visible,
+    onClose,
+    onDelete,
+}) => (
+    <Modal
+        visible={visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={onClose}
+    >
+        <TouchableWithoutFeedback onPress={onClose}>
+            <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback onPress={e => e.stopPropagation()}>
+                    <Animatable.View
+                        animation="zoomIn"
+                        duration={300}
+                        style={styles.deleteModalContainer}
+                    >
+                        <View style={styles.deleteModalContent}>
+                            <View style={styles.deleteIconContainer}>
+                                <MaterialIcons name="delete-outline" size={40} color="#FF4444" />
+                            </View>
+                            <Text style={styles.deleteModalTitle}>Delete Treatment</Text>
+                            <Text style={styles.deleteModalText}>
+                                Are you sure you want to delete this treatment? This action cannot be undone.
+                            </Text>
+                        </View>
+                        <View style={styles.deleteModalActions}>
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={onClose}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.confirmDeleteButton}
+                                onPress={onDelete}
+                            >
+                                <Text style={styles.confirmDeleteText}>Delete</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animatable.View>
+                </TouchableWithoutFeedback>
+            </View>
+        </TouchableWithoutFeedback>
+    </Modal>
+);
+
+// First, create a separate modal for client details editing
+const ClientEditModal = ({ visible, onClose, onSave, editingStat, editValue, setEditValue }) => {
+    const getFieldDisplayName = (stat) => {
+        if (!stat) return '';
+        return stat.toString().replace(/([A-Z])/g, ' $1').trim();
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <TouchableWithoutFeedback onPress={onClose}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.editModalContainer}>
+                            <View style={styles.editModalHeader}>
+                                <MaterialIcons name="edit" size={24} color="#014495" />
+                                <Text style={styles.editModalTitle}>
+                                    Edit {getFieldDisplayName(editingStat)}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={onClose}
+                                    style={styles.editModalCloseButton}
+                                >
+                                    <MaterialIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.editModalContent}>
+                                <TextInput
+                                    style={styles.editModalInput}
+                                    value={editValue}
+                                    onChangeText={setEditValue}
+                                    keyboardType={editingStat === 'Price' || editingStat === 'Meetings' ? 'numeric' : 'default'}
+                                    placeholder={`Enter ${editingStat?.toString().toLowerCase() || ''}`}
+                                />
+                            </View>
+
+                            <View style={styles.editModalFooter}>
+                                <TouchableOpacity
+                                    style={styles.editModalCancelButton}
+                                    onPress={onClose}
+                                >
+                                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.editModalSaveButton}
+                                    onPress={onSave}
+                                >
+                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+};
+
+// Second, create a separate modal for treatment editing
+const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, setEditValue }) => {
+    const isLongTextField = editingStat?.field === 'treatmentSummary' ||
+        editingStat?.field === 'whatNext' ||
+        editingStat?.field === 'homework';
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <TouchableWithoutFeedback onPress={onClose}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={[
+                            styles.editModalContainer,
+                            isLongTextField && styles.editModalContainerLarge
+                        ]}>
+                            <View style={styles.editModalHeader}>
+                                <MaterialIcons name="edit" size={24} color="#014495" />
+                                <Text style={styles.editModalTitle}>
+                                    Edit {editingStat?.field?.replace(/([A-Z])/g, ' $1').trim() || ''}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={onClose}
+                                    style={styles.editModalCloseButton}
+                                >
+                                    <MaterialIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.editModalContent}>
+                                <TextInput
+                                    style={[
+                                        styles.editModalInput,
+                                        isLongTextField && styles.editModalInputMultiline
+                                    ]}
+                                    value={editValue}
+                                    onChangeText={setEditValue}
+                                    multiline={isLongTextField}
+                                    numberOfLines={isLongTextField ? 6 : 1}
+                                    textAlignVertical={isLongTextField ? "top" : "center"}
+                                    placeholder={`Enter ${editingStat?.field?.toLowerCase() || ''}`}
+                                />
+                            </ScrollView>
+
+                            <View style={styles.editModalFooter}>
+                                <TouchableOpacity
+                                    style={styles.editModalCancelButton}
+                                    onPress={onClose}
+                                >
+                                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.editModalSaveButton}
+                                    onPress={onSave}
+                                >
+                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+};
 
 export default function Treatments({ navigation }) {
     const dispatch = useDispatch();
@@ -87,6 +305,7 @@ export default function Treatments({ navigation }) {
     const [parentsModalVisible, setParentsModalVisible] = useState(false);
     const [newTreatment, setNewTreatment] = useState({
         treatmentDate: new Date(),
+        treatmentTime: new Date(),
         treatmentSummary: '',
         whatNext: '',
         paymentStatus: '',
@@ -106,10 +325,34 @@ export default function Treatments({ navigation }) {
     const [activeTab, setActiveTab] = useState(0);
     const translateX = useSharedValue(0);
     const pagerRef = useRef(null); // Add a ref for PagerView
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [editingStat, setEditingStat] = useState(null);
+    const [editValue, setEditValue] = useState('');
+    const [showAgeDatePicker, setShowAgeDatePicker] = useState(false);
+    const [isSavingAge, setIsSavingAge] = useState(false);
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [treatmentToDelete, setTreatmentToDelete] = useState("");
+    const [tempBirthday, setTempBirthday] = useState(() => {
+        const now = new Date();
+        try {
+            if (!clientDetails.birthday) return now;
+            const date = new Date(clientDetails.birthday);
+            return isNaN(date.getTime()) ? now : date;
+        } catch {
+            return now;
+        }
+    });
+    const [clientEditModalVisible, setClientEditModalVisible] = useState(false);
+    const [treatmentEditModalVisible, setTreatmentEditModalVisible] = useState(false);
+
+    const handleCloseDeleteModal = useCallback(() => {
+        setDeleteModalVisible(false);
+        setTreatmentToDelete(null);
+    }, []);
 
     const handlePageChange = (page) => {
         setActiveTab(page);
-        translateX.value = withTiming(page * (windowWidth / 2)); // Adjust width division as per number of tabs
+        translateX.value = withTiming(page * (windowWidth / 4)); // Adjust width division as per number of tabs
 
         // Set the page in PagerView
         if (pagerRef.current) {
@@ -150,7 +393,25 @@ export default function Treatments({ navigation }) {
         fetchClientData();
     }, [clientId, adminId]);
 
+    const handleDeleteTreatment = useCallback(async () => {
+        try {
+            const response = await axios.delete(`${Api}/treatments/${treatmentToDelete}`);
 
+            if (response.status === 200) {
+                setTreatments(prev => prev.filter(t => t._id !== treatmentToDelete));
+                handleCloseDeleteModal(); // Use the handler here
+
+                // Optional: Show success message
+                Alert.alert('Success', 'Treatment deleted successfully');
+            }
+        } catch (error) {
+            console.error('Error deleting treatment:', error);
+            Alert.alert(
+                'Error',
+                error.response?.data?.message || 'Failed to delete treatment'
+            );
+        }
+    }, [treatmentToDelete]);
     /*  const fetchClientDetails = async () => {
          // Fetch client details based on clientId
          // Assuming you have a route for fetching client details by ID
@@ -217,6 +478,172 @@ export default function Treatments({ navigation }) {
         }
     };
 
+    const TreatmentsList = ({ treatments, onAddTreatment, loading }) => {
+        const renderTreatmentItem = ({ item, index }) => (
+            <Animatable.View
+                animation="fadeInUp"
+                delay={index * 100}
+                style={styles.treatmentCard}
+            >
+                <View style={styles.treatmentHeader}>
+                    <View style={styles.treatmentDateTime}>
+                        <View style={styles.treatmentDate}>
+                            <MaterialIcons name="event" size={20} color="#014495" />
+                            <Text style={styles.dateText}>
+                                {new Date(item.treatmentDate).toLocaleDateString()}
+                            </Text>
+                        </View>
+                        <View style={styles.treatmentTime}>
+                            <MaterialIcons name="access-time" size={20} color="#014495" />
+                            <Text style={styles.timeText}>
+                                {formatTime(item.treatmentDate)}
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <Text style={styles.sessionNumber}>Session #{item.sessionNumber}</Text>
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => {
+                                setTreatmentToDelete(item._id);
+                                setDeleteModalVisible(true);
+                            }}
+                        >
+                            <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <DeleteConfirmationModal
+                    visible={deleteModalVisible}
+                    onClose={handleCloseDeleteModal}
+                    onDelete={handleDeleteTreatment}
+                />
+                <View style={styles.treatmentContent}>
+                    <TouchableOpacity
+                        style={styles.editableField}
+                        onPress={() => handleEditField(item._id, 'treatmentSummary')}
+                    >
+                        <Text style={styles.fieldLabel}>Treatment Summary</Text>
+                        <Text style={styles.fieldValue}>
+                            {item.treatmentSummary || 'Add summary...'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.editableField}
+                        onPress={() => handleEditField(item._id, 'whatNext')}
+                    >
+                        <Text style={styles.fieldLabel}>Next Steps</Text>
+                        <Text style={styles.fieldValue}>
+                            {item.whatNext || 'Add next steps...'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.editableField}
+                        onPress={() => handleEditField(item._id, 'homework')}
+                    >
+                        <Text style={styles.fieldLabel}>Homework</Text>
+                        <Text style={styles.fieldValue}>
+                            {item.homework || 'Add homework...'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.paymentSection}>
+                        <TouchableOpacity
+                            style={[styles.paymentStatus, {
+                                backgroundColor: item.paymentStatus === 'paid' ? '#E8F5E9' : '#FFF3E0'
+                            }]}
+                            onPress={() => handleEditField(item._id, 'paymentStatus')}
+                        >
+                            <MaterialIcons
+                                name={item.paymentStatus === 'paid' ? 'check-circle' : 'schedule'}
+                                size={16}
+                                color={item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800'}
+                            />
+                            <Text style={styles.statusText}>
+                                {item.paymentStatus || 'Set status'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.paymentMethod}
+                            onPress={() => handleEditField(item._id, 'PaymentMethod')}
+                        >
+                            <Text style={styles.methodText}>
+                                {item.PaymentMethod || 'Set method'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Animatable.View>
+        );
+
+        const renderSkeletonLoading = () => (
+            <View style={styles.skeletonContainer}>
+                {[1, 2, 3].map((_, index) => (
+                    <Animatable.View
+                        key={index}
+                        animation="pulse"
+                        iterationCount="infinite"
+                        style={styles.skeletonCard}
+                    >
+                        <View style={styles.skeletonHeader}>
+                            <View style={styles.skeletonDate} />
+                            <View style={styles.skeletonStatus} />
+                        </View>
+                        <View style={styles.skeletonContent}>
+                            <View style={styles.skeletonLine} />
+                            <View style={[styles.skeletonLine, { width: '60%' }]} />
+                        </View>
+                    </Animatable.View>
+                ))}
+            </View>
+        );
+
+        return (
+            <View style={styles.treatmentsContainer}>
+                {loading ? (
+                    renderSkeletonLoading()
+                ) : (
+                    <>
+                        <FlatList
+                            data={treatments}
+                            renderItem={renderTreatmentItem}
+                            keyExtractor={(item) => item._id}
+                            contentContainerStyle={styles.treatmentsList}
+                            showsVerticalScrollIndicator={false}
+                            ListEmptyComponent={() => (
+                                <View style={styles.emptyState}>
+                                    <MaterialIcons name="medical-services" size={60} color="#014495" />
+                                    <Text style={styles.emptyStateTitle}>No Treatments Yet</Text>
+                                    <Text style={styles.emptyStateText}>
+                                        Add your first treatment to start tracking progress
+                                    </Text>
+                                </View>
+                            )}
+                        />
+                        <TouchableOpacity
+                            style={styles.addButton}
+                            onPress={onAddTreatment}
+                            activeOpacity={0.7}
+                        >
+                            <LinearGradient
+                                colors={['#4A90E2', '#357ABD']}
+                                style={styles.gradientButton}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                            >
+                                <MaterialIcons name="add" size={24} color="white" />
+                                <Text style={styles.addButtonText}>Add Treatment</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </>
+                )}
+            </View>
+        );
+    };
+
     const validateInputs = () => {
         let validationErrors = {};
 
@@ -228,33 +655,200 @@ export default function Treatments({ navigation }) {
     };
 
     const handleSaveTreatment = async () => {
-        if (!validateInputs()) return;
-
         try {
-            const response = await axios.post(`${Api}/treatments/${clientId}`, newTreatment);
+            // Validate date and time
+            if (!newTreatment.treatmentDate || !newTreatment.treatmentTime) {
+                Alert.alert("Error", "Please select both date and time");
+                return;
+            }
 
-            // Add the new treatment to the treatments array
-            setTreatments(prev => [...prev, response.data]); // `response.data` is the newly added treatment
+            // Combine date and time
+            const combinedDateTime = new Date(newTreatment.treatmentDate);
+            const timeDate = new Date(newTreatment.treatmentTime);
+
+            // Validate the combined date
+            if (isNaN(combinedDateTime.getTime()) || isNaN(timeDate.getTime())) {
+                Alert.alert("Error", "Invalid date or time selected");
+                return;
+            }
+
+            combinedDateTime.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+
+            console.log('Sending treatment data:', {
+                clientId,
+                treatmentDate: combinedDateTime.toISOString()
+            });
+
+            const response = await axios.post(`${Api}/treatments/${clientId}`, {
+                treatmentDate: combinedDateTime.toISOString(),
+            });
+
+            // Add the new treatment to the beginning of the list
+            setTreatments(prev => [response.data, ...prev]);
             setModalVisible(false);
-
-            // Reset new treatment form fields
             setNewTreatment({
                 treatmentDate: new Date(),
-                treatmentSummary: '',
-                whatNext: '',
-                paymentStatus: '',
-                payDate: ''
+                treatmentTime: new Date(),
             });
         } catch (error) {
-            console.error("Error saving treatment:", error);
+            console.error("Error saving treatment:", error.response?.data || error);
+            Alert.alert(
+                "Error",
+                "Failed to create treatment: " + (error.response?.data?.message || error.message)
+            );
+        }
+    };
+
+    const handleEditField = (treatmentId, field) => {
+        const treatment = treatments.find(t => t._id === treatmentId);
+        if (!treatment) return;
+
+        setEditingStat({
+            id: treatmentId,
+            field,
+            currentValue: treatment[field] || '',
+        });
+        setEditValue(treatment[field] || '');
+        setTreatmentEditModalVisible(true);  // Changed from setEditModalVisible
+    };
+
+    const handleSaveTreatmentEdit = async () => {
+        try {
+            const { id, field } = editingStat;
+            let value = editValue;
+
+            // Special handling for dates if needed
+            if (field === 'payDate') {
+                value = new Date(value).toISOString();
+            }
+
+            const response = await axios.put(`${Api}/treatments/${id}`, {
+                [field]: value
+            });
+
+            // Update treatments list with edited treatment
+            setTreatments(prev =>
+                prev.map(t => t._id === id ? response.data : t)
+            );
+
+            setTreatmentEditModalVisible(false);
+        } catch (error) {
+            console.error('Error updating treatment:', error);
+            Alert.alert('Error', 'Failed to update treatment');
         }
     };
 
     const renderTreatmentItem = ({ item }) => (
-        <View style={styles.treatmentItem}>
-            <Text style={{ color: "grey" }}>{new Date(item.treatmentDate).toLocaleDateString()}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: "Rubik-italic", fontSize: moderateScale(30) }}>{item.treatmentSummary}</Text>
-        </View>
+        <Animatable.View
+            animation="fadeInUp"
+            style={styles.treatmentCard}
+        >
+            <View style={styles.treatmentHeader}>
+                <View style={styles.treatmentDateTime}>
+                    <View style={styles.treatmentDate}>
+                        <MaterialIcons name="event" size={20} color="#014495" />
+                        <Text style={styles.dateText}>
+                            {new Date(item.treatmentDate).toLocaleDateString()}
+                        </Text>
+                    </View>
+                    <View style={styles.treatmentTime}>
+                        <MaterialIcons name="access-time" size={20} color="#014495" />
+                        <Text style={styles.timeText}>
+                            {formatTime(item.treatmentDate)}
+                        </Text>
+                    </View>
+                </View>
+                <View style={styles.headerActions}>
+                    <Text style={styles.sessionNumber}>Session ##{item.sessionNumber}</Text>
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => {
+                            setTreatmentToDelete(item._id);
+                            setDeleteModalVisible(true);
+                        }}
+                    >
+                        <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <View style={styles.treatmentContent}>
+                <TouchableOpacity
+                    style={styles.longTextFieldContainer}
+                    onPress={() => handleEditField(item._id, 'treatmentSummary')}
+                >
+                    <View style={styles.fieldHeader}>
+                        <Text style={styles.fieldLabel}>Treatment Summary</Text>
+                        <MaterialIcons name="edit" size={16} color="#014495" />
+                    </View>
+                    <Text style={[
+                        styles.longTextValue,
+                        !item.treatmentSummary && styles.placeholderText
+                    ]}>
+                        {item.treatmentSummary || 'Add treatment summary...'}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.longTextFieldContainer}
+                    onPress={() => handleEditField(item._id, 'whatNext')}
+                >
+                    <View style={styles.fieldHeader}>
+                        <Text style={styles.fieldLabel}>Next Steps</Text>
+                        <MaterialIcons name="edit" size={16} color="#014495" />
+                    </View>
+                    <Text style={[
+                        styles.longTextValue,
+                        !item.whatNext && styles.placeholderText
+                    ]}>
+                        {item.whatNext || 'Add next steps...'}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.longTextFieldContainer}
+                    onPress={() => handleEditField(item._id, 'homework')}
+                >
+                    <View style={styles.fieldHeader}>
+                        <Text style={styles.fieldLabel}>Homework</Text>
+                        <MaterialIcons name="edit" size={16} color="#014495" />
+                    </View>
+                    <Text style={[
+                        styles.longTextValue,
+                        !item.homework && styles.placeholderText
+                    ]}>
+                        {item.homework || 'Add homework...'}
+                    </Text>
+                </TouchableOpacity>
+
+                <View style={styles.paymentSection}>
+                    <TouchableOpacity
+                        style={[styles.paymentStatus, {
+                            backgroundColor: item.paymentStatus === 'paid' ? '#E8F5E9' : '#FFF3E0'
+                        }]}
+                        onPress={() => handleEditField(item._id, 'paymentStatus')}
+                    >
+                        <MaterialIcons
+                            name={item.paymentStatus === 'paid' ? 'check-circle' : 'schedule'}
+                            size={16}
+                            color={item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800'}
+                        />
+                        <Text style={styles.statusText}>
+                            {item.paymentStatus || 'Set status'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.paymentMethod}
+                        onPress={() => handleEditField(item._id, 'PaymentMethod')}
+                    >
+                        <Text style={styles.methodText}>
+                            {item.PaymentMethod || 'Set method'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Animatable.View>
     );
 
     const renderParent = ({ item, index }) => (
@@ -325,25 +919,7 @@ export default function Treatments({ navigation }) {
         );
     };
 
-    function calculateAge(birthday) {
-        const birthDate = new Date(birthday);
-        const today = new Date();
 
-        let ageYears = today.getFullYear() - birthDate.getFullYear();
-        let ageMonths = today.getMonth() - birthDate.getMonth();
-
-        // If the current month is before the birth month, or it's the birth month but the current day is before the birth day
-        if (ageMonths < 0 || (ageMonths === 0 && today.getDate() < birthDate.getDate())) {
-            ageYears--;
-            ageMonths += 12;
-        }
-
-        if (today.getDate() < birthDate.getDate()) {
-            ageMonths--;
-        }
-
-        return `${ageYears}:${ageMonths < 10 ? '0' : ''}${ageMonths}`;
-    }
     const onTreatmentDateChange = (event, selectedDate) => {
         setShowTreatmentDatePicker(false);
         if (selectedDate) {
@@ -370,6 +946,174 @@ export default function Treatments({ navigation }) {
         }
     };
 
+    const handleStatPress = (statLabel) => {
+        // Don't show edit modal for Age stat
+        if (statLabel === 'Age') return;
+
+        let currentValue = '';
+        switch (statLabel) {
+            case 'Price':
+                currentValue = clientDetails.clientPrice || '';
+                break;
+            case 'Insurance':
+                currentValue = clientDetails.insuranceInfo || '';
+                break;
+            case 'Meetings':
+                currentValue = clientDetails.numberOfMeetings?.toString() || '';
+                break;
+        }
+
+        setEditingStat(statLabel);
+        setEditValue(currentValue);
+        setClientEditModalVisible(true);
+    };
+
+    const handleSaveStatEdit = async () => {
+        try {
+            let field = '';
+            let value = editValue;
+
+            // Map the editingStat to the correct field name
+            switch (editingStat) {
+                case 'Price':
+                    field = 'clientPrice';
+                    break;
+                case 'Insurance':
+                    field = 'insuranceInfo';
+                    break;
+                case 'Meetings':
+                    field = 'numberOfMeetings';
+                    value = parseInt(editValue) || 0;
+                    break;
+            }
+
+            const response = await axios.patch(`${Api}/clients/${clientId}/updateField`, {
+                field,
+                value
+            });
+
+            setClientDetails(response.data);
+            setClientEditModalVisible(false);
+        } catch (error) {
+            console.error('Error updating stat:', error);
+            Alert.alert('Error', 'Failed to update information');
+        }
+    };
+
+    const ClientDescription = ({ clientDetails }) => {
+        const [descModalVisible, setDescModalVisible] = useState(false);
+        const [description, setDescription] = useState(clientDetails.descriptin || '');
+        const [isSaving, setIsSaving] = useState(false);
+
+        const handleSaveDescription = async () => {
+            setIsSaving(true);
+            try {
+                const response = await axios.patch(`${Api}/clients/${clientDetails._id}/updateField`, {
+                    field: 'descriptin',
+                    value: description
+                });
+
+                // Update the client details in the parent component
+                setClientDetails(response.data);
+                setDescModalVisible(false);
+            } catch (error) {
+                console.error('Error saving description:', error);
+                Alert.alert('Error', 'Failed to save description');
+            } finally {
+                setIsSaving(false);
+            }
+        };
+
+        return (
+            <Animatable.View
+                animation="fadeInUp"
+                delay={800}
+                style={styles.descriptionContainer}
+            >
+                <View style={styles.descriptionHeader}>
+                    <MaterialIcons name="description" size={24} color="#014495" />
+                    <Text style={styles.descriptionTitle}>Description</Text>
+                    <TouchableOpacity
+                        onPress={() => setDescModalVisible(true)}
+                        style={styles.editDescriptionButton}
+                    >
+                        <MaterialIcons name="edit" size={20} color="#014495" />
+                    </TouchableOpacity>
+                </View>
+                <Text style={styles.descriptionText}>
+                    {clientDetails.descriptin || "No description available"}
+                </Text>
+
+                <Modal
+                    visible={descModalVisible}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={() => setDescModalVisible(false)}
+                >
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={styles.descriptionModalContainer}
+                    >
+                        <View style={styles.descriptionModalContent}>
+                            <View style={styles.descriptionModalHeader}>
+                                <Text style={styles.descriptionModalTitle}>Edit Description</Text>
+                                <TouchableOpacity
+                                    onPress={() => setDescModalVisible(false)}
+                                    style={styles.descriptionModalClose}
+                                >
+                                    <MaterialIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <TextInput
+                                style={styles.descriptionInput}
+                                multiline
+                                numberOfLines={8}
+                                value={description}
+                                onChangeText={setDescription}
+                                placeholder="Enter description..."
+                                textAlignVertical="top"
+                            />
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.saveDescriptionButton,
+                                    isSaving && styles.saveButtonDisabled
+                                ]}
+                                onPress={handleSaveDescription}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? (
+                                    <ActivityIndicator color="white" size="small" />
+                                ) : (
+                                    <Text style={styles.saveDescriptionText}>Save Description</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </Modal>
+            </Animatable.View>
+        );
+    };
+
+
+    const handleSaveAge = async () => {
+        try {
+            setIsSavingAge(true);
+            const response = await axios.patch(`${Api}/clients/${clientId}/updateField`, {
+                field: 'birthday',
+                value: tempBirthday.toISOString()
+            });
+            setClientDetails(response.data);
+            setShowAgeDatePicker(false);
+        } catch (error) {
+            console.error('Error updating age:', error);
+            Alert.alert('Error', 'Failed to update birthday');
+        } finally {
+            setIsSavingAge(false);
+        }
+    };
+
     if (loading) {
         return <ActivityIndicator size="large" color="#0000ff" style={styles.centered} />;
     }
@@ -390,369 +1134,1550 @@ export default function Treatments({ navigation }) {
         );
     }
 
-    return (
-        <View style={{
-            flex: 1,
-        }}>
-            <ImageBackground source={require("../../assets/background.png")} style={{ flex: 1 }}>
+    const EditStatModal = () => {
+        // Determine if the current field should use multiline input
+        const isLongTextField = editingStat?.field === 'treatmentSummary' ||
+            editingStat?.field === 'whatNext' ||
+            editingStat?.field === 'homework';
 
-                {user.package === "free" && <BannerAd
-                    //    ref={bannerRef}
-                    unitId={adUnitId1}
-                    size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                    requestOptions={{
-                        requestNonPersonalizedAdsOnly: !isTrackingPermission,
-                        // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
-                    }}
-                />}
-                {/* Tab Bar */}
-                <View style={styles.tabBar}>
-                    <TouchableOpacity style={styles.tab} onPress={() => handlePageChange(0)}>
-                        <Text style={activeTab === 0 ? styles.activeTabText : styles.tabText}>Client</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.tab} onPress={() => handlePageChange(1)}>
-                        <Text style={activeTab === 1 ? styles.activeTabText : styles.tabText}>Treatments</Text>
-                    </TouchableOpacity>
-                    {/* Add more tabs as needed */}
-                    <Animated.View style={[styles.indicator, animatedIndicatorStyle]} />
+        return (
+            <Modal
+                visible={editModalVisible}
+                transparent={true}
+                animationType="none"
+                onRequestClose={() => setEditModalVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <View style={[
+                            styles.editModalContainer,
+                            isLongTextField && styles.editModalContainerLarge
+                        ]}>
+                            <View style={styles.editModalHeader}>
+                                <MaterialIcons name="edit" size={24} color="#014495" />
+                                <Text style={styles.editModalTitle}>
+                                    Edit {editingStat?.field ? editingStat.field.replace(/([A-Z])/g, ' $1').trim() : ''}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setEditModalVisible(false)}
+                                    style={styles.editModalCloseButton}
+                                >
+                                    <MaterialIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.editModalContent}>
+                                <Text style={styles.editModalLabel}>
+                                    {editingStat?.field ? editingStat.field.replace(/([A-Z])/g, ' $1').trim() : ''} Value
+                                </Text>
+                                <TextInput
+                                    style={[
+                                        styles.editModalInput,
+                                        isLongTextField && styles.editModalInputMultiline
+                                    ]}
+                                    value={editValue}
+                                    onChangeText={setEditValue}
+                                    multiline={isLongTextField}
+                                    numberOfLines={isLongTextField ? 6 : 1}
+                                    textAlignVertical={isLongTextField ? "top" : "center"}
+                                    keyboardType={editingStat?.field === 'numberOfMeetings' || editingStat?.field === 'clientPrice' ? 'numeric' : 'default'}
+                                    placeholder={`Enter ${editingStat?.field ? editingStat.field.replace(/([A-Z])/g, ' $1').trim().toLowerCase() : ''}`}
+                                />
+                            </View>
+
+                            <View style={styles.editModalFooter}>
+                                <TouchableOpacity
+                                    style={styles.editModalCancelButton}
+                                    onPress={() => setEditModalVisible(false)}
+                                >
+                                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.editModalSaveButton}
+                                    onPress={handleSaveTreatmentEdit}
+                                >
+                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+        );
+    };
+
+
+
+    return (
+        <View style={styles.container}>
+            <Animatable.View
+                animation="fadeInDown"
+                duration={800}
+                style={styles.header}
+            >
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={styles.backButton}
+                >
+                    <MaterialIcons name="arrow-back" size={24} color="#014495" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Client Profile</Text>
+                <View style={{ width: 40 }} />
+            </Animatable.View>
+
+            <TabBar
+                activeTab={activeTab}
+                handlePageChange={handlePageChange}
+                animatedIndicatorStyle={animatedIndicatorStyle}
+            />
+
+            <PagerView
+                ref={pagerRef}
+                style={styles.pagerView}
+                initialPage={0}
+                onPageSelected={onPageSelected}
+            >
+                {/* Profile Tab */}
+                <View key="1" style={styles.page}>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        <Animatable.View
+                            animation="fadeIn"
+                            duration={1000}
+                            style={styles.profileContainer}
+                        >
+                            <Animatable.View
+                                animation="bounceIn"
+                                duration={1500}
+                                style={styles.avatarContainer}
+                            >
+                                <Image
+                                    source={
+                                        clientDetails.gender === 'male'
+                                            ? require("../../assets/maleIcon.png")
+                                            : require('../../assets/femaleIcon.png')
+                                    }
+                                    style={styles.avatarImage}
+                                />
+                            </Animatable.View>
+
+                            <Animatable.Text
+                                animation="fadeInUp"
+                                delay={300}
+                                style={styles.clientName}
+                            >
+                                {`${clientDetails.name} ${clientDetails.lastName}`}
+                            </Animatable.Text>
+
+                            <View style={styles.statsContainer}>
+                                {[
+                                    {
+                                        label: 'Age',
+                                        value: calculateAge(clientDetails.birthday),
+                                        icon: 'cake',
+                                        // isEditable: true
+                                    },
+                                    {
+                                        label: 'Price',
+                                        value: clientDetails.clientPrice ?
+                                            Math.min(Number(clientDetails.clientPrice), 99999).toString() :
+                                            '-',
+                                        icon: 'attach-money'
+                                    },
+                                    {
+                                        label: 'Insurance',
+                                        value: clientDetails.insuranceInfo ?
+                                            clientDetails.insuranceInfo.slice(0, 20) :
+                                            '-',
+                                        icon: 'health-and-safety'
+                                    },
+                                    {
+                                        label: 'Meetings',
+                                        value: clientDetails.numberOfMeetings ?
+                                            Math.min(Number(clientDetails.numberOfMeetings), 9999).toString() :
+                                            '-',
+                                        icon: 'event'
+                                    }
+                                ].map((stat, index) => (
+                                    <TouchableOpacity
+                                        key={stat.label}
+                                        onPress={() => stat.label === 'Age' ? setShowAgeDatePicker(true) : handleStatPress(stat.label)}
+                                        style={[styles.statItemWrapper, { flex: stat.label === 'Insurance' ? 1.2 : 1 }]}
+                                    >
+                                        <Animatable.View
+                                            animation="fadeInUp"
+                                            delay={500 + (index * 100)}
+                                            style={[
+                                                styles.statItem,
+                                                stat.isEditable && styles.editableStatItem
+                                            ]}
+                                        >
+                                            <MaterialIcons name={stat.icon} size={24} color="#014495" />
+                                            <Text
+                                                style={[
+                                                    styles.statValue,
+                                                    (stat.label === 'Insurance' || stat.label === 'Meetings') && styles.insuranceValue
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {stat.value}
+                                            </Text>
+                                            <Text numberOfLines={1} style={styles.statLabel}>{stat.label}</Text>
+                                            {stat.isEditable && (
+                                                <View style={styles.editIndicator}>
+                                                    <MaterialIcons name="edit" size={16} color="#014495" />
+                                                </View>
+                                            )}
+                                        </Animatable.View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </Animatable.View>
+                        <ClientDescription clientDetails={clientDetails} />
+                    </ScrollView>
                 </View>
 
-                {/* PagerView */}
-                <PagerView
-                    ref={pagerRef} // Assign the ref to PagerView
-                    style={styles.pagerView}
-                    initialPage={0}
-                    onPageSelected={onPageSelected}
+                {/* Treatments Tab */}
+                <View key="2" style={styles.page}>
+                    <TreatmentsList
+                        treatments={treatments}
+                        onAddTreatment={() => setModalVisible(true)}
+                        loading={isLoading}
+                    />
+                </View>
+
+                {/* Payments Tab */}
+                <View key="3" style={styles.page}>
+                    <PaymentsList treatments={treatments} />
+                </View>
+            </PagerView>
+
+            {/* Add Treatment Modal */}
+            <AddTreatmentModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onSave={handleSaveTreatment}
+                treatment={newTreatment}
+                setTreatment={setNewTreatment}
+            />
+
+            <ClientEditModal
+                visible={clientEditModalVisible}
+                onClose={() => setClientEditModalVisible(false)}
+                onSave={handleSaveStatEdit}
+                editingStat={editingStat}
+                editValue={editValue}
+                setEditValue={setEditValue}
+            />
+
+            <TreatmentEditModal
+                visible={treatmentEditModalVisible}
+                onClose={() => setTreatmentEditModalVisible(false)}
+                onSave={handleSaveTreatmentEdit}
+                editingStat={editingStat}
+                editValue={editValue}
+                setEditValue={setEditValue}
+            />
+
+            <Modal
+                visible={showAgeDatePicker}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowAgeDatePicker(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
                 >
-                    <View key="1" style={styles.page}>
-                        <Text>Content for Tab 1</Text>
-                        <View style={{ justifyContent: "center", width: windowWidth, alignItems: "center" }}>
-                            {clientDetails.gender === 'male' ? (
-                                <Image
-                                    source={require("../../assets/maleIcon.png")}
-                                    style={{ width: 100, height: 100 }}
-                                    alt="Male Icon"
-                                />
 
-                            ) : (
-                                <Image
-                                    source={require('../../assets/femaleIcon.png')}
-                                    style={{ width: 100, height: 100 }}
-                                    alt="Female Icon"
-                                />
-                            )}
-                            <Text numberOfLines={1} style={{ fontFamily: "Rubik", fontSize: moderateScale(40), alignSelf: "center", }}>{`${clientDetails.name} ${clientDetails.lastName}`}</Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-around", marginVertical: verticalScale(20) }}>
-                            <View style={{ justifyContent: "center", alignItems: "center" }}>
-                                <Text allowFontScaling={false} style={{ fontSize: 25 }}>{`${calculateAge(clientDetails.birthday)}`}</Text>
-                                <Text style={{ color: "grey", fontSize: 20 }}>{`Age`}</Text>
-                            </View>
-                            <View style={{ justifyContent: "center", alignItems: "center" }}>
-                                <Text allowFontScaling={false} style={{ fontSize: 25 }}>{clientDetails.clientPrice ? clientDetails.clientPrice : "-"}</Text>
-                                <Text style={{ color: "grey", fontSize: 20 }}>{`Price`}</Text>
-                            </View>
-                            <View style={{ justifyContent: "center", alignItems: "center" }}>
-                                <Text allowFontScaling={false} style={{ fontSize: 25 }}>{clientDetails.insuranceInfo ? clientDetails.insuranceInfo : "-"}</Text>
-                                <Text style={{ color: "grey", fontSize: 20 }}>{`Insurance`}</Text>
-                            </View>
-                            <View style={{ justifyContent: "center", alignItems: "center" }}>
-                                <Text allowFontScaling={false} style={{ fontSize: 25 }}>{clientDetails.numberOfMeetings ? clientDetails.numberOfMeetings : "-"}</Text>
-                                <Text style={{ color: "grey", fontSize: 20 }}>{`Meetings`}</Text>
-                            </View>
-                        </View>
-                        <View style={[styles.clientDetails, { marginTop: verticalScale(10) }]}>
-                            {/* <Text>Birthday: {new Date(clientDetails.birthday).toLocaleDateString()}</Text>
-                <Text>Gender: {clientDetails.gender}</Text> */}
-                            <Text style={{ color: "grey" }}>Description: {clientDetails.descriptin ? clientDetails.descriptin : "No description"}</Text>
-
-                            {/*  <Text style={{ fontFamily: "Rubik", fontSize: moderateScale(18) }}>{`phone: ${clientDetails.phone} `}</Text>
-                <Text>{`Age: ${calculateAge(clientDetails.birthday)}`}</Text> */}
-                        </View>
-                        <View style={{
-                            flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: windowWidth * 0.95, alignSelf: "center", /* backgroundColor: "yellow" */
-                        }}>
-
-                            <Text style={{ fontFamily: "Rubik", fontSize: moderateScale(30), marginHorizontal: horizontalScale(15) }}>Parents</Text>
-                            <TouchableOpacity onPress={() => setParentsModalVisible(true)} style={{ padding: 5, backgroundColor: "#1F609A", borderRadius: 20 }}>
-                                {/*  <FontAwesome name="user-plus" size={10} color="blue" /> */}
-                                <Text style={{ color: "white" }}>Add parent</Text>
-                                {/* <Text>Add Parent</Text> */}
-                            </TouchableOpacity>
-                        </View>
-                        <View style={{ justifyContent: "flex-start", flexDirection: "row", alignItems: "center", width: windowWidth * 0.9, paddingVertical: verticalScale(20), alignSelf: "center", backgroundColor: "white", borderRadius: 10 }}>
-                            <FlatList
-                                data={clientDetails.parents}
-                                horizontal
-                                keyExtractor={(item, index) => index.toString()}
-                                renderItem={renderParent}
-                            />
-                        </View>
-
-                    </View>
-                    <View key="2" style={styles.page}>
-                        <Text>Content for Tab 2</Text>
-                        <TouchableOpacity style={styles.addButton} onPress={() => /* setModalVisible(true) */ navigation.navigate("TreatmentForm")}>
-                            <Text style={styles.addButtonText}>Add New Treatment</Text>
-                        </TouchableOpacity>
+                    <TouchableWithoutFeedback onPress={() => setShowAgeDatePicker(false)}>
+                        <View style={styles.modalOverlay}>
+                            <TouchableWithoutFeedback onPress={e => e.stopPropagation()}>
+                                <Animatable.View
+                                    animation="zoomIn"
+                                    duration={300}
+                                    style={[
+                                        styles.editModalContainer,
+                                        { maxHeight: windowHeight * 0.5 } // Reduced from 0.4 to 0.3
+                                    ]}
+                                >
+                                    <View style={styles.editModalHeader}>
+                                        <MaterialIcons name="cake" size={24} color="#014495" />
+                                        <Text style={styles.editModalTitle}>Edit Birthday</Text>
+                                        <TouchableOpacity
+                                            onPress={() => setShowAgeDatePicker(false)}
+                                            style={styles.editModalCloseButton}
+                                        >
+                                            <MaterialIcons name="close" size={24} color="#666" />
+                                        </TouchableOpacity>
+                                    </View>
 
 
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search by treatment summary..."
-                            value={search}
-                            onChangeText={handleSearch}
-                        />
-                        <FlatList
-                            data={treatments}
-                            keyExtractor={(item) => item._id.toString()}
-                            renderItem={renderTreatmentItem}
-                            onEndReached={handleEndReached}
-                            onEndReachedThreshold={0.5}
-                        />
-                    </View>
-                </PagerView>
+                                    <View style={styles.modalBody}>
+                                        {Platform.OS === 'ios' ? (
+                                            <DateTimePicker
+                                                value={tempBirthday}
+                                                mode="date"
+                                                display="spinner"
+                                                onChange={(event, selectedDate) => {
+                                                    if (selectedDate) {
+                                                        setTempBirthday(selectedDate);
+                                                    }
+                                                }}
+                                                maximumDate={new Date()}
+                                            />
+                                        ) : (
+                                            <DateTimePicker
+                                                value={tempBirthday}
+                                                mode="date"
+                                                display="default"
+                                                onChange={(event, selectedDate) => {
+                                                    if (event.type === 'set' && selectedDate) {
+                                                        setTempBirthday(selectedDate);
+                                                    }
+                                                }}
+                                                maximumDate={new Date()}
+                                            />
+                                        )}
+                                    </View>
 
-
-
-
-
-
-
-
-
-
-
-
-
-                <Modal
-                    visible={modalVisible}
-                    // transparent={true}
-                    animationType="slide"
-                    onRequestClose={() => setModalVisible(false)}
-                >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-
-                        <View style={styles.modalContent}>
-                            <ScrollView style={{ marginTop: 100, paddingBottom: 500 }}>
-                                <Text style={styles.modalTitle}>Add New Treatment</Text>
-                                <Text>Treatment Date:</Text>
-                                <TouchableOpacity onPress={() => setShowTreatmentDatePicker(true)}>
-                                    <Text style={styles.dateInput}>{!showPayDatePicker ? "Pick a date:" : newTreatment.treatmentDate.toDateString()}</Text>
-                                </TouchableOpacity>
-                                {/*  <Button title="Select Treatment Date" onPress={() => setShowTreatmentDatePicker(true)} /> */}
-                                {showTreatmentDatePicker && (
-                                    <DateTimePicker
-                                        value={newTreatment.treatmentDate}
-                                        mode="date"
-                                        display="default"
-                                        onChange={onTreatmentDateChange}
-                                    />
-                                )}
-                                <Text>{newTreatment.treatmentDate.toLocaleDateString()}</Text>
-                                {errors.treatmentDate && <Text style={styles.errorText}>{errors.treatmentDate}</Text>}
-                                <Text>Treatment Summary:</Text>
-                                <TextInput
-                                    style={[styles.input, errors.treatmentSummary && styles.errorInput]}
-                                    placeholder="Treatment Summary"
-                                    value={newTreatment.treatmentSummary}
-                                    multiline
-                                    numberOfLines={8}
-                                    onChangeText={(text) => setNewTreatment({ ...newTreatment, treatmentSummary: text })}
-                                />
-                                {errors.treatmentSummary && <Text style={styles.errorText}>{errors.treatmentSummary}</Text>}
-                                <Text>What Next:</Text>
-                                <TextInput
-                                    style={[styles.input, errors.whatNext && styles.errorInput]}
-                                    placeholder="What Next"
-                                    value={newTreatment.whatNext}
-                                    multiline
-                                    numberOfLines={8}
-                                    onChangeText={(text) => setNewTreatment({ ...newTreatment, whatNext: text })}
-                                />
-                                {errors.whatNext && <Text style={styles.errorText}>{errors.whatNext}</Text>}
-
-
-                                {/*   <Button title="Select Pay Date" onPress={() => setShowPayDatePicker(true)} />
-                            {showPayDatePicker && (
-                                <DateTimePicker
-                                    value={newTreatment.payDate || new Date()}
-                                    mode="date"
-                                    display="default"
-                                    onChange={onPayDateChange}
-                                />
-                            )}
-                            {newTreatment.payDate && <Text>{newTreatment.payDate.toLocaleDateString()}</Text>} */}
-
-                                <Button title="Save" onPress={handleSaveTreatment} />
-                                <Button title="Cancel" onPress={() => {
-                                    setNewTreatment({
-                                        treatmentDate: new Date(),
-                                        treatmentSummary: '',
-                                        whatNext: '',
-                                        paymentStatus: '',
-                                        payDate: ''
-                                    }); setModalVisible(false)
-                                }} />
-                            </ScrollView>
+                                    <View style={styles.editModalFooter}>
+                                        <TouchableOpacity
+                                            style={styles.editModalCancelButton}
+                                            onPress={() => setShowAgeDatePicker(false)}
+                                        >
+                                            <Text style={styles.editModalCancelText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.editModalSaveButton, isSavingAge && styles.modalSaveButtonDisabled]}
+                                            onPress={handleSaveAge}
+                                            disabled={isSavingAge}
+                                        >
+                                            {isSavingAge ? (
+                                                <ActivityIndicator color="white" size="small" />
+                                            ) : (
+                                                <Text style={styles.editModalSaveText}>Save</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                </Animatable.View>
+                            </TouchableWithoutFeedback>
                         </View>
                     </TouchableWithoutFeedback>
-                </Modal>
-                <Modal visible={parentsModalVisible} transparent={true} animationType="slide">
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.title}>Add Parent</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Parent Name"
-                            value={parentName}
-                            onChangeText={setParentName}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Gender"
-                            value={gender}
-                            onChangeText={setGender}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Phone"
-                            value={phone}
-                            onChangeText={setPhone}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Email"
-                            value={email}
-                            onChangeText={setEmail}
-                        />
-                        <Button title="Add Parent" onPress={handleAddParent} />
-                        <Button title="Cancel" onPress={() => setParentsModalVisible(false)} color="red" />
-                    </View>
-                </Modal>
-            </ImageBackground>
-
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }
 
+const TabBar = ({ activeTab, handlePageChange, animatedIndicatorStyle }) => (
+    <View style={styles.tabBarContainer}>
+        {['Profile', 'Treatments', 'Payments'].map((tab, index) => (
+            <TouchableOpacity
+                key={tab}
+                style={styles.tab}
+                onPress={() => handlePageChange(index)}
+            >
+                <Animatable.View
+                    animation={activeTab === index ? 'pulse' : undefined}
+                    style={styles.tabContent}
+                >
+                    <MaterialIcons
+                        name={
+                            index === 0 ? 'person' :
+                                index === 1 ? 'medical-services' :
+                                    'payments'
+                        }
+                        size={24}
+                        color={activeTab === index ? '#014495' : '#666'}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        activeTab === index && styles.activeTabText
+                    ]}>
+                        {tab}
+                    </Text>
+                </Animatable.View>
+            </TouchableOpacity>
+        ))}
+        <Animated.View style={[styles.indicator, animatedIndicatorStyle]} />
+    </View>
+);
+
+const ClientProfile = ({ clientDetails }) => (
+    <Animatable.View
+        animation="fadeIn"
+        duration={1000}
+        style={styles.profileContainer}
+    >
+        <Animatable.View
+            animation="bounceIn"
+            duration={1500}
+            style={styles.avatarContainer}
+        >
+            <Image
+                source={
+                    clientDetails.gender === 'male'
+                        ? require("../../assets/maleIcon.png")
+                        : require('../../assets/femaleIcon.png')
+                }
+                style={styles.avatarImage}
+            />
+        </Animatable.View>
+
+        <Animatable.Text
+            animation="fadeInUp"
+            delay={300}
+            style={styles.clientName}
+        >
+            {`${clientDetails.name} ${clientDetails.lastName}`}
+        </Animatable.Text>
+
+        <View style={styles.statsContainer}>
+            {[
+                { label: 'Age', value: calculateAge(clientDetails.birthday), icon: 'cake' },
+                { label: 'Price', value: clientDetails.clientPrice || '-', icon: 'attach-money' },
+                { label: 'Insurance', value: clientDetails.insuranceInfo || '-', icon: 'health-and-safety' },
+                { label: 'Meetings', value: clientDetails.numberOfMeetings || '-', icon: 'event' }
+            ].map((stat, index) => (
+                <Animatable.View
+                    key={stat.label}
+                    animation="fadeInUp"
+                    delay={500 + (index * 100)}
+                    style={styles.statItem}
+                >
+                    <MaterialIcons name={stat.icon} size={24} color="#014495" />
+                    <Text style={styles.statValue}>{stat.value}</Text>
+                    <Text style={styles.statLabel}>{stat.label}</Text>
+                </Animatable.View>
+            ))}
+        </View>
+    </Animatable.View>
+);
+
+
+
+
+
+const PaymentsList = ({ treatments }) => {
+    const paidTreatments = treatments.filter(t => t.paymentStatus === 'paid');
+    const pendingTreatments = treatments.filter(t => t.paymentStatus === 'pending');
+
+    const totalPaid = paidTreatments.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    const totalPending = pendingTreatments.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+    const renderPaymentItem = ({ item, index }) => (
+        <Animatable.View
+            animation="fadeInUp"
+            delay={index * 100}
+            style={styles.paymentCard}
+        >
+            <View style={styles.paymentHeader}>
+                <View style={styles.paymentDate}>
+                    <MaterialIcons name="event" size={20} color="#014495" />
+                    <Text style={styles.paymentDateText}>
+                        {new Date(item.treatmentDate).toLocaleDateString()}
+                    </Text>
+                </View>
+                <Text style={styles.paymentAmount}>
+                    ${parseFloat(item.amount || 0).toFixed(2)}
+                </Text>
+            </View>
+
+            <View style={styles.paymentDetails}>
+                <Text style={styles.paymentLabel}>Treatment Summary</Text>
+                <Text style={styles.paymentSummary} numberOfLines={2}>
+                    {item.treatmentSummary}
+                </Text>
+
+                <View style={[
+                    styles.paymentStatusBadge,
+                    { backgroundColor: item.paymentStatus === 'paid' ? '#E8F5E9' : '#FFF3E0' }
+                ]}>
+                    <MaterialIcons
+                        name={item.paymentStatus === 'paid' ? 'check-circle' : 'schedule'}
+                        size={16}
+                        color={item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800'}
+                    />
+                    <Text style={[
+                        styles.paymentStatusText,
+                        { color: item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800' }
+                    ]}>
+                        {item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                    </Text>
+                </View>
+            </View>
+        </Animatable.View>
+    );
+
+    return (
+        <View style={styles.paymentsContainer}>
+            <Animatable.View
+                animation="fadeInDown"
+                style={styles.paymentsSummary}
+            >
+                <View style={styles.summaryCard}>
+                    <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+                    <Text style={styles.summaryAmount}>${totalPaid.toFixed(2)}</Text>
+                    <Text style={styles.summaryLabel}>Total Paid</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                    <MaterialIcons name="schedule" size={24} color="#FF9800" />
+                    <Text style={styles.summaryAmount}>${totalPending.toFixed(2)}</Text>
+                    <Text style={styles.summaryLabel}>Pending</Text>
+                </View>
+            </Animatable.View>
+
+            <FlatList
+                data={treatments}
+                renderItem={renderPaymentItem}
+                keyExtractor={(item) => item._id}
+                contentContainerStyle={styles.paymentsList}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={() => (
+                    <View style={styles.emptyState}>
+                        <MaterialIcons name="account-balance-wallet" size={60} color="#014495" />
+                        <Text style={styles.emptyStateTitle}>No Payments Yet</Text>
+                        <Text style={styles.emptyStateText}>
+                            Payments will appear here once treatments are added
+                        </Text>
+                    </View>
+                )}
+            />
+        </View>
+    );
+};
+
+const AddTreatmentModal = ({ visible, onClose, onSave, treatment, setTreatment }) => {
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const formatTime = (date) => {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        await onSave();
+        setIsSaving(false);
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={onClose}
+        >
+            <TouchableWithoutFeedback onPress={onClose}>
+                <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                        <Animatable.View
+                            animation="slideInUp"
+                            duration={300}
+                            style={styles.modalContainer}
+                        >
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Add Treatments</Text>
+                                <TouchableOpacity
+                                    onPress={onClose}
+                                    style={styles.modalCloseButton}
+                                >
+                                    <MaterialIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.modalContent}>
+                                <View style={styles.dateTimeContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}
+                                        onPress={() => setShowDatePicker(true)}
+                                    >
+                                        <MaterialIcons name="event" size={24} color="#014495" />
+                                        <Text style={styles.datePickerText}>
+                                            {treatment.treatmentDate.toLocaleDateString()}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.datePickerButton, { flex: 1 }]}
+                                        onPress={() => setShowTimePicker(true)}
+                                    >
+                                        <MaterialIcons name="access-time" size={24} color="#014495" />
+                                        <Text style={styles.datePickerText}>
+                                            {formatTime(treatment.treatmentTime)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={treatment.treatmentDate}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                            setShowDatePicker(false);
+                                            if (selectedDate) {
+                                                setTreatment({
+                                                    ...treatment,
+                                                    treatmentDate: selectedDate
+                                                });
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                {showTimePicker && (
+                                    <DateTimePicker
+                                        value={treatment.treatmentTime}
+                                        mode="time"
+                                        display="default"
+                                        onChange={(event, selectedTime) => {
+                                            setShowTimePicker(false);
+                                            if (selectedTime) {
+                                                setTreatment({
+                                                    ...treatment,
+                                                    treatmentTime: selectedTime
+                                                });
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                <Text style={styles.inputLabel}>Treatment Summary</Text>
+                                <TextInput
+                                    style={styles.textArea}
+                                    multiline
+                                    numberOfLines={4}
+                                    value={treatment.treatmentSummary}
+                                    onChangeText={(text) =>
+                                        setTreatment({ ...treatment, treatmentSummary: text })
+                                    }
+                                    placeholder="Describe the treatment..."
+                                />
+
+                                <Text style={styles.inputLabel}>Next Steps</Text>
+                                <TextInput
+                                    style={styles.textArea}
+                                    multiline
+                                    numberOfLines={4}
+                                    value={treatment.whatNext}
+                                    onChangeText={(text) =>
+                                        setTreatment({ ...treatment, whatNext: text })
+                                    }
+                                    placeholder="What's next..."
+                                />
+
+                                <Text style={styles.inputLabel}>Payment Status</Text>
+                                <View style={styles.paymentStatusSelector}>
+                                    {['paid', 'pending'].map((status) => (
+                                        <TouchableOpacity
+                                            key={status}
+                                            style={[
+                                                styles.statusOption,
+                                                treatment.paymentStatus === status &&
+                                                styles.statusOptionActive
+                                            ]}
+                                            onPress={() =>
+                                                setTreatment({ ...treatment, paymentStatus: status })
+                                            }
+                                        >
+                                            <MaterialIcons
+                                                name={status === 'paid' ? 'check-circle' : 'schedule'}
+                                                size={20}
+                                                color={treatment.paymentStatus === status ?
+                                                    'white' : '#666'}
+                                            />
+                                            <Text style={[
+                                                styles.statusOptionText,
+                                                treatment.paymentStatus === status &&
+                                                styles.statusOptionTextActive
+                                            ]}>
+                                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </ScrollView>
+
+                            <View style={styles.modalFooter}>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={onClose}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                                    onPress={handleSave}
+                                    disabled={isSaving}
+                                >
+                                    {isSaving ? (
+                                        <ActivityIndicator color="white" size="small" />
+                                    ) : (
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </Animatable.View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+};
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
+        backgroundColor: '#F5F6FA',
     },
-    clientDetails: {
-        marginBottom: 20,
-        marginHorizontal: horizontalScale(15),
-        // backgroundColor: "#1F609A"
-    },
-    searchInput: {
-        width: windowWidth * 0.9,
-        alignSelf: "center",
-        padding: 10,
-        marginBottom: 20,
-        borderColor: '#ccc',
-        backgroundColor: '#ccc',
-        borderWidth: 1,
-        borderRadius: moderateScale(10),
-    },
-    treatmentItem: {
-        backgroundColor: "white",
-        padding: 15,
-        borderRadius: moderateScale(10),
-        // borderBottomColor: '#ccc',
-        // borderBottomWidth: 1,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-        width: windowWidth * 0.9,
-        marginVertical: verticalScale(10),
-    },
-    addButton: {
-        width: horizontalScale(200),
-        backgroundColor: '#014495',
-        padding: 15,
-        borderRadius: 20,
-        marginVertical: verticalScale(20),
-        alignSelf: "center",
-        justifyContent: "center",
+    header: {
+        flexDirection: 'row',
         alignItems: 'center',
-    },
-    addButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    modalContainer: {
-        flex: 1,
+        justifyContent: 'space-between',
+        padding: 20,
         backgroundColor: 'white',
-        padding: 20,
     },
-    modalContent: {
-        flex: 1,
-        padding: 20,
-        justifyContent: 'center',
-    },
-    input: {
-        borderColor: '#ccc',
-        borderWidth: 1,
-        padding: 10,
-        borderRadius: 5,
-        marginBottom: 10,
-    },
-    errorInput: {
-        borderColor: 'red',
-    },
-    errorText: {
-        color: 'red',
-        marginBottom: 10,
-    },
-    modalTitle: {
+    headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 20,
+        color: '#014495',
     },
-    parentContainer: {
-        justifyContent: "center",
-        alignItems: "center",
-        // flexDirection: "row",
-        marginHorizontal: horizontalScale(10),
-        // backgroundColor: "rgba(0,0,0,0.01)",
-        padding: 5
+    backButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
     },
-    iconContainer: {
-        marginHorizontal: horizontalScale(10)
-        // flexDirection: 'row',
-        // gap: 15,
-    },
-    tabBar: {
+    tabBarContainer: {
         flexDirection: 'row',
-        height: 50,
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+        backgroundColor: 'white',
+        marginHorizontal: 15,
+        marginVertical: 10,
+        borderRadius: 15,
+        height: 60,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     tab: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    tabText: { fontSize: 16, color: '#777' },
-    activeTabText: { fontSize: 16, color: '#000', fontWeight: 'bold' },
+    tabContent: {
+        alignItems: 'center',
+    },
+    tabText: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 4,
+    },
+    activeTabText: {
+        color: '#014495',
+        fontWeight: '600',
+    },
     indicator: {
         position: 'absolute',
         bottom: 0,
         height: 3,
-        width: windowWidth / 2, // Adjust width division as per number of tabs
-        backgroundColor: 'blue',
+        width: windowWidth / 3,
+        backgroundColor: '#014495',
+        borderRadius: 1.5,
+    },
+    profileContainer: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    avatarContainer: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: 'white',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    avatarImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+    },
+    clientName: {
+        fontSize: moderateScale(28),
+        fontWeight: 'bold',
+        color: '#014495',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    statsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor: 'white',
+        borderRadius: 15,
+        padding: 20,
+        // marginHorizontal: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    statItem: {
+        alignItems: 'center',
+    },
+    statValue: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#014495',
+        marginTop: 8,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 4,
+    },
+    descriptionContainer: {
+        backgroundColor: 'white',
+        margin: 15,
+        padding: 20,
+        borderRadius: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    descriptionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    descriptionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#014495',
+        marginLeft: 10,
+    },
+    descriptionText: {
+        fontSize: 16,
+        color: '#666',
+        lineHeight: 24,
+    },
+    treatmentsContainer: {
+        flex: 1,
+        backgroundColor: '#F5F6FA',
+    },
+    treatmentsList: {
+        padding: 15,
+        paddingBottom: 80, // Space for FAB
+    },
+    treatmentCard: {
+        backgroundColor: 'white',
+        borderRadius: 15,
+        marginBottom: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    treatmentHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    treatmentDateTime: {
+        flexDirection: 'column',
+        gap: 4,
+    },
+    treatmentDate: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    treatmentTime: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 4,
+    },
+    dateText: {
+        marginLeft: 8,
+        fontSize: 16,
+        color: '#333',
+    },
+    timeText: {
+        marginLeft: 8,
+        fontSize: 14,
+        color: '#666',
+    },
+    paymentStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 6,
+        borderRadius: 20,
+    },
+    statusText: {
+        marginLeft: 4,
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    treatmentContent: {
+        padding: 15,
+    },
+    summaryLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 5,
+    },
+    summaryText: {
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 15,
+    },
+    nextStepsLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 5,
+    },
+    nextStepsText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    paymentsContainer: {
+        flex: 1,
+        backgroundColor: '#F5F6FA',
+    },
+    paymentsSummary: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    summaryCard: {
+        flex: 1,
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    summaryAmount: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#014495',
+        marginTop: 8,
+    },
+    summaryLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    paymentsList: {
+        padding: 15,
+        paddingBottom: 80, // Space for FAB
+    },
+    paymentCard: {
+        backgroundColor: 'white',
+        borderRadius: 15,
+        marginBottom: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    paymentHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    paymentDate: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    paymentDateText: {
+        marginLeft: 8,
+        fontSize: 16,
+        color: '#333',
+    },
+    paymentAmount: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#014495',
+        marginLeft: 8,
+    },
+    paymentDetails: {
+        padding: 15,
+    },
+    paymentLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 5,
+    },
+    paymentSummary: {
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 15,
+    },
+    paymentStatusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 6,
+        borderRadius: 20,
+    },
+    paymentStatusText: {
+        marginLeft: 4,
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.9,
+        // height: windowHeight * 0.8,
+        borderRadius: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    modalCloseButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    modalContent: {
+        padding: 20,
+    },
+    dateTimeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    datePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        borderRadius: 10,
+    },
+    datePickerText: {
+        marginLeft: 8,
+        fontSize: 16,
+        color: '#333',
+    },
+    inputLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 5,
+    },
+    textArea: {
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: 10,
+    },
+    paymentStatusSelector: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 10,
+    },
+    statusOption: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        borderRadius: 10,
+    },
+    statusOptionActive: {
+        borderColor: '#014495',
+    },
+    statusOptionText: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 4,
+    },
+    statusOptionTextActive: {
+        color: '#014495',
+        fontWeight: '600',
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    cancelButton: {
+        padding: 10,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    cancelButtonText: {
+        fontSize: 16,
+        color: '#666',
+    },
+    saveButton: {
+        padding: 10,
+        borderRadius: 20,
+        backgroundColor: '#014495',
+    },
+    saveButtonDisabled: {
+        backgroundColor: '#CCCCCC',
+    },
+    saveButtonText: {
+        fontSize: 16,
+        color: 'white',
     },
     pagerView: { flex: 1 },
-    page: {
+    editModalInputError: {
+        borderColor: '#FF4444',
+    },
+    errorText: {
+        color: '#FF4444',
+        fontSize: 14,
+        marginTop: 4,
+    },
+    statItemWrapper: {
         flex: 1,
-        // justifyContent: 'center',
-        // alignItems: 'center',
+    },
+    editableStatItem: {
+        position: 'relative',
+        backgroundColor: '#F8F9FF',
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+        borderRadius: 12,
+        padding: 12,
+    },
+    editIndicator: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: '#E0E7FF',
+        borderRadius: 12,
+        padding: 4,
+    },
+    editModalContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.9,
+        maxHeight: windowHeight * 0.7, // Limit the height
+        borderRadius: 15,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    editModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    editModalTitle: {
+        flex: 1,
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#014495',
+        marginLeft: 12,
+    },
+    editModalCloseButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    editModalContent: {
+        padding: 20,
+        maxHeight: windowHeight * 0.4, // Limit content height
+    },
+    editModalLabel: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 8,
+    },
+    editModalInput: {
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 16,
+        color: '#333',
+        backgroundColor: '#F8F9FF',
+    },
+    editModalFooter: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+        backgroundColor: 'white', // Ensure the background is white
+    },
+    editModalCancelButton: {
+        padding: 12,
+        borderRadius: 12,
+        backgroundColor: '#F0F4F8',
+        marginRight: 12,
+    },
+    editModalCancelText: {
+        fontSize: 16,
+        color: '#666',
+    },
+    editModalSaveButton: {
+        padding: 12,
+        borderRadius: 12,
+        backgroundColor: '#014495',
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    editModalSaveButtonDisabled: {
+        backgroundColor: '#CCCCCC',
+    },
+    editModalSaveText: {
+        fontSize: 16,
+        color: 'white',
+        fontWeight: '600',
+    },
+    descriptionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        justifyContent: 'space-between',
+    },
+    editDescriptionButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    descriptionModalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    descriptionModalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        maxHeight: '80%',
+    },
+    descriptionModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    descriptionModalTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    descriptionModalClose: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    descriptionInput: {
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+        borderRadius: 12,
+        padding: 15,
+        fontSize: 16,
+        backgroundColor: '#F8F9FF',
+        minHeight: 150,
+        marginBottom: 20,
+    },
+    saveDescriptionButton: {
+        backgroundColor: '#014495',
+        padding: 15,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginBottom: Platform.OS === 'ios' ? 20 : 0,
+    },
+    saveDescriptionText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    ageDatePickerContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.9,
+        borderRadius: 20,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    ageDatePickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    ageDatePickerTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    ageDatePickerCloseButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    datePickerWrapper: {
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+        borderRadius: 12,
+        marginBottom: 20,
+    },
+    ageDatePickerFooter: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        // backgroundColor: '#2196F3', // Material Design blue
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 25,
+        elevation: 3, // Android shadow
+        shadowColor: '#000', // iOS shadow
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        gap: 8, // Space between icon and text
+    },
+    addButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+    gradientButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 25,
+        elevation: 3, // Android shadow
+        shadowColor: '#000', // iOS shadow
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    editableField: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    fieldLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 4,
+    },
+    fieldValue: {
+        fontSize: 16,
+        color: '#333',
+    },
+    paymentSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 12,
+    },
+    paymentMethod: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    methodText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    sessionNumber: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    deleteButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#FFF5F5',
+    },
+    deleteModalContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.85,
+        borderRadius: 20,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    deleteModalContent: {
+        padding: 24,
+        alignItems: 'center',
+    },
+    deleteIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#FFF5F5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    deleteModalTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 12,
+    },
+    deleteModalText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+    deleteModalActions: {
+        flexDirection: 'row',
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    deleteModalActions: {
+        flexDirection: 'row',
+        borderTopWidth: 1,
+        borderTopColor: '#F0F0F0',
+    },
+    cancelButton: {
+        flex: 1,
+        padding: 16,
+        alignItems: 'center',
+        borderRightWidth: 1,
+        borderRightColor: '#F0F0F0',
+    },
+    confirmDeleteButton: {
+        flex: 1,
+        padding: 16,
+        alignItems: 'center',
+        backgroundColor: '#FF4444',
+        borderBottomRightRadius: 20,
+    },
+    confirmDeleteText: {
+        fontSize: 16,
+        color: 'white',
+        fontWeight: '600',
+    },
+    editModalContainerLarge: {
+        maxHeight: windowHeight * 0.6, // Increased height for long text fields
+    },
+    editModalInputMultiline: {
+        height: 150,
+        textAlignVertical: 'top',
+        paddingTop: 12,
+        paddingBottom: 12,
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#FF4444',
+        textAlign: 'center',
+    },
+    longTextFieldContainer: {
+        padding: 12,
+        backgroundColor: '#F8F9FF',
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+    },
+    fieldHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    longTextValue: {
+        fontSize: 16,
+        color: '#333',
+        lineHeight: 24,
+        minHeight: 48,
+    },
+    placeholderText: {
+        color: '#999',
+        fontStyle: 'italic',
     },
 });
