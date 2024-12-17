@@ -258,8 +258,7 @@ export default function Clients({ navigation }) {
         if (!validateInputs()) return;
         try {
             const response = await axios.post(`${Api}/clients`, newClient);
-            fetchClients()
-            // setClients([response.data, ...clients]);
+            setClients([response.data, ...clients]);
             setModalVisible(false);
             setNewClient({ name: '', lastName: '', birthday: '', gender: "male", adminId: user._id });
         } catch (error) {
@@ -402,7 +401,7 @@ export default function Clients({ navigation }) {
             ) : (
                 // Main Clients View
                 <>
-                    {clients.length === 0 && !isLoading ? (
+                    {clients.length === 0 ? (
                         <NoClientsComponent onAddClient={handleAddClient} />
                     ) : (
                         <>
@@ -514,8 +513,6 @@ export default function Clients({ navigation }) {
                         duration={300}
                         style={styles.modalContent}
                     >
-
-
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Add New Client</Text>
                             <TouchableOpacity
@@ -527,52 +524,6 @@ export default function Clients({ navigation }) {
                         </View>
 
                         <ScrollView style={styles.modalScroll}>
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Client gender</Text>
-                                <View style={styles.genderContainer}>
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setGender("male");
-                                            setNewClient({ ...newClient, gender: "male" })
-                                        }}
-                                        style={[
-                                            styles.genderButton,
-                                            gender === "male" && styles.genderButtonActive
-                                        ]}
-                                    >
-                                        <FontAwesome
-                                            name="male"
-                                            size={24}
-                                            color={gender === "male" ? "#1F609A" : "#666"}
-                                        />
-                                        <Text style={[
-                                            styles.genderText,
-                                            gender === "male" && styles.genderTextActive
-                                        ]}>Male</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setGender("female");
-                                            setNewClient({ ...newClient, gender: "female" })
-                                        }}
-                                        style={[
-                                            styles.genderButton,
-                                            gender === "female" && styles.genderButtonActive
-                                        ]}
-                                    >
-                                        <FontAwesome
-                                            name="female"
-                                            size={24}
-                                            color={gender === "female" ? "#FF69B4" : "#666"}
-                                        />
-                                        <Text style={[
-                                            styles.genderText,
-                                            gender === "female" && styles.genderTextActive
-                                        ]}>Female</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
                             <View style={styles.inputGroup}>
                                 <Text style={styles.inputLabel}>Client name</Text>
                                 <TextInput
@@ -617,7 +568,7 @@ export default function Clients({ navigation }) {
                                     <DateTimePicker
                                         value={newClient.birthday ? new Date(newClient.birthday) : new Date()}
                                         mode="date"
-                                        display="spinner"
+                                        display="default"
                                         onChange={handleDateChange}
                                         maximumDate={new Date()}
                                         style={styles.datePicker}
@@ -625,9 +576,54 @@ export default function Clients({ navigation }) {
                                 </View>
                             </View>
 
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Client gender</Text>
+                                <View style={styles.genderContainer}>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setGender("male");
+                                            setNewClient({ ...newClient, gender: "male" })
+                                        }}
+                                        style={[
+                                            styles.genderButton,
+                                            gender === "male" && styles.genderButtonActive
+                                        ]}
+                                    >
+                                        <FontAwesome
+                                            name="male"
+                                            size={24}
+                                            color={gender === "male" ? "#014495" : "#666"}
+                                        />
+                                        <Text style={[
+                                            styles.genderText,
+                                            gender === "male" && styles.genderTextActive
+                                        ]}>Male</Text>
+                                    </TouchableOpacity>
 
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setGender("female");
+                                            setNewClient({ ...newClient, gender: "female" })
+                                        }}
+                                        style={[
+                                            styles.genderButton,
+                                            gender === "female" && styles.genderButtonActive
+                                        ]}
+                                    >
+                                        <FontAwesome
+                                            name="female"
+                                            size={24}
+                                            color={gender === "female" ? "#FF69B4" : "#666"}
+                                        />
+                                        <Text style={[
+                                            styles.genderText,
+                                            gender === "female" && styles.genderTextActive
+                                        ]}>Female</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </ScrollView>
-                        <View style={{ width: windowWidth, alignSelf: "center", backgroundColor: "grey", height: 1, bottom: keyboardHeight }}></View>
+
                         <Animated.View
                             style={[
                                 styles.buttonContainer,
@@ -667,7 +663,6 @@ export default function Clients({ navigation }) {
                                 )}
                             </TouchableOpacity>
                         </Animated.View>
-
                     </Animatable.View>
                 </View>
             </Modal>
@@ -842,8 +837,8 @@ const styles = StyleSheet.create({
         padding: 40,
     },
     emptyStateAnimation: {
-        width: windowWidth * 0.7,
-        height: windowWidth * 0.7,
+        width: windowWidth * 0.3,
+        height: windowWidth * 0.3,
         marginBottom: 20,
     },
     emptyStateTitle: {
@@ -935,10 +930,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
-        marginBottom: -20,
-        backgroundColor: "white",
-        alignSelf: "center",
-        width: windowWidth,
     },
     cancelButton: {
         backgroundColor: '#FF3B30',
@@ -1005,7 +996,7 @@ const styles = StyleSheet.create({
     },
     datePickerContainer: {
         backgroundColor: '#F5F6FA',
-        padding: 20,
+        padding: 15,
         borderRadius: 10,
         marginBottom: 15,
     },

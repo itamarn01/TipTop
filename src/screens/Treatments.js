@@ -37,6 +37,7 @@ import {
     AdsConsentStatus,
     useForeground,
 } from "react-native-google-mobile-ads";
+import ParentsSection from "../components/ParentsSection";
 //  import { Image } from 'expo-image';
 // import FastImage from 'react-native-fast-image'
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -51,10 +52,12 @@ import Entypo from '@expo/vector-icons/Entypo';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import Feather from '@expo/vector-icons/Feather';
 import PagerView from 'react-native-pager-view';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Swipeable } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, FadeIn, FadeOut } from 'react-native-reanimated';
 import * as Animatable from 'react-native-animatable';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import { Picker } from '@react-native-picker/picker';
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -218,7 +221,13 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
     const isLongTextField = editingStat?.field === 'treatmentSummary' ||
         editingStat?.field === 'whatNext' ||
         editingStat?.field === 'homework';
+    const [isSaving, setIsSaving] = useState(false); // Add this line to create a loading state
 
+    const handleSave = async () => {
+        setIsSaving(true); // Set loading state to true before saving
+        await onSave(); // Call the save function
+        setIsSaving(false); // Set loading state back to false after saving
+    };
     return (
         <Modal
             visible={visible}
@@ -253,7 +262,8 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                 <TextInput
                                     style={[
                                         styles.editModalInput,
-                                        isLongTextField && styles.editModalInputMultiline
+                                        isLongTextField && styles.editModalInputMultiline,
+                                        { textAlign: editValue && /^[\u0590-\u05FF]/.test(editValue[0]) ? 'right' : 'left' } // Conditional text alignment
                                     ]}
                                     value={editValue}
                                     onChangeText={setEditValue}
@@ -273,13 +283,160 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.editModalSaveButton}
-                                    onPress={onSave}
+                                    onPress={handleSave} // Call the handleSave function
+                                    disabled={isSaving} // Disable button while saving
                                 >
-                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                    {isSaving ? (
+                                        <ActivityIndicator color="white" size="small" /> // Show ActivityIndicator while saving
+                                    ) : (
+                                        <Text style={styles.editModalSaveText}>Save</Text>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>
                     </View>
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+};
+
+// Add these constants at the top of the file
+const PAYMENT_STATUSES = {
+    PENDING: { label: 'Pending', icon: 'schedule', color: '#FF9800' },
+    PAID: { label: 'Paid', icon: 'check-circle', color: '#4CAF50' },
+    PARTIALLY_PAID: { label: 'Partially Paid', icon: 'remove-circle-outline', color: '#2196F3' },
+    REFUNDED: { label: 'Refunded', icon: 'replay', color: '#9C27B0' },
+    CANCELLED: { label: 'Cancelled', icon: 'cancel', color: '#F44336' }
+};
+
+const PAYMENT_METHODS = {
+    CASH: { label: 'Cash', icon: 'attach-money' },
+    CREDIT_CARD: { label: 'Credit Card', icon: 'credit-card' },
+    DEBIT_CARD: { label: 'Debit Card', icon: 'credit-card' },
+    BANK_TRANSFER: { label: 'Bank Transfer', icon: 'account-balance' },
+    INSURANCE: { label: 'Insurance', icon: 'health-and-safety' },
+    OTHER: { label: 'Other', icon: 'more-horiz' }
+};
+
+// Add these new modal components
+const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
+    <Modal
+        visible={visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={onClose}
+    >
+        <TouchableWithoutFeedback onPress={onClose}>
+            <View style={styles.modalOverlay}>
+                <Animatable.View
+                    animation="zoomIn"
+                    duration={300}
+                    style={styles.paymentModalContainer}
+                >
+                    <View style={styles.paymentModalHeader}>
+                        <MaterialIcons name="payments" size={24} color="#014495" />
+                        <Text style={styles.paymentModalTitle}>Payment Status</Text>
+                        <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+                            <MaterialIcons name="close" size={24} color="#666" />
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView style={styles.paymentModalContent}>
+                        {Object.entries(PAYMENT_STATUSES).map(([status, { label, icon, color }]) => (
+                            <TouchableOpacity
+                                key={status}
+                                style={[
+                                    styles.paymentOptionButton,
+                                    currentStatus === status && styles.paymentOptionButtonActive
+                                ]}
+                                onPress={() => onSelect(status)}
+                            >
+                                <MaterialIcons name={icon} size={24} color={color} />
+                                <Text style={[
+                                    styles.paymentOptionText,
+                                    currentStatus === status && styles.paymentOptionTextActive
+                                ]}>
+                                    {label}
+                                </Text>
+                                {currentStatus === status && (
+                                    <MaterialIcons name="check" size={24} color="#014495" />
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </Animatable.View>
+            </View>
+        </TouchableWithoutFeedback>
+    </Modal>
+);
+
+const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOtherMethodChange }) => {
+    const [otherMethod, setOtherMethod] = useState('');
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <TouchableWithoutFeedback onPress={onClose}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={styles.modalOverlay}
+                >
+                    <Animatable.View
+                        animation="zoomIn"
+                        duration={300}
+                        style={styles.paymentModalContainer}
+                    >
+                        <View style={styles.paymentModalHeader}>
+                            <MaterialIcons name="payment" size={24} color="#014495" />
+                            <Text style={styles.paymentModalTitle}>Payment Method</Text>
+                            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+                                <MaterialIcons name="close" size={24} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.paymentModalContent}>
+                            {Object.entries(PAYMENT_METHODS).map(([method, { label, icon }]) => (
+                                <TouchableOpacity
+                                    key={method}
+                                    style={[
+                                        styles.paymentOptionButton,
+                                        currentMethod === method && styles.paymentOptionButtonActive
+                                    ]}
+                                    onPress={() => onSelect(method)}
+                                >
+                                    <MaterialIcons name={icon} size={24} color="#014495" />
+                                    <Text style={[
+                                        styles.paymentOptionText,
+                                        currentMethod === method && styles.paymentOptionTextActive
+                                    ]}>
+                                        {label}
+                                    </Text>
+                                    {currentMethod === method && (
+                                        <MaterialIcons name="check" size={24} color="#014495" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                            {currentMethod === 'OTHER' && (
+                                <Animatable.View
+                                    animation="fadeIn"
+                                    style={styles.otherMethodInput}
+                                >
+                                    <TextInput
+                                        placeholder="Specify payment method"
+                                        value={otherMethod}
+                                        onChangeText={(text) => {
+                                            setOtherMethod(text);
+                                            onOtherMethodChange(text);
+                                        }}
+                                        style={styles.otherMethodTextInput}
+                                    />
+                                </Animatable.View>
+                            )}
+                        </ScrollView>
+                    </Animatable.View>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
         </Modal>
@@ -293,7 +450,7 @@ export default function Treatments({ navigation }) {
     const client = useSelector((state) => state.selectedClient);
     const clientId = client._id;
     const adminId = user._id
-    console.log("clientId:", clientId, "adminId:", adminId)
+    // console.log("clientId:", clientId, "adminId:", adminId)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null);
     const [clientDetails, setClientDetails] = useState([]);
@@ -332,6 +489,7 @@ export default function Treatments({ navigation }) {
     const [isSavingAge, setIsSavingAge] = useState(false);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [treatmentToDelete, setTreatmentToDelete] = useState("");
+    const firstNameInputRef = useRef(null);
     const [tempBirthday, setTempBirthday] = useState(() => {
         const now = new Date();
         try {
@@ -344,6 +502,183 @@ export default function Treatments({ navigation }) {
     });
     const [clientEditModalVisible, setClientEditModalVisible] = useState(false);
     const [treatmentEditModalVisible, setTreatmentEditModalVisible] = useState(false);
+    const [statusModalVisible, setStatusModalVisible] = useState(false);
+    const [methodModalVisible, setMethodModalVisible] = useState(false);
+    const [selectedTreatmentId, setSelectedTreatmentId] = useState(null);
+    const [isSaving, setIsSaving] = useState(false); // Add this line to create a loading state
+    const [dateTimeModalVisible, setDateTimeModalVisible] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [nameModalVisible, setNameModalVisible] = useState(false);
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [isFullNameSaving, setIsFullNameSaving] = useState(false); // State to track saving status
+    const [editPriceModalVisible, setEditPriceModalVisible] = useState(false);
+    const [isSavingPrice, setIsSavingPrice] = useState(false);
+    const [price, setPrice] = useState(0);
+    const priceInputRef = useRef(null); // Add a ref for price input
+    const [clientPayments, setClientPayments] = useState([])
+    const [loadingPaments, setLoadingPayments] = useState(false)
+    const [treatmentPaid, setTreatmentPaid] = useState([])
+
+    function checkTreatmentPaid() {
+        const paymentsAmountArr = clientPayments.map(p => p.amount)
+        const treatmentPriceArr = treatments.map(t => t.treatmentPrice)
+        console.log("paymentsAmountArr:", paymentsAmountArr, "treatmentPriceArr:", treatmentPriceArr)
+        let paymentSum = paymentsAmountArr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+        // let paymentSum = 0; // Tracks the cumulative sum of payments
+        let result = []; // Array to store the payment statuses
+
+        // Loop through the treatment prices
+        for (let i = 0; i < treatmentPriceArr.length; i++) {
+            // paymentSum += paymentsAmountArr.shift() || 0; // Add the next payment, or 0 if no payments left
+
+            if (paymentSum >= treatmentPriceArr[i]) {
+                result.push("PAID");
+                paymentSum -= treatmentPriceArr[i]; // Deduct the treatment price from the payment sum
+            } else if (paymentSum > 0 && paymentSum < treatmentPriceArr[i]) {
+                result.push("PARTIALLY PAID");
+                break; // Stop further processing as payments can't cover subsequent treatments
+                // paymentSum = 0; // Remaining amount is used up for partial payment
+            } else {
+                result.push("PENDING"); // Payment is not sufficient for this treatment
+            }
+        }
+        // Fill the rest with "pending" if there are more treatments than payments
+        while (result.length < treatmentPriceArr.length) {
+            result.push("PENDING");
+        }
+        console.log(result)
+        setTreatmentPaid(result.reverse())
+        // return result;
+    }
+    useEffect(() => {
+        checkTreatmentPaid()
+    }, [clientPayments, treatments])
+
+    const fetchPayments = async () => {
+        // console.log("clientId for payments:", client._id);
+        try {
+            setLoadingPayments(true);
+            const response = await axios.get(`${Api}/payments/client/${client._id}`);
+
+            // Check if the response is successful
+            if (response.status === 200) {
+                setClientPayments(response.data);
+                // checkTreatmentPaid()
+            } /* else {
+                console.error("Unexpected response status:", response.status);
+            } */
+        } catch (error) {
+            setLoadingPayments(false);
+            if (error.response) {
+                // Handle known errors
+                console.error('Error fetching payments:', error.response.data.message);
+                // alert(error.response.data.message); // Show the error message to the user
+            } else {
+                // Handle unknown errors
+                console.error('Error fetching payments:', error.message);
+                // alert('An unexpected error occurred. Please try again.');
+            }
+        } finally {
+            setLoadingPayments(false);
+        }
+    };
+
+
+    useEffect(() => {
+        fetchPayments(clientDetails._id);
+    }, []);
+
+    const openEditPriceModal = () => {
+        setEditPriceModalVisible(true);
+        setTimeout(() => {
+            priceInputRef.current?.focus(); // Focus on the price input after the modal opens
+        }, 100); // Delay to ensure the modal is fully rendered before focusing
+    };
+    const handlePriceChange = (text, id) => {
+        setPrice(text);
+    };
+    const handleSavePrice = async (id) => {
+        if (price === 0) { setIsSavingPrice(false); return }
+        setIsSavingPrice(true); // Set loading state to true before saving
+        try {
+            // Call the function to update the treatment price in the backend
+            await updateTreatmentPrice(id);
+        } catch (error) {
+            console.error('Error saving treatment price:', error);
+        } finally {
+            setIsSavingPrice(false); // Reset loading state after saving
+            setEditPriceModalVisible(false); // Close modal after saving
+        }
+    };
+    const updateTreatmentPrice = async (id) => {
+        try {
+            // console.log("id:", id)
+            const response = await axios.put(`${Api}/treatments/treatments/${selectedTreatmentId}`, {
+                treatmentPrice: price,
+            });
+            fetchTreatments();
+            // Handle response if needed
+        } catch (error) {
+            console.error('Error updating treatment price:', error);
+        }
+    };
+
+    const openNameModal = () => {
+        setNameModalVisible(true);
+        setTimeout(() => {
+            firstNameInputRef.current.focus(); // Focus on the first name input after the modal opens
+        }, 100); // Delay to ensure the modal is fully rendered before focusing
+    };
+    const handleSaveName = async (id) => {
+        if (firstName === "" || lastName === "") { setIsFullNameSaving(false); return }
+        setIsFullNameSaving(true); // Set loading state to true before saving
+        try {
+            // Call the function to update the client's name in the backend
+            await updateClientName(id, firstName, lastName);
+        } catch (error) {
+            console.error('Error saving client name:', error);
+        } finally {
+            setIsFullNameSaving(false); // Reset loading state after saving
+            setNameModalVisible(false); // Close modal after saving
+        }
+    };
+    const updateClientName = async (id, firstName, lastName) => {
+        try {
+            const response = await axios.put(`${Api}/clients/${id}/${user._id}`, {
+                name: firstName,
+                lastName: lastName,
+            });
+            fetchClientData()
+            // Handle response if needed
+        } catch (error) {
+            console.error('Error updating client name:', error);
+        }
+    };
+    const handleDateChange = (event, date) => {
+        if (date) {
+            setSelectedDate(date);
+        }
+    };
+
+    const handleSaveDateTime = async (id) => {
+        // Call the function to update the date and time in the backend
+        await updateTreatmentDateTime(id, selectedDate);
+        setDateTimeModalVisible(false);
+    };
+
+    // Function to update the treatment date and time in the backend
+    const updateTreatmentDateTime = async (id, newDateTime) => {
+        try {
+            const response = await axios.put(`${Api}/treatments/dateTime/${id}`, {
+                treatmentDate: newDateTime.toISOString(),
+            });
+            fetchTreatments()
+            // Handle response if needed
+        } catch (error) {
+            console.error('Error updating treatment date and time:', error);
+        }
+    };
 
     const handleCloseDeleteModal = useCallback(() => {
         setDeleteModalVisible(false);
@@ -352,7 +687,7 @@ export default function Treatments({ navigation }) {
 
     const handlePageChange = (page) => {
         setActiveTab(page);
-        translateX.value = withTiming(page * (windowWidth / 4)); // Adjust width division as per number of tabs
+        translateX.value = withTiming(page * (windowWidth / 3)); // Adjust width division as per number of tabs
 
         // Set the page in PagerView
         if (pagerRef.current) {
@@ -363,12 +698,28 @@ export default function Treatments({ navigation }) {
     const onPageSelected = (e) => {
         const page = e.nativeEvent.position;
         setActiveTab(page);
-        translateX.value = withTiming(page * (windowWidth / 2)); // Sync the indicator animation with swipe
+        translateX.value = withTiming(page * (windowWidth / 3)); // Sync the indicator animation with swipe
     };
 
     const animatedIndicatorStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: translateX.value }],
     }));
+
+    const fetchClientData = async () => {
+        try {
+            setLoading(true)
+            const response = await axios.get(`${Api}/clients/${clientId}/${adminId}`);
+            setClientDetails(response.data);
+        } catch (err) {
+            if (err.response && err.response.status === 404) {
+                setError('404'); // Set error to "404" if status is 404
+            } else {
+                setError('An unexpected error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
     useEffect(() => {
         // fetchClientDetails();
         fetchTreatments();
@@ -395,14 +746,16 @@ export default function Treatments({ navigation }) {
 
     const handleDeleteTreatment = useCallback(async () => {
         try {
+            console.log("treatmentToDelete:", treatmentToDelete)
             const response = await axios.delete(`${Api}/treatments/${treatmentToDelete}`);
 
             if (response.status === 200) {
+                // setTreatments(response.data.treatments)
                 setTreatments(prev => prev.filter(t => t._id !== treatmentToDelete));
                 handleCloseDeleteModal(); // Use the handler here
 
                 // Optional: Show success message
-                Alert.alert('Success', 'Treatment deleted successfully');
+                // Alert.alert('Success', 'Treatment deleted successfully');
             }
         } catch (error) {
             console.error('Error deleting treatment:', error);
@@ -448,8 +801,9 @@ export default function Treatments({ navigation }) {
             );
 
             setTreatments(uniqueTreatments);
+            // checkTreatmentPaid()
             setTotalPages(totalPages); // Set total pages for pagination controls
-            console.log("treatments:", uniqueTreatments);
+            //  console.log("treatments:", uniqueTreatments);
         } catch (error) {
             console.error("error fetching treatments: ", error);
         }
@@ -478,171 +832,256 @@ export default function Treatments({ navigation }) {
         }
     };
 
-    const TreatmentsList = ({ treatments, onAddTreatment, loading }) => {
-        const renderTreatmentItem = ({ item, index }) => (
-            <Animatable.View
-                animation="fadeInUp"
-                delay={index * 100}
-                style={styles.treatmentCard}
-            >
-                <View style={styles.treatmentHeader}>
-                    <View style={styles.treatmentDateTime}>
-                        <View style={styles.treatmentDate}>
-                            <MaterialIcons name="event" size={20} color="#014495" />
-                            <Text style={styles.dateText}>
-                                {new Date(item.treatmentDate).toLocaleDateString()}
-                            </Text>
-                        </View>
-                        <View style={styles.treatmentTime}>
-                            <MaterialIcons name="access-time" size={20} color="#014495" />
-                            <Text style={styles.timeText}>
-                                {formatTime(item.treatmentDate)}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.headerActions}>
-                        <Text style={styles.sessionNumber}>Session #{item.sessionNumber}</Text>
-                        <TouchableOpacity
-                            style={styles.deleteButton}
-                            onPress={() => {
-                                setTreatmentToDelete(item._id);
-                                setDeleteModalVisible(true);
-                            }}
-                        >
-                            <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                <DeleteConfirmationModal
-                    visible={deleteModalVisible}
-                    onClose={handleCloseDeleteModal}
-                    onDelete={handleDeleteTreatment}
-                />
-                <View style={styles.treatmentContent}>
-                    <TouchableOpacity
-                        style={styles.editableField}
-                        onPress={() => handleEditField(item._id, 'treatmentSummary')}
-                    >
-                        <Text style={styles.fieldLabel}>Treatment Summary</Text>
-                        <Text style={styles.fieldValue}>
-                            {item.treatmentSummary || 'Add summary...'}
-                        </Text>
-                    </TouchableOpacity>
+    // const TreatmentsList = ({ treatments, onAddTreatment, loading }) => {
+    //     const [isSaving, setIsSaving] = useState(false);
 
-                    <TouchableOpacity
-                        style={styles.editableField}
-                        onPress={() => handleEditField(item._id, 'whatNext')}
-                    >
-                        <Text style={styles.fieldLabel}>Next Steps</Text>
-                        <Text style={styles.fieldValue}>
-                            {item.whatNext || 'Add next steps...'}
-                        </Text>
-                    </TouchableOpacity>
+    //     const handleSaveDateTime = async (item) => {
+    //         setIsSaving(true); // Set loading state to true before saving
+    //         try {
+    //             // Call the function to update the date and time in the backend
+    //             await updateTreatmentDateTime(item._id, selectedDate);
+    //         } catch (error) {
+    //             console.error('Error saving date and time:', error);
+    //         } finally {
+    //             setIsSaving(false); // Reset loading state after saving
+    //             setDateTimeModalVisible(false); // Close modal after saving
+    //         }
+    //     };
+    //     const renderTreatmentItem = ({ item, index }) => (
+    //         <Animatable.View
+    //             animation="fadeInUp"
+    //             delay={index * 100}
+    //             style={styles.treatmentCard}
+    //         >
+    //             <View style={styles.treatmentHeader}>
+    //                 <TouchableOpacity onPress={() => { setSelectedDate(new Date(item.treatmentDate)); setDateTimeModalVisible(true) }}>
+    //                     <View style={styles.treatmentDateTime}>
+    //                         <View style={styles.treatmentDate}>
+    //                             <MaterialIcons name="event" size={20} color="#014495" />
+    //                             <Text style={styles.dateText}>
+    //                                 {new Date(item.treatmentDate).toLocaleDateString()}
+    //                             </Text>
+    //                         </View>
+    //                         <View style={styles.treatmentTime}>
+    //                             <MaterialIcons name="access-time" size={20} color="#014495" />
+    //                             <Text style={styles.timeText}>
+    //                                 {formatTime(item.treatmentDate)}
+    //                             </Text>
+    //                         </View>
+    //                     </View>
+    //                 </TouchableOpacity>
+    //                 <TouchableOpacity onPress={() => { setPrice(clientDetails.clientPrice); openEditPriceModal() }}>
+    //                     <View style={styles.treatmentPrice}>
+    //                         <MaterialIcons name="attach-money" size={20} color="#014495" />
+    //                         <Text style={styles.priceText}>
+    //                             ${item.treatmentPrice ? item.treatmentPrice : clientDetails.clientPrice ? clientDetails.clientPrice : 'N/A'}
+    //                         </Text>
+    //                     </View>
+    //                 </TouchableOpacity>
+    //                 <Modal
+    //                     animationType="slide"
+    //                     transparent={true}
+    //                     visible={editPriceModalVisible}
+    //                     onRequestClose={() => setEditPriceModalVisible(false)}
+    //                 >
+    //                     <View style={styles.modalOverlay}>
+    //                         <View style={styles.modalEditPriceContainer}>
+    //                             <Text style={styles.modalEditPriceHeader}>Edit Price</Text>
+    //                             <TextInput
+    //                                 ref={priceInputRef}
+    //                                 style={styles.priceInput}
+    //                                 placeholder="Enter new price"
+    //                                 keyboardType="numeric"
+    //                                 value={price ? price.toString() : ''}
+    //                                 onChangeText={(text) => handlePriceChange(text, item._id)}
+    //                             // onFocus={() => priceInputRef.current?.focus()}
+    //                             />
+    //                             <View style={styles.buttonEditPriceContainer}>
+    //                                 <Button title="Cancel" onPress={() => setEditPriceModalVisible(false)} color="#FF3D00" />
+    //                                 <Button title="Save" onPress={() => handleSavePrice(item._id)} color="#014495" />
+    //                             </View>
+    //                         </View>
+    //                     </View>
+    //                 </Modal>
+    //                 <Modal
+    //                     animationType="slide"
+    //                     transparent={true}
+    //                     visible={dateTimeModalVisible}
+    //                     onRequestClose={() => setDateTimeModalVisible(false)}
+    //                 >
+    //                     <View style={styles.modalOverlay}>
+    //                         <View style={styles.modalDateTimeContainer}>
+    //                             <Text style={styles.modalDateTimeHeader}>Update Date and Time</Text>
+    //                             <DateTimePicker
+    //                                 value={selectedDate}
+    //                                 mode="datetime"
+    //                                 display="default"
+    //                                 onChange={handleDateChange}
+    //                                 confirmBtnText="confirm"
+    //                                 cancelBtnText="dismiss"
+    //                             />
+    //                             <View style={styles.buttonDateTimeContainer}>
+    //                                 <Button title="Cancel" onPress={() => setDateTimeModalVisible(false)} color="#FF3D00" />
+    //                                 <View style={styles.saveDateTimeButtonContainer}>
+    //                                     {isSaving ? (
+    //                                         <ActivityIndicator size="small" color="#014495" />
+    //                                     ) : (
+    //                                         <Button title="Save" onPress={handleSaveDateTime} color="#014495" />
+    //                                     )}
+    //                                 </View>
+    //                             </View>
+    //                         </View>
+    //                     </View>
+    //                 </Modal>
+    //                 <View style={styles.headerActions}>
+    //                     <Text style={styles.sessionNumber}>Session #{/* item.sessionNumber */treatments.length - index}</Text>
+    //                     <TouchableOpacity
+    //                         style={styles.deleteButton}
+    //                         onPress={() => {
+    //                             setTreatmentToDelete(item._id);
+    //                             setDeleteModalVisible(true);
+    //                         }}
+    //                     >
+    //                         <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
+    //                     </TouchableOpacity>
+    //                 </View>
+    //             </View>
+    //             <DeleteConfirmationModal
+    //                 visible={deleteModalVisible}
+    //                 onClose={handleCloseDeleteModal}
+    //                 onDelete={handleDeleteTreatment}
+    //             />
+    //             <View style={styles.treatmentContent}>
+    //                 <TouchableOpacity
+    //                     style={styles.editableField}
+    //                     onPress={() => handleEditField(item._id, 'treatmentSummary')}
+    //                 >
+    //                     <Text style={styles.fieldLabel}>Treatment Summary</Text>
+    //                     <Text style={styles.fieldValue}>
+    //                         {item.treatmentSummary || 'Add summary...'}
+    //                     </Text>
+    //                 </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.editableField}
-                        onPress={() => handleEditField(item._id, 'homework')}
-                    >
-                        <Text style={styles.fieldLabel}>Homework</Text>
-                        <Text style={styles.fieldValue}>
-                            {item.homework || 'Add homework...'}
-                        </Text>
-                    </TouchableOpacity>
+    //                 <TouchableOpacity
+    //                     style={styles.editableField}
+    //                     onPress={() => handleEditField(item._id, 'whatNext')}
+    //                 >
+    //                     <Text style={styles.fieldLabel}>Next Steps</Text>
+    //                     <Text style={styles.fieldValue}>
+    //                         {item.whatNext || 'Add next steps...'}
+    //                     </Text>
+    //                 </TouchableOpacity>
 
-                    <View style={styles.paymentSection}>
-                        <TouchableOpacity
-                            style={[styles.paymentStatus, {
-                                backgroundColor: item.paymentStatus === 'paid' ? '#E8F5E9' : '#FFF3E0'
-                            }]}
-                            onPress={() => handleEditField(item._id, 'paymentStatus')}
-                        >
-                            <MaterialIcons
-                                name={item.paymentStatus === 'paid' ? 'check-circle' : 'schedule'}
-                                size={16}
-                                color={item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800'}
-                            />
-                            <Text style={styles.statusText}>
-                                {item.paymentStatus || 'Set status'}
-                            </Text>
-                        </TouchableOpacity>
+    //                 <TouchableOpacity
+    //                     style={styles.editableField}
+    //                     onPress={() => handleEditField(item._id, 'homework')}
+    //                 >
+    //                     <Text style={styles.fieldLabel}>Homework</Text>
+    //                     <Text style={styles.fieldValue}>
+    //                         {item.homework || 'Add homework...'}
+    //                     </Text>
+    //                 </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.paymentMethod}
-                            onPress={() => handleEditField(item._id, 'PaymentMethod')}
-                        >
-                            <Text style={styles.methodText}>
-                                {item.PaymentMethod || 'Set method'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Animatable.View>
-        );
+    //                 <View style={styles.paymentSection}>
+    //                     <TouchableOpacity
+    //                         style={[styles.paymentStatus, {
+    //                             backgroundColor: PAYMENT_STATUSES[item.paymentStatus]?.color + '20' || '#FFF3E0'
+    //                         }]}
+    //                         onPress={() => handleStatusModalOpen(item._id)}
+    //                     >
+    //                         <MaterialIcons
+    //                             name={PAYMENT_STATUSES[item.paymentStatus]?.icon || 'schedule'}
+    //                             size={16}
+    //                             color={PAYMENT_STATUSES[item.paymentStatus]?.color || '#FF9800'}
+    //                         />
+    //                         <Text style={[styles.statusText, { color: PAYMENT_STATUSES[item.paymentStatus]?.color || '#FF9800' }]}>
+    //                             {PAYMENT_STATUSES[item.paymentStatus]?.label || 'Set status'}
+    //                         </Text>
+    //                     </TouchableOpacity>
 
-        const renderSkeletonLoading = () => (
-            <View style={styles.skeletonContainer}>
-                {[1, 2, 3].map((_, index) => (
-                    <Animatable.View
-                        key={index}
-                        animation="pulse"
-                        iterationCount="infinite"
-                        style={styles.skeletonCard}
-                    >
-                        <View style={styles.skeletonHeader}>
-                            <View style={styles.skeletonDate} />
-                            <View style={styles.skeletonStatus} />
-                        </View>
-                        <View style={styles.skeletonContent}>
-                            <View style={styles.skeletonLine} />
-                            <View style={[styles.skeletonLine, { width: '60%' }]} />
-                        </View>
-                    </Animatable.View>
-                ))}
-            </View>
-        );
+    //                     <TouchableOpacity
+    //                         style={styles.paymentMethod}
+    //                         onPress={() => handleMethodModalOpen(item._id)}
+    //                     >
+    //                         <MaterialIcons
+    //                             name={PAYMENT_METHODS[item.PaymentMethod]?.icon || 'payment'}
+    //                             size={16}
+    //                             color="#014495"
+    //                         />
+    //                         <Text style={styles.methodText}>
+    //                             {item.PaymentMethod === 'OTHER' ? item.otherPaymentMethod :
+    //                                 PAYMENT_METHODS[item.PaymentMethod]?.label || 'Set method'}
+    //                         </Text>
+    //                     </TouchableOpacity>
+    //                 </View>
+    //             </View>
+    //         </Animatable.View>
+    //     );
 
-        return (
-            <View style={styles.treatmentsContainer}>
-                {loading ? (
-                    renderSkeletonLoading()
-                ) : (
-                    <>
-                        <FlatList
-                            data={treatments}
-                            renderItem={renderTreatmentItem}
-                            keyExtractor={(item) => item._id}
-                            contentContainerStyle={styles.treatmentsList}
-                            showsVerticalScrollIndicator={false}
-                            ListEmptyComponent={() => (
-                                <View style={styles.emptyState}>
-                                    <MaterialIcons name="medical-services" size={60} color="#014495" />
-                                    <Text style={styles.emptyStateTitle}>No Treatments Yet</Text>
-                                    <Text style={styles.emptyStateText}>
-                                        Add your first treatment to start tracking progress
-                                    </Text>
-                                </View>
-                            )}
-                        />
-                        <TouchableOpacity
-                            style={styles.addButton}
-                            onPress={onAddTreatment}
-                            activeOpacity={0.7}
-                        >
-                            <LinearGradient
-                                colors={['#4A90E2', '#357ABD']}
-                                style={styles.gradientButton}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <MaterialIcons name="add" size={24} color="white" />
-                                <Text style={styles.addButtonText}>Add Treatment</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </>
-                )}
-            </View>
-        );
-    };
+    //     const renderSkeletonLoading = () => (
+    //         <View style={styles.skeletonContainer}>
+    //             {[1, 2, 3].map((_, index) => (
+    //                 <Animatable.View
+    //                     key={index}
+    //                     animation="pulse"
+    //                     iterationCount="infinite"
+    //                     style={styles.skeletonCard}
+    //                 >
+    //                     <View style={styles.skeletonHeader}>
+    //                         <View style={styles.skeletonDate} />
+    //                         <View style={styles.skeletonStatus} />
+    //                     </View>
+    //                     <View style={styles.skeletonContent}>
+    //                         <View style={styles.skeletonLine} />
+    //                         <View style={[styles.skeletonLine, { width: '60%' }]} />
+    //                     </View>
+    //                 </Animatable.View>
+    //             ))}
+    //         </View>
+    //     );
+
+    //     return (
+    //         <View style={styles.treatmentsContainer}>
+    //             {loading ? (
+    //                 renderSkeletonLoading()
+    //             ) : (
+    //                 <>
+    //                     <FlatList
+    //                         data={treatments}
+    //                         renderItem={renderTreatmentItem}
+    //                         keyExtractor={(item) => item._id}
+    //                         contentContainerStyle={styles.treatmentsList}
+    //                         showsVerticalScrollIndicator={false}
+    //                         ListEmptyComponent={() => (
+    //                             <View style={styles.emptyState}>
+    //                                 <MaterialIcons name="medical-services" size={60} color="#014495" />
+    //                                 <Text style={styles.emptyStateTitle}>No Treatments Yet</Text>
+    //                                 <Text style={styles.emptyStateText}>
+    //                                     Add your first treatment to start tracking progress
+    //                                 </Text>
+    //                             </View>
+    //                         )}
+    //                     />
+    //                     <TouchableOpacity
+    //                         style={styles.addButton}
+    //                         onPress={() => setModalVisible(true)}
+    //                         activeOpacity={0.7}
+    //                     >
+    //                         <LinearGradient
+    //                             colors={['#4A90E2', '#357ABD']}
+    //                             style={styles.gradientButton}
+    //                             start={{ x: 0, y: 0 }}
+    //                             end={{ x: 1, y: 0 }}
+    //                         >
+    //                             <MaterialIcons name="add" size={24} color="white" />
+    //                             <Text style={styles.addButtonText}>Add Treatment</Text>
+    //                         </LinearGradient>
+    //                     </TouchableOpacity>
+    //                 </>
+    //             )}
+    //         </View>
+    //     );
+    // };
 
     const validateInputs = () => {
         let validationErrors = {};
@@ -674,15 +1113,15 @@ export default function Treatments({ navigation }) {
 
             combinedDateTime.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
 
-            console.log('Sending treatment data:', {
-                clientId,
-                treatmentDate: combinedDateTime.toISOString()
-            });
+            /*  console.log('Sending treatment data:', {
+                 clientId,
+                 treatmentDate: combinedDateTime.toISOString()
+             }); */
 
             const response = await axios.post(`${Api}/treatments/${clientId}`, {
                 treatmentDate: combinedDateTime.toISOString(),
             });
-
+            // setTreatments(response.data)
             // Add the new treatment to the beginning of the list
             setTreatments(prev => [response.data, ...prev]);
             setModalVisible(false);
@@ -721,8 +1160,8 @@ export default function Treatments({ navigation }) {
             if (field === 'payDate') {
                 value = new Date(value).toISOString();
             }
-
-            const response = await axios.put(`${Api}/treatments/${id}`, {
+            // console.log("id:", id, "field:", field, "value:", value)
+            const response = await axios.put(`${Api}/treatments/treatments/${id}`, {
                 [field]: value
             });
 
@@ -738,118 +1177,7 @@ export default function Treatments({ navigation }) {
         }
     };
 
-    const renderTreatmentItem = ({ item }) => (
-        <Animatable.View
-            animation="fadeInUp"
-            style={styles.treatmentCard}
-        >
-            <View style={styles.treatmentHeader}>
-                <View style={styles.treatmentDateTime}>
-                    <View style={styles.treatmentDate}>
-                        <MaterialIcons name="event" size={20} color="#014495" />
-                        <Text style={styles.dateText}>
-                            {new Date(item.treatmentDate).toLocaleDateString()}
-                        </Text>
-                    </View>
-                    <View style={styles.treatmentTime}>
-                        <MaterialIcons name="access-time" size={20} color="#014495" />
-                        <Text style={styles.timeText}>
-                            {formatTime(item.treatmentDate)}
-                        </Text>
-                    </View>
-                </View>
-                <View style={styles.headerActions}>
-                    <Text style={styles.sessionNumber}>Session ##{item.sessionNumber}</Text>
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => {
-                            setTreatmentToDelete(item._id);
-                            setDeleteModalVisible(true);
-                        }}
-                    >
-                        <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
-                    </TouchableOpacity>
-                </View>
-            </View>
 
-            <View style={styles.treatmentContent}>
-                <TouchableOpacity
-                    style={styles.longTextFieldContainer}
-                    onPress={() => handleEditField(item._id, 'treatmentSummary')}
-                >
-                    <View style={styles.fieldHeader}>
-                        <Text style={styles.fieldLabel}>Treatment Summary</Text>
-                        <MaterialIcons name="edit" size={16} color="#014495" />
-                    </View>
-                    <Text style={[
-                        styles.longTextValue,
-                        !item.treatmentSummary && styles.placeholderText
-                    ]}>
-                        {item.treatmentSummary || 'Add treatment summary...'}
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.longTextFieldContainer}
-                    onPress={() => handleEditField(item._id, 'whatNext')}
-                >
-                    <View style={styles.fieldHeader}>
-                        <Text style={styles.fieldLabel}>Next Steps</Text>
-                        <MaterialIcons name="edit" size={16} color="#014495" />
-                    </View>
-                    <Text style={[
-                        styles.longTextValue,
-                        !item.whatNext && styles.placeholderText
-                    ]}>
-                        {item.whatNext || 'Add next steps...'}
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.longTextFieldContainer}
-                    onPress={() => handleEditField(item._id, 'homework')}
-                >
-                    <View style={styles.fieldHeader}>
-                        <Text style={styles.fieldLabel}>Homework</Text>
-                        <MaterialIcons name="edit" size={16} color="#014495" />
-                    </View>
-                    <Text style={[
-                        styles.longTextValue,
-                        !item.homework && styles.placeholderText
-                    ]}>
-                        {item.homework || 'Add homework...'}
-                    </Text>
-                </TouchableOpacity>
-
-                <View style={styles.paymentSection}>
-                    <TouchableOpacity
-                        style={[styles.paymentStatus, {
-                            backgroundColor: item.paymentStatus === 'paid' ? '#E8F5E9' : '#FFF3E0'
-                        }]}
-                        onPress={() => handleEditField(item._id, 'paymentStatus')}
-                    >
-                        <MaterialIcons
-                            name={item.paymentStatus === 'paid' ? 'check-circle' : 'schedule'}
-                            size={16}
-                            color={item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800'}
-                        />
-                        <Text style={styles.statusText}>
-                            {item.paymentStatus || 'Set status'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.paymentMethod}
-                        onPress={() => handleEditField(item._id, 'PaymentMethod')}
-                    >
-                        <Text style={styles.methodText}>
-                            {item.PaymentMethod || 'Set method'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Animatable.View>
-    );
 
     const renderParent = ({ item, index }) => (
         <View style={styles.parentContainer}>
@@ -1002,14 +1330,14 @@ export default function Treatments({ navigation }) {
 
     const ClientDescription = ({ clientDetails }) => {
         const [descModalVisible, setDescModalVisible] = useState(false);
-        const [description, setDescription] = useState(clientDetails.descriptin || '');
+        const [description, setDescription] = useState(clientDetails.description || '');
         const [isSaving, setIsSaving] = useState(false);
 
         const handleSaveDescription = async () => {
             setIsSaving(true);
             try {
                 const response = await axios.patch(`${Api}/clients/${clientDetails._id}/updateField`, {
-                    field: 'descriptin',
+                    field: 'description',
                     value: description
                 });
 
@@ -1041,7 +1369,7 @@ export default function Treatments({ navigation }) {
                     </TouchableOpacity>
                 </View>
                 <Text style={styles.descriptionText}>
-                    {clientDetails.descriptin || "No description available"}
+                    {clientDetails.description || "No description available"}
                 </Text>
 
                 <Modal
@@ -1053,6 +1381,7 @@ export default function Treatments({ navigation }) {
                     <KeyboardAvoidingView
                         behavior={Platform.OS === "ios" ? "padding" : "height"}
                         style={styles.descriptionModalContainer}
+                        keyboardVerticalOffset={100} // Adjust this value as needed
                     >
                         <View style={styles.descriptionModalContent}>
                             <View style={styles.descriptionModalHeader}>
@@ -1080,7 +1409,10 @@ export default function Treatments({ navigation }) {
                                     styles.saveDescriptionButton,
                                     isSaving && styles.saveButtonDisabled
                                 ]}
-                                onPress={handleSaveDescription}
+                                onPress={() => {
+                                    handleSaveDescription();
+                                    Keyboard.dismiss(); // Dismiss the keyboard when saving
+                                }}
                                 disabled={isSaving}
                             >
                                 {isSaving ? (
@@ -1111,6 +1443,40 @@ export default function Treatments({ navigation }) {
             Alert.alert('Error', 'Failed to update birthday');
         } finally {
             setIsSavingAge(false);
+        }
+    };
+
+    const handleStatusModalOpen = (treatmentId) => {
+        setSelectedTreatmentId(treatmentId);
+        setStatusModalVisible(true);
+    };
+
+    const handleMethodModalOpen = (treatmentId) => {
+        setSelectedTreatmentId(treatmentId);
+        setMethodModalVisible(true);
+    };
+
+    const handleStatusSelect = async (status) => {
+        if (selectedTreatmentId) {
+            await handleEditField(selectedTreatmentId, 'paymentStatus', status);
+            setStatusModalVisible(false);
+            setSelectedTreatmentId(null);
+        }
+    };
+
+    const handleMethodSelect = async (method) => {
+        if (selectedTreatmentId) {
+            await handleEditField(selectedTreatmentId, 'PaymentMethod', method);
+            setMethodModalVisible(false);
+            if (method !== 'OTHER') {
+                setSelectedTreatmentId(null);
+            }
+        }
+    };
+
+    const handleOtherMethodChange = async (text) => {
+        if (selectedTreatmentId) {
+            await handleEditField(selectedTreatmentId, 'otherPaymentMethod', text);
         }
     };
 
@@ -1173,7 +1539,8 @@ export default function Treatments({ navigation }) {
                                 <TextInput
                                     style={[
                                         styles.editModalInput,
-                                        isLongTextField && styles.editModalInputMultiline
+                                        isLongTextField && styles.editModalInputMultiline,
+                                        { textAlign: editValue && /^[\u0590-\u05FF]/.test(editValue[0]) ? 'right' : 'left' } // Conditional text alignment
                                     ]}
                                     value={editValue}
                                     onChangeText={setEditValue}
@@ -1195,14 +1562,352 @@ export default function Treatments({ navigation }) {
                                 <TouchableOpacity
                                     style={styles.editModalSaveButton}
                                     onPress={handleSaveTreatmentEdit}
+                                    disabled={isSaving}
                                 >
-                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                    {isSaving ? (
+                                        <ActivityIndicator color="white" size="small" />
+                                    ) : (
+                                        <Text style={styles.editModalSaveText}>Save</Text>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
+        );
+    };
+
+    const PaymentsList = ({ treatments, payments, clientId, userId }) => {
+        const paidTreatments = /* payments.filter(t => t.status === 'paid'); */ payments.map(t => t.amount)
+        const pendingTreatments = /* treatments.filter(t => t.paymentStatus === 'pending'); */treatments.map(t => t.treatmentPrice)
+
+        const totalPaid = paidTreatments.reduce((sum, t) => sum + (parseFloat(t) || 0), 0);
+        const totalPending = pendingTreatments.reduce((sum, t) => sum + (parseFloat(t) || 0), 0) - totalPaid;
+        const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+        const [paymentAmount, setPaymentAmount] = useState('');
+        const [paymentMethod, setPaymentMethod] = useState('');
+        const [paymentStage, setPaymentStage] = useState(1); // 1: Amount, 2: Method, 3: Confirmation
+        const paymentMethods = ['Cash', 'Credit Card', 'Debit Card', 'PayPal', 'Bank Transfer'];
+
+
+        const handleDeletePayment = async (paymentId) => {
+            try {
+                Alert.alert(
+                    "Delete Payment",
+                    "Are you sure you want to delete this payment?",
+                    [
+                        {
+                            text: "Cancel",
+                            style: "cancel"
+                        },
+                        {
+                            text: "Delete",
+                            style: "destructive",
+                            onPress: async () => {
+                                const response = await axios.delete(`${Api}/payments/${paymentId}`);
+                                if (response.status === 200) {
+                                    // Update your local state to remove the deleted payment
+                                    const updatedPayments = payments.filter(payment => payment._id !== paymentId);
+                                    setClientPayments(updatedPayments);
+                                    // Alert.alert("Success", "Payment deleted successfully");
+                                }
+                            }
+                        }
+                    ]
+                );
+            } catch (error) {
+                console.error('Error deleting payment:', error);
+                Alert.alert("Error", "Failed to delete payment");
+            }
+        };
+
+        const handleAddPayment = async () => {
+            // Validate input
+            if (!paymentAmount || !paymentMethod) {
+                alert("Please enter an amount and select a payment method.");
+                return;
+            }
+
+            // Prepare the payment data
+            const paymentData = {
+                clientId: clientId, // Assuming you have clientDetails available
+                userId: userId,
+                amount: parseFloat(paymentAmount),
+                paymentMethod: paymentMethod,
+            };
+
+            try {
+                // Make API call to add the payment
+                const response = await axios.post(`${Api}/payments/`, paymentData);
+                if (response.status !== 201) {
+                    throw new Error('Failed to add payment');
+                }
+                console.log("response data payments:", response.data)
+                setClientPayments([response.data, ...clientPayments])
+                // Optionally, you can update the state or refresh the list of treatments here
+                // setTreatments([...treatments]); // If you are using state to manage treatments
+
+                // Close the payment modal
+                setPaymentModalVisible(false);
+                alert('Payment added successfully!');
+
+            } catch (error) {
+                console.error('Error adding payment:', error);
+                alert('Failed to add payment. Please try again.');
+            }
+        };
+        const renderRightActions = (progress, dragX, item) => {
+            return (
+                <Animated.View
+                    entering={FadeIn}
+                    exiting={FadeOut}
+                    style={styles.deleteAction}
+                >
+                    <TouchableOpacity
+                        style={styles.deleteActionButton}
+                        onPress={() => handleDeletePayment(item._id)}
+                    >
+                        <MaterialIcons name="delete" size={24} color="white" />
+                    </TouchableOpacity>
+                </Animated.View>
+            );
+        };
+
+        const renderPaymentItem = ({ item, index }) => (
+            <Swipeable
+                renderRightActions={(progress, dragX) =>
+                    renderRightActions(progress, dragX, item)
+                }
+                rightThreshold={40}
+            >
+                <Animatable.View
+                    animation="fadeInUp"
+                    delay={index * 100}
+                    style={styles.paymentCard}
+                >
+                    <View style={styles.paymentHeader}>
+                        <View style={styles.paymentDate}>
+                            <MaterialIcons name="event" size={20} color="#014495" />
+                            <Text style={styles.paymentDateText2}>
+                                {new Date(item.createdAt).toLocaleDateString()}
+                            </Text>
+                            <Text style={styles.paymentTimeText}>
+                                {new Date(item.createdAt).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                })}
+                            </Text>
+                        </View>
+                        <View style={styles.headerRightSection}>
+                            <Text style={styles.paymentAmounts}>
+                                ${parseFloat(item.amount || 0).toFixed(2)}
+                            </Text>
+                            {/* Remove the static delete button */}
+                        </View>
+                    </View>
+                    <View style={styles.paymentMethodContainer}>
+                        <View style={styles.paymentMethodBadge}>
+                            <MaterialIcons
+                                name={
+                                    item.paymentMethod === 'cash' ? 'payments' :
+                                        item.paymentMethod === 'credit' ? 'credit-card' :
+                                            'account-balance'
+                                }
+                                size={18}
+                                color="#014495"
+                            />
+                            <Text style={styles.paymentMethodText}>
+                                {item.paymentMethod?.charAt(0).toUpperCase() + item.paymentMethod?.slice(1)}
+                            </Text>
+                        </View>
+                    </View>
+                </Animatable.View>
+            </Swipeable>
+        );
+
+        return (
+            <View style={styles.paymentsContainer}>
+                <Animatable.View
+                    animation="fadeInDown"
+                    style={styles.paymentsSummary}
+                >
+                    <View style={styles.summaryCard}>
+                        <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+                        <Text style={styles.summaryAmount}>${totalPaid.toFixed(2)}</Text>
+                        <Text style={styles.summaryLabel}>Total Paid</Text>
+                    </View>
+                    <View style={styles.summaryCard}>
+                        <MaterialIcons name="schedule" size={24} color="#FF9800" />
+                        <Text style={styles.summaryAmount}>${totalPending.toFixed(2)}</Text>
+                        <Text style={styles.summaryLabel}>Pending</Text>
+                    </View>
+                </Animatable.View>
+
+
+
+                <FlatList
+                    data={/*treatments*/ payments}
+                    renderItem={renderPaymentItem}
+                    keyExtractor={(item) => item._id}
+                    contentContainerStyle={styles.paymentsList}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={() => (
+                        <View style={styles.emptyState}>
+                            <MaterialIcons name="account-balance-wallet" size={60} color="#014495" />
+                            <Text style={styles.emptyStateTitle}>No Payments Yet</Text>
+                            {/* <Text style={styles.emptyStateText}>
+                                Payments will appear here once treatments are added
+                            </Text> */}
+                        </View>
+                    )}
+                />
+                <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => {
+                        setPaymentAmount('');
+                        setPaymentMethod('');
+                        setPaymentStage(1);
+                        setPaymentModalVisible(true);
+                    }}
+                >
+                    <LinearGradient
+                        colors={['#4A90E2', '#357ABD']}
+                        style={styles.gradientButton}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <MaterialIcons name="add" size={24} color="white" />
+                        <Text style={styles.addButtonText}>Add Payment</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={paymentModalVisible}
+                    onRequestClose={() => setPaymentModalVisible(false)}
+                >
+                    <View style={styles.modalPaymentOverlay}>
+                        <View style={styles.modalPaymentContainer}>
+                            {paymentStage === 1 && (
+                                <>
+                                    <View style={styles.modalHeader}>
+                                        <Text style={styles.modalTitle}>Enter Amount</Text>
+                                        <TouchableOpacity
+                                            onPress={() => setPaymentModalVisible(false)}
+                                            style={styles.modalCloseButton}
+                                        >
+                                            <MaterialIcons name="close" size={24} color="#666" />
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/*  <Text style={styles.modalPaymentHeader}>Enter Amount</Text> */}
+                                    <TextInput
+                                        style={styles.inputPayment}
+                                        placeholder="Amount"
+                                        keyboardType="numeric"
+                                        value={paymentAmount}
+                                        onChangeText={setPaymentAmount}
+                                    />
+                                    <View style={styles.modalFooter}>
+                                        <TouchableOpacity
+                                            style={styles.cancelButtonTreatment}
+                                            onPress={() => setPaymentModalVisible(false)}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.saveButton}
+                                            onPress={() => setPaymentStage(2)}
+                                            disabled={!paymentAmount}
+                                        >
+
+                                            <Text style={styles.saveButtonText}>Next</Text>
+
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/* <Button title="Next" onPress={() => setPaymentStage(2)} disabled={!paymentAmount} /> */}
+                                </>
+                            )}
+                            {paymentStage === 2 && (
+                                <>
+                                    <View style={styles.modalHeader}>
+                                        <Text style={styles.modalTitle}>Select Payment Method</Text>
+                                        <TouchableOpacity
+                                            onPress={() => setPaymentModalVisible(false)}
+                                            style={styles.modalCloseButton}
+                                        >
+                                            <MaterialIcons name="close" size={24} color="#666" />
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/*  <Text style={styles.modalPaymentHeader}>Select Payment Method</Text> */}
+                                    <Picker
+                                        selectedValue={paymentMethod}
+                                        onValueChange={(itemValue) => setPaymentMethod(itemValue)}
+                                    >
+                                        {paymentMethods.map((method) => (
+                                            <Picker.Item key={method} label={method} value={method} />
+                                        ))}
+                                    </Picker>
+                                    <View style={styles.modalFooter}>
+                                        <TouchableOpacity
+                                            style={styles.cancelButtonTreatment}
+                                            onPress={() => setPaymentModalVisible(false)}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.saveButton}
+                                            onPress={() => setPaymentStage(3)}
+                                            disabled={!paymentAmount}
+                                        >
+
+                                            <Text style={styles.saveButtonText}>Next</Text>
+
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/*  <Button title="Next" onPress={() => setPaymentStage(3)} disabled={!paymentMethod} /> */}
+                                </>
+                            )}
+                            {paymentStage === 3 && (
+                                <>
+                                    <View style={styles.modalHeader}>
+                                        <Text style={styles.modalTitle}>Confirm Payment</Text>
+                                        <TouchableOpacity
+                                            onPress={() => setPaymentModalVisible(false)}
+                                            style={styles.modalCloseButton}
+                                        >
+                                            <MaterialIcons name="close" size={24} color="#666" />
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/* <Text style={styles.modalPaymentHeader}>Confirm Payment</Text> */}
+                                    <Text style={styles.paymentText}>Amount: ${paymentAmount}</Text>
+                                    <Text style={styles.paymentText}>Method: {paymentMethod}</Text>
+                                    <View style={styles.modalFooter}>
+                                        <TouchableOpacity
+                                            style={styles.cancelButtonTreatment}
+                                            onPress={() => setPaymentModalVisible(false)}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.saveButton}
+                                            onPress={handleAddPayment}
+                                            disabled={!paymentAmount}
+                                        >
+
+                                            <Text style={styles.saveButtonText}>Confirm</Text>
+
+                                        </TouchableOpacity>
+                                    </View>
+                                    {/*  <Button title="Confirm" onPress={handleAddPayment} />
+                                    <Button title="Cancel" onPress={() => setPaymentModalVisible(false)} /> */}
+                                </>
+                            )}
+                        </View>
+                    </View>
+                </Modal>
+            </View>
         );
     };
 
@@ -1221,7 +1926,7 @@ export default function Treatments({ navigation }) {
                 >
                     <MaterialIcons name="arrow-back" size={24} color="#014495" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Client Profile</Text>
+                <Text style={styles.headerTitle}>Client Card</Text>
                 <View style={{ width: 40 }} />
             </Animatable.View>
 
@@ -1239,7 +1944,9 @@ export default function Treatments({ navigation }) {
             >
                 {/* Profile Tab */}
                 <View key="1" style={styles.page}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <ScrollView showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps={"handled"}
+                    >
                         <Animatable.View
                             animation="fadeIn"
                             duration={1000}
@@ -1259,14 +1966,96 @@ export default function Treatments({ navigation }) {
                                     style={styles.avatarImage}
                                 />
                             </Animatable.View>
+                            <TouchableOpacity onPress={() => { setFirstName(clientDetails.name); setLastName(clientDetails.lastName); openNameModal() }}>
 
-                            <Animatable.Text
-                                animation="fadeInUp"
-                                delay={300}
-                                style={styles.clientName}
+                                <Animatable.Text
+                                    animation="fadeInUp"
+                                    delay={300}
+                                    style={styles.clientName}
+
+                                >
+                                    {`${clientDetails.name} ${clientDetails.lastName}`}
+                                </Animatable.Text>
+                            </TouchableOpacity>
+                            <Modal
+                                animationType="slide"
+                                transparent={true}
+                                visible={nameModalVisible}
+                                onRequestClose={() => setNameModalVisible(false)}
                             >
-                                {`${clientDetails.name} ${clientDetails.lastName}`}
-                            </Animatable.Text>
+                                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                                    <View style={styles.modalNameOverlay}>
+
+                                        <KeyboardAvoidingView
+                                            style={styles.modalNameContainer}
+                                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Adjust behavior based on platform
+                                            keyboardVerticalOffset={100} // Adjust this value based on your header height
+                                        >
+                                            <Animatable.Text style={styles.labelName} animation="fadeIn" duration={500}>
+                                                First Name
+                                            </Animatable.Text>
+                                            {/* <Animatable.Text style={styles.descriptionName} animation="fadeIn" duration={500}>
+                                            Please enter the client's first name.
+                                        </Animatable.Text> */}
+                                            <Animatable.View animation="fadeInUp" duration={500}>
+                                                <TextInput
+                                                    ref={firstNameInputRef}
+                                                    style={[styles.inputName, { textAlign: firstName && /^[\u0590-\u05FF]/.test(firstName[0]) ? 'right' : 'left' }]} // Conditional text alignment
+                                                    placeholder="First Name"
+                                                    value={firstName}
+                                                    onChangeText={setFirstName}
+                                                />
+                                                {firstName === "" && (
+                                                    <Animatable.Text style={styles.validationNameText} animation="shake" duration={500}>
+                                                        First name cannot be empty.
+                                                    </Animatable.Text>
+                                                )}
+                                            </Animatable.View>
+
+                                            <Animatable.Text style={styles.labelName} animation="fadeIn" duration={500}>
+                                                Last Name
+                                            </Animatable.Text>
+                                            {/*  <Animatable.Text style={styles.descriptionName} animation="fadeIn" duration={500}>
+                                            Please enter the client's last name.
+                                        </Animatable.Text> */}
+                                            <Animatable.View animation="fadeInUp" duration={500}>
+                                                <TextInput
+
+                                                    style={[styles.inputName, { textAlign: lastName && /^[\u0590-\u05FF]/.test(lastName[0]) ? 'right' : 'left' }]} // Conditional text alignment
+                                                    placeholder="Last Name"
+                                                    value={lastName}
+                                                    onChangeText={setLastName}
+                                                />
+                                                {lastName === "" && (
+                                                    <Animatable.Text style={styles.validationNameText} animation="shake" duration={500}>
+                                                        Last name cannot be empty.
+                                                    </Animatable.Text>
+                                                )}
+                                            </Animatable.View>
+                                            <View style={styles.buttonNameContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.cancelNameButton}
+                                                    onPress={() => setNameModalVisible(false)}
+                                                >
+                                                    <Text style={styles.buttonNameText}>Cancel</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={[styles.saveButtonNameContainer, firstName === "" || lastName === "" && styles.disabledNameButton]}
+                                                    onPress={() => handleSaveName(clientDetails._id)}
+                                                    disabled={isFullNameSaving} // Disable button while saving
+                                                >
+                                                    {isFullNameSaving ? (
+                                                        <ActivityIndicator size="small" color="white" />
+                                                    ) : (
+                                                        <Text style={styles.buttonNameText}>Save</Text>
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
+                                        </KeyboardAvoidingView>
+
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            </Modal>
 
                             <View style={styles.statsContainer}>
                                 {[
@@ -1333,21 +2122,251 @@ export default function Treatments({ navigation }) {
                             </View>
                         </Animatable.View>
                         <ClientDescription clientDetails={clientDetails} />
+                        <ParentsSection clientDetails={clientDetails} refreshClient={fetchClientData} />
                     </ScrollView>
                 </View>
 
                 {/* Treatments Tab */}
                 <View key="2" style={styles.page}>
-                    <TreatmentsList
-                        treatments={treatments}
-                        onAddTreatment={() => setModalVisible(true)}
-                        loading={isLoading}
-                    />
+                    <View style={styles.treatmentsContainer}>
+                        {loading ? (
+                            renderSkeletonLoading()
+                        ) : (
+                            <>
+                                <Text style={{}}>{treatments.length}\{clientDetails.numberOfMeetings} treatments</Text>
+                                <FlatList
+                                    data={treatments}
+                                    renderItem={({ item, index }) => (
+                                        <Animatable.View
+                                            animation="fadeInUp"
+                                            delay={index * 100}
+                                            style={styles.treatmentCard}
+                                        >
+                                            <View style={styles.treatmentHeader}>
+                                                <TouchableOpacity onPress={() => { setSelectedDate(new Date(item.treatmentDate)); setSelectedTreatmentId(item._id); setDateTimeModalVisible(true) }}>
+                                                    <View style={styles.treatmentDateTime}>
+                                                        <View style={styles.treatmentDate}>
+                                                            <MaterialIcons name="event" size={20} color="#014495" />
+                                                            <Text style={styles.dateText}>
+                                                                {new Date(item.treatmentDate).toLocaleDateString()}
+                                                            </Text>
+                                                        </View>
+                                                        <View style={styles.treatmentTime}>
+                                                            <MaterialIcons name="access-time" size={20} color="#014495" />
+                                                            <Text style={styles.timeText}>
+                                                                {formatTime(item.treatmentDate)}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
+                                                    <View style={styles.treatmentPrice}>
+                                                        <MaterialIcons name="attach-money" size={20} color="#014495" />
+                                                        <Text style={styles.priceText}>
+                                                            ${item.treatmentPrice ? item.treatmentPrice : clientDetails.clientPrice ? clientDetails.clientPrice : 'N/A'}
+                                                        </Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                                <Modal
+                                                    animationType="slide"
+                                                    transparent={true}
+                                                    visible={editPriceModalVisible}
+                                                    onRequestClose={() => setEditPriceModalVisible(false)}
+                                                >
+                                                    <View style={styles.modalOverlay}>
+                                                        <View style={styles.modalEditPriceContainer}>
+                                                            <Text style={styles.modalEditPriceHeader}>Edit Price</Text>
+                                                            <TextInput
+                                                                ref={priceInputRef}
+                                                                style={styles.priceInput}
+                                                                placeholder="Enter new price"
+                                                                keyboardType="numeric"
+                                                                value={price ? price.toString() : ''}
+                                                                onChangeText={(text) => handlePriceChange(text, item._id)}
+                                                            />
+                                                            <View style={styles.buttonEditPriceContainer}>
+                                                                <Button title="Cancel" onPress={() => setEditPriceModalVisible(false)} color="#FF3D00" />
+                                                                <Button title="Save" onPress={() => handleSavePrice(item._id)} color="#014495" />
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                </Modal>
+                                                <Modal
+                                                    animationType="slide"
+                                                    transparent={true}
+                                                    visible={dateTimeModalVisible}
+                                                    onRequestClose={() => setDateTimeModalVisible(false)}
+                                                >
+                                                    <View style={styles.modalOverlay}>
+                                                        <View style={styles.modalDateTimeContainer}>
+                                                            <Text style={styles.modalDateTimeHeader}>Update Date and Time</Text>
+                                                            <DateTimePicker
+                                                                value={selectedDate}
+                                                                mode="datetime"
+                                                                display="default"
+                                                                onChange={handleDateChange}
+                                                                confirmBtnText="confirm"
+                                                                cancelBtnText="dismiss"
+                                                            />
+                                                            <View style={styles.buttonDateTimeContainer}>
+                                                                <Button title="Cancel" onPress={() => setDateTimeModalVisible(false)} color="#FF3D00" />
+                                                                <View style={styles.saveDateTimeButtonContainer}>
+                                                                    {isSaving ? (
+                                                                        <ActivityIndicator size="small" color="#014495" />
+                                                                    ) : (
+                                                                        <Button title="Save" onPress={() => handleSaveDateTime(item._id)} color="#014495" />
+                                                                    )}
+                                                                </View>
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                </Modal>
+                                                <View style={styles.headerActions}>
+                                                    <Text style={styles.sessionNumber}>Session #{treatments.length - index}</Text>
+                                                    <TouchableOpacity
+                                                        style={styles.deleteButton}
+                                                        onPress={() => {
+                                                            setTreatmentToDelete(item._id);
+                                                            setDeleteModalVisible(true);
+                                                        }}
+                                                    >
+                                                        <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                            <DeleteConfirmationModal
+                                                visible={deleteModalVisible}
+                                                onClose={handleCloseDeleteModal}
+                                                onDelete={handleDeleteTreatment}
+                                            />
+                                            <View style={styles.treatmentContent}>
+                                                <TouchableOpacity
+                                                    style={styles.editableField}
+                                                    onPress={() => handleEditField(item._id, 'treatmentSummary')}
+                                                >
+                                                    <Text style={styles.fieldLabel}>Treatment Summary</Text>
+                                                    <Text style={[
+                                                        styles.fieldValue,
+                                                        { textAlign: /^[\u0590-\u05FF]/.test(item.treatmentSummary) ? 'right' : 'left' }
+                                                    ]}>
+                                                        {item.treatmentSummary || 'Add summary...'}
+                                                    </Text>
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    style={styles.editableField}
+                                                    onPress={() => handleEditField(item._id, 'whatNext')}
+                                                >
+                                                    <Text style={styles.fieldLabel}>Next Steps</Text>
+                                                    <Text style={[
+                                                        styles.fieldValue,
+                                                        { textAlign: /^[\u0590-\u05FF]/.test(item.whatNext) ? 'right' : 'left' }
+                                                    ]}>
+                                                        {item.whatNext || 'Add next steps...'}
+                                                    </Text>
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    style={styles.editableField}
+                                                    onPress={() => handleEditField(item._id, 'homework')}
+                                                >
+                                                    <Text style={styles.fieldLabel}>Homework</Text>
+                                                    <Text style={[
+                                                        styles.fieldValue,
+                                                        { textAlign: /^[\u0590-\u05FF]/.test(item.homework) ? 'right' : 'left' }
+                                                    ]}>
+                                                        {item.homework || 'Add homework...'}
+                                                    </Text>
+                                                </TouchableOpacity>
+
+                                                <View style={styles.paymentSection}>
+                                                    <View
+                                                        style={[styles.paymentStatus, {
+                                                            backgroundColor: PAYMENT_STATUSES[treatmentPaid[index]]?.color + '20' || '#FFF3E0'
+                                                        }]}
+                                                    >
+                                                        <MaterialIcons
+                                                            name={PAYMENT_STATUSES[treatmentPaid[index]]?.icon || 'schedule'}
+                                                            size={16}
+                                                            color={PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800'}
+                                                        />
+                                                        <Text style={[styles.statusText, { color: PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800' }]}>
+                                                            {treatmentPaid[index]}
+                                                        </Text>
+                                                        {/* <Text>{treatmentPaid[index]}</Text> */}
+                                                    </View>
+
+
+                                                    {/* <TouchableOpacity
+                                                        style={[styles.paymentStatus, {
+                                                            backgroundColor: PAYMENT_STATUSES[item.paymentStatus]?.color + '20' || '#FFF3E0'
+                                                        }]}
+                                                        onPress={() => handleStatusModalOpen(item._id)}
+                                                    >
+                                                        <MaterialIcons
+                                                            name={PAYMENT_STATUSES[item.paymentStatus]?.icon || 'schedule'}
+                                                            size={16}
+                                                            color={PAYMENT_STATUSES[item.paymentStatus]?.color || '#FF9800'}
+                                                        />
+                                                        <Text style={[styles.statusText, { color: PAYMENT_STATUSES[item.paymentStatus]?.color || '#FF9800' }]}>
+                                                            {PAYMENT_STATUSES[item.paymentStatus]?.label || 'Set status'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        style={styles.paymentMethod}
+                                                        onPress={() => handleMethodModalOpen(item._id)}
+                                                    >
+                                                        <MaterialIcons
+                                                            name={PAYMENT_METHODS[item.PaymentMethod]?.icon || 'payment'}
+                                                            size={16}
+                                                            color="#014495"
+                                                        />
+                                                        <Text style={styles.methodText}>
+                                                            {item.PaymentMethod === 'OTHER' ? item.otherPaymentMethod :
+                                                                PAYMENT_METHODS[item.PaymentMethod]?.label || 'Set method'}
+                                                        </Text>
+                                                    </TouchableOpacity> */}
+                                                </View>
+                                            </View>
+                                        </Animatable.View>
+                                    )}
+                                    keyExtractor={(item) => item._id}
+                                    contentContainerStyle={styles.treatmentsList}
+                                    showsVerticalScrollIndicator={false}
+                                    ListEmptyComponent={() => (
+                                        <View style={styles.emptyState}>
+                                            <MaterialIcons name="medical-services" size={60} color="#014495" />
+                                            <Text style={styles.emptyStateTitle}>No Treatments Yet</Text>
+                                            <Text style={styles.emptyStateText}>
+                                                Add your first treatment to start tracking progress
+                                            </Text>
+                                        </View>
+                                    )}
+                                />
+                                <TouchableOpacity
+                                    style={styles.addButton}
+                                    onPress={() => setModalVisible(true)}
+                                    activeOpacity={0.7}
+                                >
+                                    <LinearGradient
+                                        colors={['#4A90E2', '#357ABD']}
+                                        style={styles.gradientButton}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                    >
+                                        <MaterialIcons name="add" size={24} color="white" />
+                                        <Text style={styles.addButtonText}>Add Treatment</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
                 </View>
 
                 {/* Payments Tab */}
                 <View key="3" style={styles.page}>
-                    <PaymentsList treatments={treatments} />
+                    <PaymentsList treatments={treatments} payments={clientPayments} clientId={clientId} userId={user._id} />
                 </View>
             </PagerView>
 
@@ -1465,9 +2484,239 @@ export default function Treatments({ navigation }) {
                     </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
             </Modal>
+
+            {/* Add these modals outside of the FlatList but inside the main View */}
+            <PaymentStatusModal
+                visible={statusModalVisible}
+                onClose={() => {
+                    setStatusModalVisible(false);
+                    setSelectedTreatmentId(null);
+                }}
+                currentStatus={treatments.find(t => t._id === selectedTreatmentId)?.paymentStatus}
+                onSelect={handleStatusSelect}
+            />
+
+            <PaymentMethodModal
+                visible={methodModalVisible}
+                onClose={() => {
+                    setMethodModalVisible(false);
+                    setSelectedTreatmentId(null);
+                }}
+                currentMethod={treatments.find(t => t._id === selectedTreatmentId)?.PaymentMethod}
+                onSelect={handleMethodSelect}
+                onOtherMethodChange={handleOtherMethodChange}
+            />
         </View>
     );
 }
+
+const AddTreatmentModal = ({ visible, onClose, onSave, treatment, setTreatment }) => {
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const formatTime = (date) => {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        await onSave();
+        setIsSaving(false);
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={onClose}
+        >
+            <TouchableWithoutFeedback onPress={onClose}>
+                <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                        <Animatable.View
+                            animation="slideInUp"
+                            duration={300}
+                            style={styles.modalContainer}
+                        >
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Add Treatment</Text>
+                                <TouchableOpacity
+                                    onPress={onClose}
+                                    style={styles.modalCloseButton}
+                                >
+                                    <MaterialIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.modalContent}>
+                                <View style={styles.dateTimeContainer}>
+                                    <View
+                                        style={[styles.datePickerButton, { flex: 1, marginRight: 10, }]}
+                                    // onPress={() => setShowDatePicker(true)}
+                                    >
+                                        {/* <MaterialIcons name="event" size={24} color="#014495" />
+                                        <Text style={styles.datePickerText}>
+                                            {treatment.treatmentDate.toLocaleDateString()}
+                                        </Text> */}
+                                        <DateTimePicker
+                                            value={treatment.treatmentDate}
+                                            mode="date"
+                                            display="inline"
+                                            onChange={(event, selectedDate) => {
+                                                setShowDatePicker(false);
+                                                if (selectedDate) {
+                                                    setTreatment({
+                                                        ...treatment,
+                                                        treatmentDate: selectedDate
+                                                    });
+                                                }
+                                            }}
+                                        />
+                                    </View>
+
+                                    <View
+                                        style={[styles.datePickerButton, { flex: 1 }]}
+                                    // onPress={() => setShowTimePicker(true)}
+                                    >
+                                        {/*  <MaterialIcons name="access-time" size={24} color="#014495" />
+                                        <Text style={styles.datePickerText}>
+                                            {formatTime(treatment.treatmentTime)}
+                                        </Text> */}
+                                        <DateTimePicker
+                                            value={treatment.treatmentTime}
+                                            mode="time"
+                                            display="calendar"
+                                            onChange={(event, selectedTime) => {
+                                                setShowTimePicker(false);
+                                                if (selectedTime) {
+                                                    setTreatment({
+                                                        ...treatment,
+                                                        treatmentTime: selectedTime
+                                                    });
+                                                }
+                                            }}
+                                        />
+                                    </View>
+                                </View>
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={treatment.treatmentDate}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                            setShowDatePicker(false);
+                                            if (selectedDate) {
+                                                setTreatment({
+                                                    ...treatment,
+                                                    treatmentDate: selectedDate
+                                                });
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                {showTimePicker && (
+                                    <DateTimePicker
+                                        value={treatment.treatmentTime}
+                                        mode="time"
+                                        display="default"
+                                        onChange={(event, selectedTime) => {
+                                            setShowTimePicker(false);
+                                            if (selectedTime) {
+                                                setTreatment({
+                                                    ...treatment,
+                                                    treatmentTime: selectedTime
+                                                });
+                                            }
+                                        }}
+                                    />
+                                )}
+
+                                {/* <Text style={styles.inputLabel}>Treatment Summary</Text>
+                                <TextInput
+                                    style={styles.textArea}
+                                    multiline
+                                    numberOfLines={4}
+                                    value={treatment.treatmentSummary}
+                                    onChangeText={(text) =>
+                                        setTreatment({ ...treatment, treatmentSummary: text })
+                                    }
+                                    placeholder="Describe the treatment..."
+                                />
+
+                                <Text style={styles.inputLabel}>Next Steps</Text>
+                                <TextInput
+                                    style={styles.textArea}
+                                    multiline
+                                    numberOfLines={4}
+                                    value={treatment.whatNext}
+                                    onChangeText={(text) =>
+                                        setTreatment({ ...treatment, whatNext: text })
+                                    }
+                                    placeholder="What's next..."
+                                />
+
+                                <Text style={styles.inputLabel}>Payment Status</Text>
+                                <View style={styles.paymentStatusSelector}>
+                                    {['paid', 'pending'].map((status) => (
+                                        <TouchableOpacity
+                                            key={status}
+                                            style={[
+                                                styles.statusOption,
+                                                treatment.paymentStatus === status &&
+                                                styles.statusOptionActive
+                                            ]}
+                                            onPress={() =>
+                                                setTreatment({ ...treatment, paymentStatus: status })
+                                            }
+                                        >
+                                            <MaterialIcons
+                                                name={status === 'paid' ? 'check-circle' : 'schedule'}
+                                                size={20}
+                                                color={treatment.paymentStatus === status ?
+                                                    'white' : '#666'}
+                                            />
+                                            <Text style={[
+                                                styles.statusOptionText,
+                                                treatment.paymentStatus === status &&
+                                                styles.statusOptionTextActive
+                                            ]}>
+                                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View> */}
+                            </ScrollView>
+
+                            <View style={styles.modalFooter}>
+                                <TouchableOpacity
+                                    style={styles.cancelButtonTreatment}
+                                    onPress={onClose}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                                    onPress={handleSave}
+                                    disabled={isSaving}
+                                >
+                                    {isSaving ? (
+                                        <ActivityIndicator color="white" size="small" />
+                                    ) : (
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </Animatable.View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+};
 
 const TabBar = ({ activeTab, handlePageChange, animatedIndicatorStyle }) => (
     <View style={styles.tabBarContainer}>
@@ -1558,274 +2807,9 @@ const ClientProfile = ({ clientDetails }) => (
 
 
 
-const PaymentsList = ({ treatments }) => {
-    const paidTreatments = treatments.filter(t => t.paymentStatus === 'paid');
-    const pendingTreatments = treatments.filter(t => t.paymentStatus === 'pending');
 
-    const totalPaid = paidTreatments.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-    const totalPending = pendingTreatments.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
-    const renderPaymentItem = ({ item, index }) => (
-        <Animatable.View
-            animation="fadeInUp"
-            delay={index * 100}
-            style={styles.paymentCard}
-        >
-            <View style={styles.paymentHeader}>
-                <View style={styles.paymentDate}>
-                    <MaterialIcons name="event" size={20} color="#014495" />
-                    <Text style={styles.paymentDateText}>
-                        {new Date(item.treatmentDate).toLocaleDateString()}
-                    </Text>
-                </View>
-                <Text style={styles.paymentAmount}>
-                    ${parseFloat(item.amount || 0).toFixed(2)}
-                </Text>
-            </View>
 
-            <View style={styles.paymentDetails}>
-                <Text style={styles.paymentLabel}>Treatment Summary</Text>
-                <Text style={styles.paymentSummary} numberOfLines={2}>
-                    {item.treatmentSummary}
-                </Text>
-
-                <View style={[
-                    styles.paymentStatusBadge,
-                    { backgroundColor: item.paymentStatus === 'paid' ? '#E8F5E9' : '#FFF3E0' }
-                ]}>
-                    <MaterialIcons
-                        name={item.paymentStatus === 'paid' ? 'check-circle' : 'schedule'}
-                        size={16}
-                        color={item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800'}
-                    />
-                    <Text style={[
-                        styles.paymentStatusText,
-                        { color: item.paymentStatus === 'paid' ? '#4CAF50' : '#FF9800' }
-                    ]}>
-                        {item.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-                    </Text>
-                </View>
-            </View>
-        </Animatable.View>
-    );
-
-    return (
-        <View style={styles.paymentsContainer}>
-            <Animatable.View
-                animation="fadeInDown"
-                style={styles.paymentsSummary}
-            >
-                <View style={styles.summaryCard}>
-                    <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
-                    <Text style={styles.summaryAmount}>${totalPaid.toFixed(2)}</Text>
-                    <Text style={styles.summaryLabel}>Total Paid</Text>
-                </View>
-                <View style={styles.summaryCard}>
-                    <MaterialIcons name="schedule" size={24} color="#FF9800" />
-                    <Text style={styles.summaryAmount}>${totalPending.toFixed(2)}</Text>
-                    <Text style={styles.summaryLabel}>Pending</Text>
-                </View>
-            </Animatable.View>
-
-            <FlatList
-                data={treatments}
-                renderItem={renderPaymentItem}
-                keyExtractor={(item) => item._id}
-                contentContainerStyle={styles.paymentsList}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={() => (
-                    <View style={styles.emptyState}>
-                        <MaterialIcons name="account-balance-wallet" size={60} color="#014495" />
-                        <Text style={styles.emptyStateTitle}>No Payments Yet</Text>
-                        <Text style={styles.emptyStateText}>
-                            Payments will appear here once treatments are added
-                        </Text>
-                    </View>
-                )}
-            />
-        </View>
-    );
-};
-
-const AddTreatmentModal = ({ visible, onClose, onSave, treatment, setTreatment }) => {
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [showTimePicker, setShowTimePicker] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-
-    const formatTime = (date) => {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        await onSave();
-        setIsSaving(false);
-    };
-
-    return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={onClose}
-        >
-            <TouchableWithoutFeedback onPress={onClose}>
-                <View style={styles.modalOverlay}>
-                    <TouchableWithoutFeedback>
-                        <Animatable.View
-                            animation="slideInUp"
-                            duration={300}
-                            style={styles.modalContainer}
-                        >
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Add Treatments</Text>
-                                <TouchableOpacity
-                                    onPress={onClose}
-                                    style={styles.modalCloseButton}
-                                >
-                                    <MaterialIcons name="close" size={24} color="#666" />
-                                </TouchableOpacity>
-                            </View>
-
-                            <ScrollView style={styles.modalContent}>
-                                <View style={styles.dateTimeContainer}>
-                                    <TouchableOpacity
-                                        style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}
-                                        onPress={() => setShowDatePicker(true)}
-                                    >
-                                        <MaterialIcons name="event" size={24} color="#014495" />
-                                        <Text style={styles.datePickerText}>
-                                            {treatment.treatmentDate.toLocaleDateString()}
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[styles.datePickerButton, { flex: 1 }]}
-                                        onPress={() => setShowTimePicker(true)}
-                                    >
-                                        <MaterialIcons name="access-time" size={24} color="#014495" />
-                                        <Text style={styles.datePickerText}>
-                                            {formatTime(treatment.treatmentTime)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                                {showDatePicker && (
-                                    <DateTimePicker
-                                        value={treatment.treatmentDate}
-                                        mode="date"
-                                        display="default"
-                                        onChange={(event, selectedDate) => {
-                                            setShowDatePicker(false);
-                                            if (selectedDate) {
-                                                setTreatment({
-                                                    ...treatment,
-                                                    treatmentDate: selectedDate
-                                                });
-                                            }
-                                        }}
-                                    />
-                                )}
-
-                                {showTimePicker && (
-                                    <DateTimePicker
-                                        value={treatment.treatmentTime}
-                                        mode="time"
-                                        display="default"
-                                        onChange={(event, selectedTime) => {
-                                            setShowTimePicker(false);
-                                            if (selectedTime) {
-                                                setTreatment({
-                                                    ...treatment,
-                                                    treatmentTime: selectedTime
-                                                });
-                                            }
-                                        }}
-                                    />
-                                )}
-
-                                <Text style={styles.inputLabel}>Treatment Summary</Text>
-                                <TextInput
-                                    style={styles.textArea}
-                                    multiline
-                                    numberOfLines={4}
-                                    value={treatment.treatmentSummary}
-                                    onChangeText={(text) =>
-                                        setTreatment({ ...treatment, treatmentSummary: text })
-                                    }
-                                    placeholder="Describe the treatment..."
-                                />
-
-                                <Text style={styles.inputLabel}>Next Steps</Text>
-                                <TextInput
-                                    style={styles.textArea}
-                                    multiline
-                                    numberOfLines={4}
-                                    value={treatment.whatNext}
-                                    onChangeText={(text) =>
-                                        setTreatment({ ...treatment, whatNext: text })
-                                    }
-                                    placeholder="What's next..."
-                                />
-
-                                <Text style={styles.inputLabel}>Payment Status</Text>
-                                <View style={styles.paymentStatusSelector}>
-                                    {['paid', 'pending'].map((status) => (
-                                        <TouchableOpacity
-                                            key={status}
-                                            style={[
-                                                styles.statusOption,
-                                                treatment.paymentStatus === status &&
-                                                styles.statusOptionActive
-                                            ]}
-                                            onPress={() =>
-                                                setTreatment({ ...treatment, paymentStatus: status })
-                                            }
-                                        >
-                                            <MaterialIcons
-                                                name={status === 'paid' ? 'check-circle' : 'schedule'}
-                                                size={20}
-                                                color={treatment.paymentStatus === status ?
-                                                    'white' : '#666'}
-                                            />
-                                            <Text style={[
-                                                styles.statusOptionText,
-                                                treatment.paymentStatus === status &&
-                                                styles.statusOptionTextActive
-                                            ]}>
-                                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </ScrollView>
-
-                            <View style={styles.modalFooter}>
-                                <TouchableOpacity
-                                    style={styles.cancelButton}
-                                    onPress={onClose}
-                                >
-                                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                                    onPress={handleSave}
-                                    disabled={isSaving}
-                                >
-                                    {isSaving ? (
-                                        <ActivityIndicator color="white" size="small" />
-                                    ) : (
-                                        <Text style={styles.saveButtonText}>Save</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        </Animatable.View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
-        </Modal>
-    );
-};
 
 const styles = StyleSheet.create({
     container: {
@@ -1849,10 +2833,11 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         backgroundColor: '#F0F4F8',
     },
+
     tabBarContainer: {
         flexDirection: 'row',
         backgroundColor: 'white',
-        marginHorizontal: 15,
+        // marginHorizontal: 15,
         marginVertical: 10,
         borderRadius: 15,
         height: 60,
@@ -2020,6 +3005,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
     },
+    paymentText: {
+        fontSize: 18,
+        fontWeight: '500',
+        color: '#333', // Dark gray for better readability
+        marginVertical: 8, // Space between lines
+        padding: 10, // Padding around text
+        backgroundColor: '#f9f9f9', // Light background for contrast
+        borderRadius: 8, // Rounded corners
+        shadowColor: '#000', // Shadow for depth
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2, // Elevation for Android
+    },
     paymentStatus: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2096,14 +3098,26 @@ const styles = StyleSheet.create({
         paddingBottom: 80, // Space for FAB
     },
     paymentCard: {
-        backgroundColor: 'white',
+        /* backgroundColor: 'white',
         borderRadius: 15,
         marginBottom: 15,
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 4, */
+        padding: 15,
+        marginVertical: 8,
+        backgroundColor: 'white',
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
     paymentHeader: {
         flexDirection: 'row',
@@ -2116,6 +3130,12 @@ const styles = StyleSheet.create({
     paymentDate: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
+    },
+    paymentDateText2: {
+        fontSize: 14,
+        color: '#014495',
+        fontWeight: '500',
     },
     paymentDateText: {
         marginLeft: 8,
@@ -2158,6 +3178,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+
     modalContainer: {
         backgroundColor: 'white',
         width: windowWidth * 0.9,
@@ -2191,10 +3212,13 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     dateTimeContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 10,
+        flexDirection: 'column',
     },
+    /*  dateTimeContainer: {
+         flexDirection: 'row',
+         justifyContent: 'space-between',
+         marginBottom: 10,
+     }, */
     datePickerButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2248,25 +3272,30 @@ const styles = StyleSheet.create({
     },
     modalFooter: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 10,
+        justifyContent: 'flex-end',
+        padding: 15,
         borderTopWidth: 1,
         borderTopColor: '#F0F0F0',
+        backgroundColor: 'white'
+        // backgroundColor: "yellow"
     },
-    cancelButton: {
-        padding: 10,
-        borderRadius: 20,
+    cancelButtonTreatment: {
+        padding: 12,
+        borderRadius: 12,
         backgroundColor: '#F0F4F8',
+        marginRight: 12,
+
     },
     cancelButtonText: {
         fontSize: 16,
         color: '#666',
     },
     saveButton: {
-        padding: 10,
-        borderRadius: 20,
+        padding: 12,
+        borderRadius: 12,
         backgroundColor: '#014495',
+        minWidth: 100,
+        alignItems: 'center',
     },
     saveButtonDisabled: {
         backgroundColor: '#CCCCCC',
@@ -2485,44 +3514,73 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#F0F0F0',
     },
+    /*  addButton: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         // backgroundColor: '#2196F3', // Material Design blue
+         paddingVertical: 12,
+         paddingHorizontal: 20,
+         borderRadius: 25,
+         elevation: 3, // Android shadow
+         shadowColor: '#000', // iOS shadow
+         shadowOffset: {
+             width: 0,
+             height: 2,
+         },
+         shadowOpacity: 0.25,
+         shadowRadius: 3.84,
+         gap: 8, // Space between icon and text
+     },
+     addButtonText: {
+         color: 'white',
+         fontSize: 16,
+         fontWeight: '600',
+         marginLeft: 4,
+     },
+     gradientButton: {
+         flexDirection: 'row',
+         alignItems: 'center',
+         justifyContent: 'center',
+         paddingVertical: 12,
+         paddingHorizontal: 20,
+         borderRadius: 25,
+         elevation: 3, // Android shadow
+         shadowColor: '#000', // iOS shadow
+         shadowOffset: {
+             width: 0,
+             height: 2,
+         },
+         shadowOpacity: 0.25,
+         shadowRadius: 3.84,
+     }, */
     addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        // backgroundColor: '#2196F3', // Material Design blue
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-        elevation: 3, // Android shadow
-        shadowColor: '#000', // iOS shadow
+        position: 'absolute',
+        bottom: 24,
+        right: 24,
+        borderRadius: 30,
+        overflow: 'hidden',
+        elevation: 5,
+        shadowColor: '#4A90E2',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 4,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        gap: 8, // Space between icon and text
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+    },
+    gradientButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 30,
     },
     addButtonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
-        marginLeft: 4,
-    },
-    gradientButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-        elevation: 3, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        marginLeft: 8,
+        letterSpacing: 0.5,
     },
     editableField: {
         padding: 12,
@@ -2679,5 +3737,362 @@ const styles = StyleSheet.create({
     placeholderText: {
         color: '#999',
         fontStyle: 'italic',
+    },
+    paymentModalContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.9,
+        maxHeight: windowHeight * 0.7,
+        borderRadius: 20,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    paymentModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    paymentModalTitle: {
+        flex: 1,
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#014495',
+        marginLeft: 12,
+    },
+    paymentModalContent: {
+        padding: 15,
+    },
+    paymentOptionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderRadius: 12,
+        marginBottom: 8,
+        backgroundColor: '#F8F9FF',
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+    },
+    paymentOptionButtonActive: {
+        backgroundColor: '#EBF2FF',
+        borderColor: '#014495',
+    },
+    paymentOptionText: {
+        flex: 1,
+        fontSize: 16,
+        color: '#333',
+        marginLeft: 12,
+    },
+    paymentOptionTextActive: {
+        color: '#014495',
+        fontWeight: '600',
+    },
+    otherMethodInput: {
+        marginTop: 8,
+        padding: 15,
+        backgroundColor: '#F8F9FF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+    },
+    otherMethodTextInput: {
+        fontSize: 16,
+        color: '#333',
+        padding: 8,
+    },
+    modalDateTimeContainer: {
+        width: '80%', // Adjust width as needed
+        backgroundColor: 'white',
+        borderRadius: 15,
+        padding: 20,
+        elevation: 5, // Shadow effect for Android
+        shadowColor: '#000', // Shadow effect for iOS
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    modalDateTimeHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+        color: '#014495',
+    },
+    buttonDateTimeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    saveDateTimeButtonContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalNameOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalNameContainer: {
+        width: '80%', // Adjust width as needed
+        backgroundColor: 'white',
+        borderRadius: 15,
+        padding: 20,
+        elevation: 5, // Shadow effect for Android
+        shadowColor: '#000', // Shadow effect for iOS
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    modalNameHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+        color: '#014495',
+    },
+    inputName: {
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 15,
+        paddingHorizontal: 10,
+    },
+    buttonNameContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    saveButtonNameContainer: {
+        backgroundColor: '#014495',
+        borderRadius: 5,
+        padding: 10,
+        flex: 1,
+        alignItems: 'center',
+    },
+    cancelNameButton: {
+        backgroundColor: '#FF3D00',
+        borderRadius: 5,
+        padding: 10,
+        flex: 1,
+        marginRight: 10,
+        alignItems: 'center',
+    },
+    buttonNameText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    disabledNameButton: {
+        backgroundColor: '#CCCCCC', // Grey out the button when disabled
+    },
+    labelName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    descriptionName: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 10,
+    },
+    validationNameText: {
+        color: 'red',
+        fontSize: 12,
+        marginBottom: 10,
+    },
+    editPriceModalContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.9,
+        borderRadius: 20,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    editPriceModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    editPriceModalTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    editPriceModalCloseButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    priceInput: {
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+        borderRadius: 12,
+        marginBottom: 20,
+    },
+    buttonEditPriceContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    buttonEditPrice: {
+        backgroundColor: '#014495',
+        borderRadius: 5,
+        padding: 10,
+        flex: 1,
+        alignItems: 'center',
+    },
+    buttonEditPriceText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    disabledEditPriceButton: {
+        backgroundColor: '#CCCCCC', // Grey out the button when disabled
+    },
+    validationEditPriceText: {
+        color: 'red',
+        fontSize: 12,
+        marginBottom: 10,
+    },
+    modalEditPriceContainer: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 20,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    treatmentPrice: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    priceText: {
+        marginLeft: 5,
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    modalPaymentOverlay: {
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalPaymentContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        width: '90%',
+        maxHeight: '90%',
+    },
+    modalPaymentHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 10,
+    },
+    inputPayment: {
+        height: 40,
+        borderColor: '#E0E7FF',
+        borderWidth: 1,
+        borderRadius: 5,
+        padding: 10,
+        fontSize: 16,
+        color: '#333',
+    },
+    /*  gradientButton: {
+         padding: 10,
+         borderRadius: 5,
+         justifyContent: 'center',
+         alignItems: 'center',
+         width: '100%',
+     },
+     addButtonText: {
+         color: 'white',
+         fontSize: 16,
+         fontWeight: 'bold',
+     }, */
+    modalPaymentHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 10,
+    },
+
+    headerRightSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    deletePaymentButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#FFF0F0',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    paymentAmounts: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    paymentTimeText: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
+    },
+    paymentMethodContainer: {
+        marginTop: 10,
+        paddingTop: 10,
+        // borderTopWidth: 1,
+        // borderTopColor: '#eee',
+    },
+    paymentMethodBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E3F2FD',
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 15,
+        alignSelf: 'flex-start',
+        gap: 6,
+    },
+    paymentMethodText: {
+        color: '#014495',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    deleteAction: {
+        backgroundColor: '#FF3B30',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        height: '100%',
+        borderRadius: 10
+    },
+    deleteActionButton: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
     },
 });

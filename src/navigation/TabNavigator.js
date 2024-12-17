@@ -41,7 +41,7 @@ function TabNavigator() {
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
             }} />
             <Tab.Screen name="ClientStack" component={ClientStack} options={{
-                headerShown: true,
+                headerShown: false,
                 headerStyle: { backgroundColor: '#1F609A' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed

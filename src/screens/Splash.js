@@ -117,6 +117,7 @@ export default function Splash({ navigation }) {
             }
             await AsyncStorage.removeItem('userToken');
             dispatch(clearAuth())
+            navigation.navigate("SignIn")
             return null;
         }
     }
