@@ -22,7 +22,7 @@ function TabNavigator() {
 
                     if (route.name === 'Home') {
                         iconName = focused ? 'home' : 'home-outline';
-                    } else if (route.name === 'ClientStack') {
+                    } else if (route.name === 'Patients') {
                         iconName = focused ? 'people' : 'people-outline';
                     } else if (route.name === 'Calendar') {
                         iconName = focused ? 'calendar' : 'calendar-outline';
@@ -40,7 +40,7 @@ function TabNavigator() {
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
             }} />
-            <Tab.Screen name="ClientStack" component={ClientStack} options={{
+            <Tab.Screen name="Patients" component={ClientStack} options={{
                 headerShown: false,
                 headerStyle: { backgroundColor: '#1F609A' },
                 headerTintColor: '#fff', // This changes the text color to white

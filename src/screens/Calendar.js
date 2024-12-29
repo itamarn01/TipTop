@@ -13,6 +13,9 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import CalendarStats from '../components/CalendarStats';
 import { Api } from '../Api';
+import { useDispatch } from 'react-redux';
+import { setSelectedClient } from '../redux/slices/selectedClientSlice';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 
 export default function Calendar({ navigation }) {
     const [selected, setSelected] = useState('');
@@ -30,6 +33,7 @@ export default function Calendar({ navigation }) {
     });
     const user = useSelector((state) => state.auth.user);
     const userId = user._id
+    const dispatch = useDispatch();
     console.log("userId:", userId)
     const fetchMonthlyStats = async (month, year) => {
         try {
@@ -41,6 +45,11 @@ export default function Calendar({ navigation }) {
         } catch (error) {
             console.error('Error fetching monthly stats:', error);
         }
+    };
+
+    const handleClientPress = (client) => {
+        dispatch(setSelectedClient(client));
+        navigation.navigate("Patients", { screen: "Treatments" });
     };
 
     const fetchTreatments = async (month, year) => {
@@ -62,7 +71,7 @@ export default function Calendar({ navigation }) {
                 };
             });
             setMarkedDates(marked);
-
+            console.log(" calendar responseData:", response.data)
             // Update filtered treatments if a date is selected
             if (selected) {
                 const filtered = response.data.filter(t =>
@@ -136,29 +145,37 @@ export default function Calendar({ navigation }) {
             duration={500}
             style={styles.treatmentCard}
         >
-            <View style={styles.treatmentHeader}>
-                <Text style={styles.clientName}>
-                    {item.clientId?.name} {item.clientId?.lastName}
-                </Text>
-                <Text style={styles.time}>
-                    {new Date(item.treatmentDate).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}
-                </Text>
-            </View>
+            <TouchableOpacity onPress={() => handleClientPress(item.clientId)}>
 
-            <Text
-                style={styles.summary}
-                numberOfLines={2}
-                ellipsizeMode="tail"
-            >
-                {item.treatmentSummary || 'No summary'}
-            </Text>
+                <View style={styles.treatmentHeader}>
+                    <Text style={styles.clientName}>
+                        {item.clientId?.name} {item.clientId?.lastName}
+                    </Text>
+                    <Text style={styles.dateTime}>
+                        {new Date(item.treatmentDate).toLocaleDateString([], {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        })}{' '}
+                        {new Date(item.treatmentDate).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </Text>
+                </View>
 
-            <View style={styles.priceContainer}>
-                <Text style={styles.price}>${item.treatmentPrice}</Text>
-            </View>
+                <Text
+                    style={styles.summary}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                >
+                    {item.treatmentSummary || 'No summary'}
+                </Text>
+
+                <View style={styles.priceContainer}>
+                    <Text style={styles.price}>${item.treatmentPrice}</Text>
+                </View>
+            </TouchableOpacity>
         </Animatable.View>
     );
 
@@ -289,5 +306,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         textAlign: 'center',
+    },
+    dateTime: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'right',
     },
 });

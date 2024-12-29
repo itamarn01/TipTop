@@ -90,7 +90,7 @@ const NoClientsComponent = ({ onAddClient }) => (
             onPress={onAddClient}
         >
             <MaterialIcons name="person-add" size={24} color="white" />
-            <Text style={styles.emptyStateButtonText}>Add New Client</Text>
+            <Text style={styles.emptyStateButtonText}>Add New Patient</Text>
         </TouchableOpacity>
     </Animatable.View>
 );
@@ -154,6 +154,7 @@ export default function Clients({ navigation }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const nameRef = useRef(null);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -249,7 +250,7 @@ export default function Clients({ navigation }) {
         if (!newClient.lastName) newErrors.lastName = 'Last Name is required';
         /* if (!newClient.phone) newErrors.phone = 'Phone number is required';
         if (!newClient.email) newErrors.email = 'Email is required';*/
-        if (!newClient.birthday) newErrors.birthday = 'Birthday is required';
+        // if (!newClient.birthday) newErrors.birthday = 'Birthday is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -278,6 +279,7 @@ export default function Clients({ navigation }) {
         navigation.navigate("Treatments");
     };
 
+
     const toggleSearch = () => {
         setIsSearchVisible(!isSearchVisible);
         Animated.spring(searchAnimation, {
@@ -289,6 +291,9 @@ export default function Clients({ navigation }) {
     const handleAddClient = () => {
         setNewClient({ ...newClient, adminId: user._id });
         setModalVisible(true);
+        setTimeout(() => {
+            nameRef.current?.focus();
+        }, 100);
     };
 
     const searchClients = async (searchText) => {
@@ -328,7 +333,7 @@ export default function Clients({ navigation }) {
                 duration={1000}
                 style={styles.header}
             >
-                <Text style={styles.headerTitle}>My Clients</Text>
+                <Text style={styles.headerTitle}>My Patients</Text>
                 <TouchableOpacity
                     onPress={() => {
                         setIsSearchVisible(!isSearchVisible);
@@ -410,7 +415,7 @@ export default function Clients({ navigation }) {
                                 onPress={handleAddClient}
                             >
                                 <MaterialIcons name="person-add" size={24} color="white" />
-                                <Text style={styles.addButtonText}>Add New Client</Text>
+                                <Text style={styles.addButtonText}>Add New Patient</Text>
                             </TouchableOpacity>
 
                             {isLoading && page === 1 ? (
@@ -507,62 +512,159 @@ export default function Clients({ navigation }) {
                 transparent={true}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <Animatable.View
-                        animation="slideInUp"
-                        duration={300}
-                        style={styles.modalContent}
+                <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={{ flex: 1 }}
                     >
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Add New Client</Text>
+                        <View style={[styles.modalContainer, {
+                            // bottom: keyboardHeight,
+                        }]}>
+                            <Animatable.View
+                                animation="slideInUp"
+                                duration={300}
+                                style={[styles.modalContent,/*  {
+                                    bottom: keyboardHeight,
+                                } */]}
+                            >
+                                <Animated.View
+                                    style={[
+                                        styles.buttonContainer,
+                                        /*  {
+                                             bottom: keyboardHeight,
+                                         } */
+                                    ]}
+                                >
+                                    <TouchableOpacity
+                                        style={styles.closeButton}
+                                        onPress={() => {
+                                            setNewClient({
+                                                name: '',
+                                                lastName: '',
+                                                birthday: '',
+                                                adminId: user._id
+                                            });
+                                            setModalVisible(false);
+                                        }}
+                                    >
+                                        <MaterialIcons name="close" size={24} color="#666" />
+                                        {/* <Text style={styles.cancelButtonText}>Cancel</Text> */}
+                                    </TouchableOpacity>
+                                    <Text style={styles.modalTitle}>Add New Patient</Text>
+                                    <TouchableOpacity
+                                        style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                                        onPress={async () => {
+                                            setIsSaving(true);
+                                            await handleSaveClient();
+                                            setIsSaving(false);
+                                        }}
+                                        disabled={isSaving}
+                                    >
+                                        {isSaving ? (
+                                            <ActivityIndicator color="white" size="small" />
+                                        ) : (
+                                            <Text style={styles.saveButtonText}>Save</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </Animated.View>
+                                {/*  <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Add New Patient</Text>
                             <TouchableOpacity
                                 onPress={() => setModalVisible(false)}
                                 style={styles.closeButton}
                             >
                                 <MaterialIcons name="close" size={24} color="#666" />
                             </TouchableOpacity>
-                        </View>
+                        </View> */}
 
-                        <ScrollView style={styles.modalScroll}>
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Client name</Text>
-                                <TextInput
-                                    style={[styles.input, errors.name && styles.errorInput]}
-                                    placeholder="Name"
-                                    value={newClient.name}
-                                    onChangeText={(text) => setNewClient({ ...newClient, name: text })}
-                                    placeholderTextColor="#999"
-                                />
-                                {errors.name && (
-                                    <Animatable.Text
-                                        animation="shake"
-                                        style={styles.errorText}
-                                    >
-                                        {errors.name}
-                                    </Animatable.Text>
-                                )}
-                            </View>
+                                <ScrollView style={styles.modalScroll} keyboardShouldPersistTaps={"handled"}>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Client last name</Text>
-                                <TextInput
-                                    style={[styles.input, errors.lastName && styles.errorInput]}
-                                    placeholder="Last Name"
-                                    value={newClient.lastName}
-                                    onChangeText={(text) => setNewClient({ ...newClient, lastName: text })}
-                                    placeholderTextColor="#999"
-                                />
-                                {errors.lastName && (
-                                    <Animatable.Text
-                                        animation="shake"
-                                        style={styles.errorText}
-                                    >
-                                        {errors.lastName}
-                                    </Animatable.Text>
-                                )}
-                            </View>
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}>Patient name</Text>
+                                        <TextInput
+                                            ref={nameRef}
+                                            style={[styles.input, errors.name && styles.errorInput]}
+                                            placeholder="Name"
+                                            value={newClient.name}
+                                            onChangeText={(text) => setNewClient({ ...newClient, name: text })}
+                                            placeholderTextColor="#999"
+                                        />
+                                        {errors.name && (
+                                            <Animatable.Text
+                                                animation="shake"
+                                                style={styles.errorText}
+                                            >
+                                                {errors.name}
+                                            </Animatable.Text>
+                                        )}
+                                    </View>
 
-                            <View style={styles.inputGroup}>
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}>Patient last name</Text>
+                                        <TextInput
+                                            style={[styles.input, errors.lastName && styles.errorInput]}
+                                            placeholder="Last Name"
+                                            value={newClient.lastName}
+                                            onChangeText={(text) => setNewClient({ ...newClient, lastName: text })}
+                                            placeholderTextColor="#999"
+                                        />
+                                        {errors.lastName && (
+                                            <Animatable.Text
+                                                animation="shake"
+                                                style={styles.errorText}
+                                            >
+                                                {errors.lastName}
+                                            </Animatable.Text>
+                                        )}
+                                    </View>
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}>Client gender</Text>
+                                        <View style={styles.genderContainer}>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    setGender("male");
+                                                    setNewClient({ ...newClient, gender: "male" })
+                                                }}
+                                                style={[
+                                                    styles.genderButton,
+                                                    gender === "male" && styles.genderButtonActive
+                                                ]}
+                                            >
+                                                <FontAwesome
+                                                    name="male"
+                                                    size={24}
+                                                    color={gender === "male" ? "white" : "#666"}
+                                                />
+                                                <Text style={[
+                                                    styles.genderText,
+                                                    gender === "male" && styles.genderTextActive
+                                                ]}>Male</Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    setGender("female");
+                                                    setNewClient({ ...newClient, gender: "female" })
+                                                }}
+                                                style={[
+                                                    styles.genderButton,
+                                                    gender === "female" && styles.genderButtonActive
+                                                ]}
+                                            >
+                                                <FontAwesome
+                                                    name="female"
+                                                    size={24}
+                                                    color={gender === "female" ? "#FF69B4" : "#666"}
+                                                />
+                                                <Text style={[
+                                                    styles.genderText,
+                                                    gender === "female" && styles.genderTextActive
+                                                ]}>Female</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+
+                                    {/* <View style={styles.inputGroup}>
                                 <Text style={styles.inputLabel}>Client birthday</Text>
                                 <View style={styles.datePickerContainer}>
                                     <DateTimePicker
@@ -574,99 +676,19 @@ export default function Clients({ navigation }) {
                                         style={styles.datePicker}
                                     />
                                 </View>
-                            </View>
+                            </View> */}
 
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Client gender</Text>
-                                <View style={styles.genderContainer}>
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setGender("male");
-                                            setNewClient({ ...newClient, gender: "male" })
-                                        }}
-                                        style={[
-                                            styles.genderButton,
-                                            gender === "male" && styles.genderButtonActive
-                                        ]}
-                                    >
-                                        <FontAwesome
-                                            name="male"
-                                            size={24}
-                                            color={gender === "male" ? "#014495" : "#666"}
-                                        />
-                                        <Text style={[
-                                            styles.genderText,
-                                            gender === "male" && styles.genderTextActive
-                                        ]}>Male</Text>
-                                    </TouchableOpacity>
 
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setGender("female");
-                                            setNewClient({ ...newClient, gender: "female" })
-                                        }}
-                                        style={[
-                                            styles.genderButton,
-                                            gender === "female" && styles.genderButtonActive
-                                        ]}
-                                    >
-                                        <FontAwesome
-                                            name="female"
-                                            size={24}
-                                            color={gender === "female" ? "#FF69B4" : "#666"}
-                                        />
-                                        <Text style={[
-                                            styles.genderText,
-                                            gender === "female" && styles.genderTextActive
-                                        ]}>Female</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </ScrollView>
+                                </ScrollView>
 
-                        <Animated.View
-                            style={[
-                                styles.buttonContainer,
-                                {
-                                    bottom: keyboardHeight,
-                                }
-                            ]}
-                        >
-                            <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={() => {
-                                    setNewClient({
-                                        name: '',
-                                        lastName: '',
-                                        birthday: '',
-                                        adminId: user._id
-                                    });
-                                    setModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                                onPress={async () => {
-                                    setIsSaving(true);
-                                    await handleSaveClient();
-                                    setIsSaving(false);
-                                }}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? (
-                                    <ActivityIndicator color="white" size="small" />
-                                ) : (
-                                    <Text style={styles.saveButtonText}>Save</Text>
-                                )}
-                            </TouchableOpacity>
-                        </Animated.View>
-                    </Animatable.View>
-                </View>
+                            </Animatable.View>
+                        </View>
+                    </KeyboardAvoidingView>
+                </TouchableWithoutFeedback>
             </Modal>
         </KeyboardAvoidingView>
+
     );
 }
 const styles = StyleSheet.create({
@@ -787,6 +809,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         padding: 20,
         width: '100%',
+        maxHeight: "85%"
     },
     modalHeader: {
         flexDirection: 'row',
@@ -930,6 +953,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
+        // backgroundColor: "rgba(0,0,0,0.1)",
+        // width: windowWidth
     },
     cancelButton: {
         backgroundColor: '#FF3B30',
