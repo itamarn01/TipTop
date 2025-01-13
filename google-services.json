@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "826801571021",
+    "project_id": "tiptop-b0c7d",
+    "storage_bucket": "tiptop-b0c7d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826801571021:android:df66111319e955b677d584",
+        "android_client_info": {
+          "package_name": "com.gigtunetry.TipTop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLyuK8UWti_C4DH1rJNYAvsA2YDDmb_fc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

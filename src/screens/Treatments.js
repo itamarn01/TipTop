@@ -41,6 +41,7 @@ import ParentsSection from "../components/ParentsSection";
 //  import { Image } from 'expo-image';
 // import FastImage from 'react-native-fast-image'
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { Api } from "../Api";
 import axios from "axios";
@@ -58,6 +59,12 @@ import * as Animatable from 'react-native-animatable';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Image as ImageCompressor } from "react-native-compressor";
+import { WebView } from 'react-native-webview';
+import { SafeAreaView } from "react-native-safe-area-context";
+import AntDesign from '@expo/vector-icons/AntDesign';
+import * as DocumentPicker from "expo-document-picker";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -536,6 +543,164 @@ export default function Treatments({ navigation }) {
     const [idModalVisible, setIdModalVisible] = useState(false);
     const [isIdSaving, setIsIdSaving] = useState(false);
     const idInputRef = useRef(null);
+    const [files, setFiles] = useState([]);
+    const [modalFileVisible, setModalFileVisible] = useState(false);
+    const [modalFilePickerVisible, setModalFilePickerVisible] = useState(false);
+    const [selectedFile, setSelectedFile] = useState();
+    const [loadingFiles, setLoadingFiles] = useState(false)
+    const [uploadFileLoading, setUploadFileLoading] = useState(false)
+
+    const pickImage = async () => {
+        const permissionResult =
+            await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (permissionResult.granted === false) {
+            alert("אין הרשאה לגלריה. היכנס להגדרות");
+            return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            const compressedImage = await ImageCompressor.compress(result.assets[0].uri, {
+                compressionMethod: "auto",
+            });
+
+            uploadImage(compressedImage);
+        }
+    };
+    // Function to take a photo
+    const takePhoto = async () => {
+        const permissionResult =
+            await ImagePicker.requestCameraPermissionsAsync()
+        if (permissionResult.granted === false) {
+            alert("אין הרשאה לגלריה. היכנס להגדרות");
+            return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            const compressedImage = await ImageCompressor.compress(result.assets[0].uri, {
+                compressionMethod: "auto",
+            });
+            uploadImage(compressedImage);
+        }
+    };
+    // Add the pickFile function
+    const pickFile = async () => {
+        try {
+
+            let result = await DocumentPicker.getDocumentAsync({
+                type: "application/pdf",
+            });
+            if (!result.canceled) {
+                uploadFile(result);
+                // console.log("resault:", result.assets[0].name)
+            }
+
+            // Call your existing uploadFile function with the selected file URI
+        } catch (err) {
+            if (DocumentPicker.isCancel(err)) {
+                console.log('User cancelled the picker');
+            } else {
+                console.error('Error picking file:', err);
+            }
+        }
+    };
+
+
+    // Function to upload the file image
+    const uploadImage = async (fileUri) => {
+        setModalFilePickerVisible(false)
+        setUploadFileLoading(true)
+        const formData = new FormData();
+        formData.append('file', {
+            uri: fileUri,
+            name: 'photo.jpg',
+            type: 'image/jpeg',
+        });
+        try {
+            const response = await axios.post(`${Api}/profile/${clientId}/files`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            setFiles(response.data.files);
+            setUploadFileLoading(false)
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            setModalFilePickerVisible(false)
+            setUploadFileLoading(false)
+        }
+    };
+
+    // Function to upload the file
+    const uploadFile = async (file) => {
+        setModalFilePickerVisible(false)
+        setUploadFileLoading(true)
+        const formData = new FormData();
+        formData.append("file", {
+            uri: file.assets[0].uri,
+            name: file.assets[0].name,
+            type: file.assets[0].mimeType,
+        });
+
+        try {
+            const response = await axios.post(`${Api}/profile/${clientId}/files`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            setFiles(response.data.files);
+            setUploadFileLoading(false)
+        } catch (error) {
+            setModalFilePickerVisible(false)
+            setUploadFileLoading(false)
+            console.error('Error uploading file:', error);
+        }
+    };
+
+    // Function to fetch files
+    const fetchFiles = async () => {
+        try {
+            setLoadingFiles(true)
+            const response = await axios.get(`${Api}/profile/${clientId}/files`);
+            setFiles(response.data);
+            setLoadingFiles(false)
+        } catch (error) {
+            setLoadingFiles(false)
+            console.error('Error fetching files:', error);
+        }
+    };
+
+    // Function to delete a file
+    const deleteFile = async (index) => {
+        try {
+            await axios.delete(`${Api}/profile/${clientId}/files/index/${index}`);
+            fetchFiles(); // Refresh the file list
+        } catch (error) {
+            console.error('Error deleting file:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchFiles();
+    }, []);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchFiles()
+        });
+
+        return unsubscribe;
+    }, [navigation]);
 
     const handleSaveId = async (clientId) => {
         if (!idNumber) return;
@@ -727,24 +892,29 @@ export default function Treatments({ navigation }) {
     }, []);
 
     const handlePageChange = (page) => {
+        console.log("page:", page)
         setActiveTab(page);
-        translateX.value = withTiming(page * (windowWidth / 3)); // Adjust width division as per number of tabs
+        translateX.value = withTiming(page * (windowWidth / 4)); // Adjust width division as per number of tabs
 
         // Set the page in PagerView
         if (pagerRef.current) {
             pagerRef.current.setPage(page);
+        }
+        if (page === 3) {
+            fetchFiles()
         }
     };
 
     const onPageSelected = (e) => {
         const page = e.nativeEvent.position;
         setActiveTab(page);
-        translateX.value = withTiming(page * (windowWidth / 3)); // Sync the indicator animation with swipe
+        translateX.value = withTiming(page * (windowWidth / 4)); // Sync the indicator animation with swipe
     };
 
     const animatedIndicatorStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: translateX.value }],
     }));
+
 
     const fetchClientData = async () => {
         try {
@@ -1389,7 +1559,7 @@ export default function Treatments({ navigation }) {
         const totalPending = pendingTreatments.reduce((sum, t) => sum + (parseFloat(t) || 0), 0) - totalPaid;
         const [paymentModalVisible, setPaymentModalVisible] = useState(false);
         const [paymentAmount, setPaymentAmount] = useState('');
-        const [paymentMethod, setPaymentMethod] = useState('');
+        const [paymentMethod, setPaymentMethod] = useState('Cash');
         const [paymentStage, setPaymentStage] = useState(1); // 1: Amount, 2: Method, 3: Confirmation
         const paymentMethods = ['Cash', 'Bank Transfer', 'Paybox', 'Bit', 'Credit Card', 'Google Pay', 'Apple Pay', 'V-Check', 'Bitcoin', 'Ethereum', 'Payoneer', 'Debit Card', 'PayPal'];
         const amountInputRef = useRef(null);
@@ -1570,7 +1740,7 @@ export default function Treatments({ navigation }) {
                     style={styles.addButton}
                     onPress={() => {
                         setPaymentAmount('');
-                        setPaymentMethod('');
+                        setPaymentMethod('Cash');
                         setPaymentStage(1);
                         setPaymentModalVisible(true);
                     }}
@@ -1731,7 +1901,7 @@ export default function Treatments({ navigation }) {
                 style={styles.header}
             >
                 <TouchableOpacity
-                    onPress={() => navigation.goBack()}
+                    onPress={() => navigation.navigate("Clients")}
                     style={styles.backButton}
                 >
                     <MaterialIcons name="arrow-back" size={24} color="#014495" />
@@ -2354,9 +2524,9 @@ export default function Treatments({ navigation }) {
                                                     </TouchableOpacity> */}
                                                     <TouchableOpacity onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
                                                         <View style={styles.treatmentPrice}>
-                                                            <MaterialIcons name="attach-money" size={20} color="#014495" />
+                                                            {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
                                                             <Text style={styles.priceText}>
-                                                                {item.treatmentPrice}
+                                                                {item.treatmentPrice === 0 ? 'Add price ' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
                                                             </Text>
                                                         </View>
                                                     </TouchableOpacity>
@@ -2400,6 +2570,222 @@ export default function Treatments({ navigation }) {
                 {/* Payments Tab */}
                 <View key="3" style={styles.page}>
                     <PaymentsList treatments={treatments} payments={clientPayments} clientId={clientId} userId={user._id} />
+                </View>
+                <View key='4' style={styles.page}>
+
+                    {files.length === 0 && (
+                        <View style={styles.emptyFilesState}>
+                            <MaterialCommunityIcons name="file-document-edit" size={60} color="#014495" />
+                            <Text style={styles.emptyFilesStateTitle}>No Files Yet</Text>
+                            <Text style={styles.emptyFilesStateText}>
+                                You haven't uploaded any files yet. Start by taking a photo or choosing from your library.
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => setModalFilePickerVisible(true)}
+                    >
+                        <LinearGradient
+                            colors={['#4A90E2', '#357ABD']}
+                            style={styles.gradientButton}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        >
+                            <MaterialIcons name="add" size={24} color="white" />
+                            <Text style={styles.addButtonText}>Add File</Text>
+                        </LinearGradient>
+                    </TouchableOpacity> */}
+
+
+                    <Modal visible={modalFilePickerVisible} animationType="slide"
+                        transparent={true} onRequestClose={() => setModalFilePickerVisible(false)} onShow={() => {
+                            // Focus the amount input when the modal is shown
+                            console.log("ani patuach")
+                        }}>
+                        <View style={styles.modalPaymentOverlay}>
+                            <Animatable.View
+                                animation="slideInUp"
+                                duration={300}
+                                style={styles.modalFilePickerContainer}
+                            >
+                                <View style={styles.modalFilePickerHeader}>
+                                    <Text style={styles.modalFilePickerTitle}>Select an Option</Text>
+                                    <TouchableOpacity onPress={() => setModalFilePickerVisible(false)} style={styles.modalFilePickerCloseButton}>
+                                        <MaterialIcons name="close" size={24} color="#666" />
+                                    </TouchableOpacity>
+                                </View>
+                                <ScrollView style={styles.modalContent}>
+                                    <TouchableOpacity style={styles.optionFilePickerButton} onPress={takePhoto}>
+                                        <MaterialIcons name="camera-alt" size={24} color="#014495" />
+                                        <Text style={styles.optionFilePickerText}>Take Photo</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.optionFilePickerButton} onPress={pickImage}>
+                                        <MaterialIcons name="photo-library" size={24} color="#014495" />
+                                        <Text style={styles.optionFilePickerText}>Choose from Library</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.optionFilePickerButton} onPress={pickFile}>
+                                        <MaterialIcons name="folder" size={24} color="#014495" />
+                                        <Text style={styles.optionFilePickerText}>Choose from Files</Text>
+                                    </TouchableOpacity>
+                                </ScrollView>
+                            </Animatable.View>
+                        </View>
+                    </Modal>
+
+                    {loadingFiles ? (
+                        // Skeleton Loader
+                        /*  <SkeletonLoader />  */// Replace with your actual skeleton loader component
+                        /*  <ActivityIndicator size={"large"} color={"blue"} />  */
+                        <FlatList
+                            data={Array.from({ length: 5 })} // Create an array for skeletons
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={() => (
+                                <Animatable.View
+                                    animation="fadeIn"
+                                    duration={300}
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        padding: 10,
+                                        backgroundColor: '#f0f0f0',
+                                        borderRadius: 10,
+                                        marginBottom: 10,
+                                        elevation: 2,
+                                    }}
+                                >
+                                    <View style={{ width: 100, height: 100, backgroundColor: '#e0e0e0', borderRadius: 8 }} />
+                                    <View style={{ flex: 1, marginLeft: 10 }}>
+                                        <View style={{ height: 20, backgroundColor: '#e0e0e0', borderRadius: 4, marginBottom: 5 }} />
+                                        <View style={{ height: 15, backgroundColor: '#e0e0e0', borderRadius: 4, marginBottom: 5 }} />
+                                        <View style={{ height: 15, backgroundColor: '#e0e0e0', borderRadius: 4 }} />
+                                    </View>
+                                </Animatable.View>
+                            )}
+                            contentContainerStyle={{ padding: 10 }}
+                        />
+                    ) : (
+                        <FlatList
+                            data={files}
+                            keyExtractor={(item) => item._id}
+                            renderItem={({ item, index }) => {
+                                // Convert bytes to KB or MB
+                                const formatBytes = (bytes) => {
+                                    if (bytes < 1024) return `${bytes} bytes`;
+                                    else if (bytes < 1048576) return `${(bytes / 1024).toFixed(2)} KB`;
+                                    else return `${(bytes / 1048576).toFixed(2)} MB`;
+                                };
+
+                                return (
+                                    <TouchableOpacity onPress={() => {
+                                        // const fileExtension = item.url.split('.').pop().toLowerCase(); // Get the file extension
+                                        // if (fileExtension === 'pdf') {
+                                        //     Linking.openURL(item.url); // Open PDF in external viewer
+                                        // } else {
+                                        setSelectedFile(item);
+                                        setModalFileVisible(true); // Open modal for other file types
+                                        // }
+                                    }}>
+                                        <Animatable.View
+                                            animation="fadeInUp"
+                                            duration={300}
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: 10,
+                                                backgroundColor: 'white',
+                                                borderRadius: 10,
+                                                marginBottom: 10,
+                                                elevation: 2,
+                                                shadowColor: '#000',
+                                                shadowOffset: { width: 0, height: 2 },
+                                                shadowOpacity: 0.1,
+                                                shadowRadius: 4,
+                                            }}
+                                        >
+                                            <Image source={{ uri: item.url }} style={{ width: 100, height: 100, marginRight: 10, borderRadius: 8 }} />
+                                            <View style={{ flex: 1 }}>
+                                                {item.url && <Text style={{ fontWeight: 'bold' }}>{item.url.split('/').pop()}</Text>}
+                                                <Text style={{ color: '#666' }}>{formatBytes(item.bytes)}</Text>
+                                                <Text style={{ color: '#999' }}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                                            </View>
+                                            <TouchableOpacity onPress={() => {
+                                                Alert.alert(
+                                                    "Delete File",
+                                                    "Are you sure you want to delete this file?",
+                                                    [
+                                                        {
+                                                            text: "Cancel",
+                                                            style: "cancel"
+                                                        },
+                                                        {
+                                                            text: "Delete",
+                                                            style: "destructive",
+                                                            onPress: () => deleteFile(index)
+                                                        }
+                                                    ]
+                                                );
+                                            }} style={{ marginLeft: 10 }}>
+                                                <MaterialIcons name="delete" size={24} color="red" />
+                                            </TouchableOpacity>
+                                        </Animatable.View>
+                                    </TouchableOpacity>
+                                );
+                            }}
+                        />
+
+                    )}
+                    {uploadFileLoading && <ActivityIndicator size={"large"} color={"blue"} />}
+                    <Modal visible={modalFileVisible} animationType="slide"
+                        transparent={true} onRequestClose={() => setModalFileVisible(false)} onShow={() => {
+
+
+                        }}>
+                        <View style={styles.modalPaymentOverlay}>
+                            <SafeAreaView>
+
+                                <Animatable.View
+                                    animation="slideInUp"
+                                    duration={300} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "black", width: windowWidth, height: windowHeight }}>
+                                    <View style={styles.fileHeader}>
+                                        <TouchableOpacity style={{ flexDirection: "row", width: windowWidth / 4 }} onPress={() => setModalFileVisible(false)}>
+                                            <AntDesign name="left" size={24} color="white" />
+
+                                            <Text style={{ color: "white", fontSize: 18 }}>Back</Text>
+
+                                        </TouchableOpacity>
+                                        {selectedFile ? (
+                                            <Text style={{ fontWeight: 'bold', color: "white" }}>{selectedFile.url.split('/').pop()}</Text>
+                                        ) : (
+                                            <Text style={{ color: 'white' }}>File doesn't exist</Text>
+                                        )}
+                                        <View style={{ width: windowWidth / 4 }}></View>
+                                    </View>
+                                    {selectedFile ? (
+                                        <WebView source={{ uri: selectedFile.url }} style={{ width: windowWidth /* * 0.9 */, height: windowHeight * 0.9, backgroundColor: 'transparent', marginTop: 50, }} scalesPageToFit={true}
+                                            contentMode="mobile" />
+                                    ) : null}
+
+                                </Animatable.View>
+                            </SafeAreaView>
+                        </View>
+                    </Modal>
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => setModalFilePickerVisible(true)}
+                    >
+                        <LinearGradient
+                            colors={['#4A90E2', '#357ABD']}
+                            style={styles.gradientButton}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        >
+                            <MaterialIcons name="add" size={24} color="white" />
+                            <Text style={styles.addButtonText}>Add File</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
                 </View>
             </PagerView>
 
@@ -2792,7 +3178,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
 
 const TabBar = ({ activeTab, handlePageChange, animatedIndicatorStyle }) => (
     <View style={styles.tabBarContainer}>
-        {['Profile', 'Treatments', 'Payments'].map((tab, index) => (
+        {['Profile', 'Treatments', 'Payments', 'Files'].map((tab, index) => (
             <TouchableOpacity
                 key={tab}
                 style={styles.tab}
@@ -2806,7 +3192,9 @@ const TabBar = ({ activeTab, handlePageChange, animatedIndicatorStyle }) => (
                         name={
                             index === 0 ? 'person' :
                                 index === 1 ? 'medical-services' :
-                                    'payments'
+                                    index === 2 ? 'payments' :
+                                        'insert-drive-file'
+
                         }
                         size={24}
                         color={activeTab === index ? '#014495' : '#666'}
@@ -2940,7 +3328,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         height: 3,
-        width: windowWidth / 3,
+        width: windowWidth / 4,
         backgroundColor: '#014495',
         borderRadius: 1.5,
     },
@@ -4376,4 +4764,58 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
+    modalFilePickerContainer: {
+        backgroundColor: 'white',
+        width: windowWidth * 0.9,
+        borderRadius: 15,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        padding: 20,
+    },
+    modalFilePickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalFilePickerTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#014495',
+    },
+    optionFilePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    optionFilePickerText: {
+        marginLeft: 10,
+        fontSize: 16,
+        color: '#333',
+    },
+    modalFilePickerCloseButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
+    },
+    fileHeader: {
+        marginTop: 50,
+        backgroundColor: 'black',
+        width: windowWidth,
+        borderRadius: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        flexDirection: 'row',
+        justifyContent: "space-between",
+        alignItems: "center",
+        height: windowHeight * 0.1
+    }
 });

@@ -18,9 +18,11 @@
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
       },
       "usesAppleSignIn": true,
-      "bundleIdentifier": "com.gigtunetry.TipTop"
+      "bundleIdentifier": "com.gigtunetry.TipTop",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#014495"
@@ -32,6 +34,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      ["@react-native-google-signin/google-signin"],
       [
         "expo-document-picker",
         {
@@ -41,7 +44,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
+          "photosPermission": "The app accesses your photos to let you share them with your friends.",
+          "cameraPermission": "The app needs access to your camera to take photos."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
         }
       ],
       [
@@ -68,7 +78,8 @@
       ],
       ["expo-apple-authentication"],
       "expo-localization",
-      "expo-font"
+      "expo-font",
+      "react-native-compressor"
     ],
     "extra": {
       "eas": {
