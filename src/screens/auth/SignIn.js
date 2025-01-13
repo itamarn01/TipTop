@@ -282,7 +282,7 @@ export default function SignIn({ navigation }) {
                             loop
                             style={styles.animation}
                         />
-                        <Text style={styles.title}>Welcome Back</Text>
+                        <Text style={styles.title}>Tip Top</Text>
                         <Text style={styles.subtitle}>Sign in to continue</Text>
                     </View>
 

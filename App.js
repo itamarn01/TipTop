@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   AppState,
+  StatusBar,
 } from "react-native";
 import * as Updates from "expo-updates";
 import { NavigationContainer } from '@react-navigation/native';
@@ -100,6 +101,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <RootNavigator onReady={onLayoutRootView} />
+      <StatusBar backgroundColor='#F5F6FA' barStyle="dark-content" />
     </Provider>
   );
 }

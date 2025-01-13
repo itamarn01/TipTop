@@ -282,7 +282,7 @@ export default function Home({ navigation }) {
                             <MaterialIcons name="schedule" size={24} color={COLORS.warning} />
                             <Text style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Pending</Text>
                             <Text style={[styles.paymentAmount, { color: COLORS.warning }]}>
-                                {stats.totalPending/*  ${stats.payments.find(p => p._id === 'pending')?.totalAmount || 0} */}
+                                ${stats.totalPending/*  ${stats.payments.find(p => p._id === 'pending')?.totalAmount || 0} */}
                             </Text>
                         </View>
                     </View>

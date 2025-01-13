@@ -68,6 +68,8 @@ const ClientStack = () => (
                 headerStyle: { backgroundColor: '#1F609A' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
+                headerLeft: () => null,
+
             }}
         />
         <Stack.Screen name="TreatmentForm" component={TreatmentForm} options={{
