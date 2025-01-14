@@ -322,7 +322,7 @@ export default function Clients({ navigation }) {
             <StatusBar backgroundColor="orange" barStyle="dark-content" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-            // style={styles.container}
+                style={styles.container}
             >
 
 
@@ -860,6 +860,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     emptyStateContainer: {
+
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',

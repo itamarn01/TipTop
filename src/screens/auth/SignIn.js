@@ -9,7 +9,7 @@ import {
     Dimensions,
     Animated,
     KeyboardAvoidingView,
-    Platform
+    Platform,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,8 +19,26 @@ import { setAuth } from "../../redux/slices/authSlice";
 import LottieView from 'lottie-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import axios from 'axios';
+import {
+    GoogleOneTapSignIn,
+    statusCodes,
+    isErrorWithCode,
+    isSuccessResponse,
+    isNoSavedCredentialFoundResponse,
+    GoogleSigninButton,
+} from '@react-native-google-signin/google-signin';
+import { GoogleSignin, } from '@react-native-google-signin/google-signin';
+import { Image } from 'expo-image';
 
-const { width, height } = Dimensions.get('window');
+const windowWidth = Dimensions.get("window").width;
+const windowHeight = Dimensions.get("window").height;
+const GuideLineBaseWidth = 414;
+const GuideLineBaseHeight = 896;
+const horizontalScale = (size) => (windowWidth / GuideLineBaseWidth) * size;
+const verticalScale = (size) => (windowHeight / GuideLineBaseHeight) * size;
+const moderateScale = (size, factor = 0.5) =>
+    size + (horizontalScale(size) - size) * factor;
 
 export default function SignIn({ navigation }) {
     const [email, setEmail] = useState('');
@@ -35,10 +53,48 @@ export default function SignIn({ navigation }) {
     const [countdown, setCountdown] = useState(0);
     const [isVerified, setIsVerified] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
+    const [googleUser, setGoogleUser] = useState();
     const dispatch = useDispatch();
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;
+    useEffect(() => {
+        GoogleSignin.configure({
+            webClientId: "826801571021-4qgv31c0n29lqfkksp1j2ufadshn0et0.apps.googleusercontent.com"
+        });
+    }, [])
+
+    const signInWithGoogle = async () => {
+        try {
+            console.log("start google auth...")
+            await GoogleSignin.hasPlayServices();
+            const response = await GoogleSignin.signIn();
+            handleGoogleLogin(response.user)
+            console.log(" google response:", response.user)
+            if (isSuccessResponse(response)) {
+                setGoogleUser({ userInfo: response.data });
+                console.log("google user data: ", response.data)
+            } else {
+                // sign in was cancelled by user
+                console.log("google user dont have details")
+            }
+        } catch (error) {
+            if (isErrorWithCode(error)) {
+                switch (error.code) {
+                    case statusCodes.IN_PROGRESS:
+                        // operation (eg. sign in) already in progress
+                        break;
+                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                        // Android only, play services not available or outdated
+                        break;
+                    default:
+                    // some other error happened
+                }
+            } else {
+                // an error that's not related to google sign in occurred
+            }
+        }
+    };
 
     useEffect(() => {
         Animated.parallel([
@@ -106,7 +162,6 @@ export default function SignIn({ navigation }) {
     };
     const handleAppleLogin = async () => {
         try {
-            console.log("ani bifinim")
             const credential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -136,29 +191,14 @@ export default function SignIn({ navigation }) {
         }
     };
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleLogin = async (user) => {
         try {
-            const { type, accessToken, user } = await Google.logInAsync({
-                // Get your Google client ID from the Google Developer Console
-                clientId: 'YOUR_GOOGLE_CLIENT_ID',
-            });
-
-            if (type === 'success') {
-                // Send accessToken to your backend
-                const response = await fetch(`${Api}/auth`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        token: accessToken,
-                        authProvider: 'google',
-                    }),
-                });
-                const data = await response.json();
-                await AsyncStorage.setItem('userToken', data.token);
-                goToHome()
-            }
+            console.log("google user starting upload:", user)
+            const response = await axios.post(`${Api}/auth/google-auth`, { googleUser: user });
+            const data = response.data; // Use the response from the Axios call
+            dispatch(setAuth({ token: data.token, user: data.user }));
+            await AsyncStorage.setItem('userToken', data.token);
+            goToHome();
         } catch (e) {
             console.log(e);
         }
@@ -351,13 +391,41 @@ export default function SignIn({ navigation }) {
                             <View style={styles.dividerLine} />
                         </View>
 
+
+
+                        <GoogleSigninButton
+                            size={GoogleSigninButton.Size.Wide}
+                            color={GoogleSigninButton.Color.Light}
+                            onPress={() => {
+                                signInWithGoogle()
+
+                            }}
+                            style={{ width: "100%", height: 50 }}
+                        />
+                        <View style={{ height: 20 }}></View>
                         <AppleAuthentication.AppleAuthenticationButton
                             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                            cornerRadius={25}
+                            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK} // Options: BLACK or WHITE
+                            cornerRadius={10} // Optional, ensures rounded corners
                             style={styles.appleButton}
                             onPress={handleAppleLogin}
                         />
+                        {/*  <TouchableOpacity
+                                style={styles.socialButton}
+                                onPress={handleAppleLogin}
+                            >
+                                <Image source={require('../../../assets/apple-logo.png')} style={styles.logo} />
+
+                            </TouchableOpacity> */}
+
+
+                        {/*  <AppleAuthentication.AppleAuthenticationButton
+                            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                            cornerRadius={10}
+                            style={styles.appleButton}
+                            onPress={handleAppleLogin}
+                        /> */}
 
                         <View style={styles.signupContainer}>
                             <Text style={styles.signupText}>Don't have an account? </Text>
@@ -670,5 +738,25 @@ const styles = StyleSheet.create({
         color: '#4A90E2',
         marginTop: 10,
         textDecorationLine: 'underline',
+    },
+    socialButton: {
+        backgroundColor: '#4A90E2', // Same background color for both buttons
+        borderRadius: 5,
+        // height: 50,
+        // width: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    logo: {
+        height: 50,
+        width: 50,
+        borderRadius: 5
+    },
+    appleButton: {
+        height: 50,       // Minimum height required by Apple is 44
+        width: "100%",       // Adjust width as per your design
+        borderRadius: 10, // Rounded corners for aesthetic compliance
+        marginBottom: 20, // Optional, for spacing
     },
 });
