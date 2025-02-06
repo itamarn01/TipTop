@@ -8,20 +8,20 @@ export default function CalendarStats({ stats }) {
         <Animatable.View animation="fadeInUp" style={styles.statsContainer}>
             <View style={styles.statCard}>
                 <MaterialIcons name="event" size={24} color="#014495" />
-                <Text style={styles.statNumber}>{stats.totalTreatments}</Text>
-                <Text style={styles.statLabel}>Treatments</Text>
+                <Text allowFontScaling={false} style={styles.statNumber}>{stats.totalTreatments}</Text>
+                <Text allowFontScaling={false} style={styles.statLabel}>Treatments</Text>
             </View>
 
             <View style={styles.statCard}>
                 <MaterialIcons name="attach-money" size={24} color="#014495" />
-                <Text style={styles.statNumber}>${stats.totalRevenue}</Text>
-                <Text style={styles.statLabel}>Revenue</Text>
+                <Text allowFontScaling={false} style={styles.statNumber}>${stats.totalRevenue}</Text>
+                <Text allowFontScaling={false} style={styles.statLabel}>Revenue</Text>
             </View>
 
             <View style={styles.statCard}>
                 <MaterialIcons name="people" size={24} color="#014495" />
-                <Text style={styles.statNumber}>{stats.uniqueClientsCount}</Text>
-                <Text style={styles.statLabel}>Clients</Text>
+                <Text allowFontScaling={false} style={styles.statNumber}>{stats.uniqueClientsCount}</Text>
+                <Text allowFontScaling={false} style={styles.statLabel}>Clients</Text>
             </View>
         </Animatable.View>
     );

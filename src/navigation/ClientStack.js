@@ -49,7 +49,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Clients from "../screens/Clients";
 import Treatments from "../screens/Treatments";
 import TreatmentForm from "../screens/TreatmentForm";
-
+import ClientForm from "../screens/ClientForm";
 const Stack = createStackNavigator();
 
 const ClientStack = () => (
@@ -72,7 +72,16 @@ const ClientStack = () => (
 
             }}
         />
-        <Stack.Screen name="TreatmentForm" component={TreatmentForm} options={{
+        <Stack.Screen
+            name="TreatmentForm"
+            component={TreatmentForm}
+            options={{
+                headerShown: true,
+                headerStyle: { backgroundColor: '#1F609A' },
+                headerTintColor: '#fff',
+            }}
+        />
+        <Stack.Screen name="ClientForm" component={ClientForm} options={{
             headerShown: true,
             headerStyle: { backgroundColor: '#1F609A' },
             headerTintColor: '#fff',

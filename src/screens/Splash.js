@@ -6,6 +6,7 @@ import { Provider, useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { checkTrackingStatus, requestTrackingPermission } from 'react-native-tracking-transparency';
+import LottieView from 'lottie-react-native';
 
 import { setTrackingPermission, clearTrackingPermission } from '../redux/slices/trackingSlice';
 export default function Splash({ navigation }) {
@@ -22,17 +23,17 @@ export default function Splash({ navigation }) {
             console.log("tracking process doesn't finish");
             return;
         }
-        const animations = animatedValues.map((value, index) =>
-            Animated.timing(value, {
-                toValue: 1,
-                duration: 5,
-                delay: 50,
-                useNativeDriver: true,
-            })
-        );
-        Animated.sequence(animations).start(() => {
-            setAnimationEnded(true);
-        });
+        /*  const animations = animatedValues.map((value, index) =>
+             Animated.timing(value, {
+                 toValue: 1,
+                 duration: 5,
+                 delay: 50,
+                 useNativeDriver: true,
+             })
+         );
+         Animated.sequence(animations).start(() => {
+             setAnimationEnded(true);
+         }); */
 
         // Animated.stagger(100, animations).start();
     }, [trackingPermissionProcessEnd]);
@@ -123,25 +124,46 @@ export default function Splash({ navigation }) {
     }
 
     useEffect(() => {
-        async function prepare() {
-            try {
-                if (animationEnded) {
-                    const token = await AsyncStorage.getItem('userToken');
-                    console.log("tokennnn:", token)
-                    if (token) {
-                        const user = await fetchUserDetails(token);
-                        dispatch(setAuth({ token: token, user: user }));
-                        console.log("user.name", user.name)
-                        setLoading(false)
-                        navigation.navigate("Main")
-                    } else { setLoading(false); navigation.navigate("SignIn"); }
-                }
-            } catch (e) {
-                console.warn(e);
-            }
-        }
+        const unsubscribe = navigation.addListener('focus', async () => {
+            const timer = setTimeout(() => {
+                setAnimationEnded(true);
+            }, 2000);
 
+            // Cleanup subscription on unmount
+            return () => {
+                clearTimeout(timer); // Clear the timer when the component unmounts or focus changes
+            };
+        });
+
+        // Cleanup the navigation listener on unmount
+        return () => unsubscribe();
+    }, [navigation]);
+
+    async function prepare() {
+        try {
+            console.log("check if anumationended")
+            if (animationEnded) {
+                const token = await AsyncStorage.getItem('userToken');
+                console.log("tokennnn:", token)
+                if (token) {
+                    const user = await fetchUserDetails(token);
+                    dispatch(setAuth({ token: token, user: user }));
+                    console.log("user.name", user.name)
+                    setLoading(false)
+                    setAnimationEnded(false)
+                    navigation.navigate("Main")
+                } else { setLoading(false); setAnimationEnded(false); navigation.navigate("SignIn"); }
+            }
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    useEffect(() => {
+        // const unsubscribe = navigation.addListener('focus', async () => {
         prepare();
+        // });
+        /*  return () => unsubscribe(); */
     }, [animationEnded]);
 
     /*  const onLayoutRootView = useCallback(async () => {
@@ -158,7 +180,17 @@ export default function Splash({ navigation }) {
 
 
         <View style={styles.container}>
-            <View style={styles.dotContainer}>{renderDots()}</View>
+            <View>
+
+            </View>
+            <LottieView
+                source={require('../../assets/animation/icon.json')} // You'll need to add this animation
+                autoPlay
+                loop
+                style={styles.animation}
+            /*  onAnimationFinish={() => setAnimationEnded(true)} */
+            />
+            {/* <View style={styles.dotContainer}>{renderDots()}</View> */}
         </View>
     );
 }
@@ -183,5 +215,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: '#85C1E9', // Light blue dots
         margin: 5,
+    },
+    animation: {
+        width: 200,
+        height: 200,
     },
 });

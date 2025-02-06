@@ -28,7 +28,9 @@
         "backgroundColor": "#014495"
       },
       "permissions": ["android.permission.RECORD_AUDIO"],
-      "package": "com.gigtunetry.TipTop"
+      "package": "com.gigtunetry.TipTop",
+      "versionCode": 1,
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -10,6 +10,9 @@ import {
     Animated,
     KeyboardAvoidingView,
     Platform,
+    InputAccessoryView,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,16 +72,19 @@ export default function SignIn({ navigation }) {
             console.log("start google auth...")
             await GoogleSignin.hasPlayServices();
             const response = await GoogleSignin.signIn();
+            // const tokens = await GoogleSignin.getTokens(); 
+            console.log("response.user google:", response.user)
             handleGoogleLogin(response.user)
             console.log(" google response:", response.user)
-            if (isSuccessResponse(response)) {
-                setGoogleUser({ userInfo: response.data });
-                console.log("google user data: ", response.data)
-            } else {
-                // sign in was cancelled by user
-                console.log("google user dont have details")
-            }
+            /*   if (isSuccessResponse(response)) {
+                  setGoogleUser({ userInfo: response.data });
+                  console.log("google user data: ", response.data)
+              } else {
+                  // sign in was cancelled by user
+                  console.log("google user dont have details")
+              } */
         } catch (error) {
+            console.log("error google auth:", error)
             if (isErrorWithCode(error)) {
                 switch (error.code) {
                     case statusCodes.IN_PROGRESS:
@@ -122,7 +128,7 @@ export default function SignIn({ navigation }) {
         navigation.navigate('SignUp');
     };
     const goToHome = () => {
-        navigation.navigate('Main');
+        navigation.navigate('Splash');
     };
     const validateInputs = () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -151,6 +157,7 @@ export default function SignIn({ navigation }) {
             const data = await response.json();
             if (response.ok) {
                 await AsyncStorage.setItem('userToken', data.token);
+                dispatch(setAuth({ token: data.token, user: data.user }));
                 goToHome()
             } else {
                 Alert.alert('Login Failed', data.message || 'Please check your credentials and try again.');
@@ -296,121 +303,139 @@ export default function SignIn({ navigation }) {
             return false;
         }
     };
-
+    const inputAccessoryViewID = 'inputAccessoryViewID';
     return (
         <LinearGradient
             colors={['#4A90E2', '#5AB1FF']}
             style={styles.container}
         >
+            {Platform.OS === "ios" && <InputAccessoryView nativeID={inputAccessoryViewID}>
+                <TouchableOpacity onPress={() => Keyboard.dismiss()} style={styles.accessoryButton}>
+                    <Text allowFontScaling={false} style={styles.accessoryButtonText}>Close</Text>
+                </TouchableOpacity>
+            </InputAccessoryView>}
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}
             >
-                <Animated.View
-                    style={[
-                        styles.content,
-                        {
-                            opacity: fadeAnim,
-                            transform: [{ translateY: slideAnim }]
-                        }
-                    ]}
-                >
-                    <View style={styles.logoContainer}>
-                        <LottieView
-                            source={require('../../../assets/animation/therapy-animation.json')} // You'll need to add this animation
-                            autoPlay
-                            loop
-                            style={styles.animation}
-                        />
-                        <Text style={styles.title}>Tip Top</Text>
-                        <Text style={styles.subtitle}>Sign in to continue</Text>
-                    </View>
+                <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
 
-                    <View style={styles.formContainer}>
-                        <View style={styles.inputContainer}>
-                            <MaterialIcons name="email" size={24} color="#4A90E2" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Email"
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                placeholderTextColor="#A0A0A0"
+                    <Animated.View
+                        style={[
+                            styles.content,
+                            {
+                                opacity: fadeAnim,
+                                transform: [{ translateY: slideAnim }]
+                            }
+                        ]}
+                    >
+                        <View style={styles.logoContainer}>
+                            <LottieView
+                                source={require('../../../assets/animation/therapy-animation.json')} // You'll need to add this animation
+                                autoPlay
+                                loop
+                                style={styles.animation}
                             />
+                            <Text allowFontScaling={false} style={styles.title}>Tip Top</Text>
+                            <Text allowFontScaling={false} style={styles.subtitle}>Sign in to continue</Text>
                         </View>
 
-                        <View style={styles.inputContainer}>
-                            <MaterialIcons name="lock" size={24} color="#4A90E2" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Password"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                                placeholderTextColor="#A0A0A0"
-                            />
+                        <View style={styles.formContainer}>
+                            <View style={styles.inputContainer}>
+                                <MaterialIcons name="email" size={24} color="#4A90E2" />
+                                <TextInput
+                                    allowFontScaling={false}
+                                    style={styles.input}
+                                    placeholder="Email"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    placeholderTextColor="#A0A0A0"
+                                    inputAccessoryViewID={inputAccessoryViewID}
+                                    // autoCompleteType="off"
+                                    autoCorrect={Platform.OS === "ios" && "false"}
+                                />
+                            </View>
+
+                            <View style={styles.inputContainer}>
+                                <MaterialIcons name="lock" size={24} color="#4A90E2" />
+                                <TextInput
+                                    allowFontScaling={false}
+                                    style={styles.input}
+                                    placeholder="Password"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!showPassword}
+                                    placeholderTextColor="#A0A0A0"
+                                    inputAccessoryViewID={inputAccessoryViewID}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    style={styles.eyeIcon}
+                                >
+                                    <MaterialIcons
+                                        name={showPassword ? "visibility" : "visibility-off"}
+                                        size={24}
+                                        color="#A0A0A0"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+
                             <TouchableOpacity
-                                onPress={() => setShowPassword(!showPassword)}
-                                style={styles.eyeIcon}
+                                style={styles.forgotPasswordButton}
+                                onPress={() => setShowVerificationModal(true)}
                             >
-                                <MaterialIcons
-                                    name={showPassword ? "visibility" : "visibility-off"}
-                                    size={24}
-                                    color="#A0A0A0"
-                                />
+                                <Text allowFontScaling={false} style={styles.forgotPasswordText}>Forgot Password?</Text>
                             </TouchableOpacity>
-                        </View>
 
-                        <TouchableOpacity
-                            style={styles.forgotPasswordButton}
-                            onPress={() => setShowVerificationModal(true)}
-                        >
-                            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.loginButton}
+                                onPress={handleEmailPasswordLogin}
+                            >
+                                {isLoading ? (
+                                    <LottieView
+                                        source={require('../../../assets/animation/loading.json')} // Add loading animation
+                                        autoPlay
+                                        loop
+                                        style={styles.loadingAnimation}
+                                    />
+                                ) : (
+                                    <Text allowFontScaling={false} style={styles.loginButtonText}>Sign In</Text>
+                                )}
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.loginButton}
-                            onPress={handleEmailPasswordLogin}
-                        >
-                            {isLoading ? (
-                                <LottieView
-                                    source={require('../../../assets/animation/loading.json')} // Add loading animation
-                                    autoPlay
-                                    loop
-                                    style={styles.loadingAnimation}
-                                />
-                            ) : (
-                                <Text style={styles.loginButtonText}>Sign In</Text>
-                            )}
-                        </TouchableOpacity>
+                            <View style={styles.divider}>
+                                <View style={styles.dividerLine} />
+                                <Text allowFontScaling={false} style={styles.dividerText}>OR</Text>
+                                <View style={styles.dividerLine} />
+                            </View>
 
-                        <View style={styles.divider}>
-                            <View style={styles.dividerLine} />
-                            <Text style={styles.dividerText}>OR</Text>
-                            <View style={styles.dividerLine} />
-                        </View>
-
-
-
-                        <GoogleSigninButton
-                            size={GoogleSigninButton.Size.Wide}
-                            color={GoogleSigninButton.Color.Light}
-                            onPress={() => {
+                            <TouchableOpacity onPress={() => {
                                 signInWithGoogle()
 
-                            }}
-                            style={{ width: "100%", height: 50 }}
-                        />
-                        <View style={{ height: 20 }}></View>
-                        <AppleAuthentication.AppleAuthenticationButton
-                            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK} // Options: BLACK or WHITE
-                            cornerRadius={10} // Optional, ensures rounded corners
-                            style={styles.appleButton}
-                            onPress={handleAppleLogin}
-                        />
-                        {/*  <TouchableOpacity
+                            }} style={{ height: 80, /* backgroundColor: "yellow" */ }}>
+
+                                <GoogleSigninButton
+                                    size={GoogleSigninButton.Size.Wide}
+                                    color={GoogleSigninButton.Color.Light}
+                                    onPress={() => {
+                                        signInWithGoogle()
+
+                                    }}
+                                    style={{ width: "100%", height: 80 }}
+                                />
+                            </TouchableOpacity>
+
+                            <View style={{ height: 20 }}></View>
+                            {Platform.OS === "ios" && <AppleAuthentication.AppleAuthenticationButton
+                                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK} // Options: BLACK or WHITE
+                                cornerRadius={10} // Optional, ensures rounded corners
+                                style={styles.appleButton}
+                                onPress={handleAppleLogin}
+                            />}
+                            {/*  <TouchableOpacity
                                 style={styles.socialButton}
                                 onPress={handleAppleLogin}
                             >
@@ -419,7 +444,7 @@ export default function SignIn({ navigation }) {
                             </TouchableOpacity> */}
 
 
-                        {/*  <AppleAuthentication.AppleAuthenticationButton
+                            {/*  <AppleAuthentication.AppleAuthenticationButton
                             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
                             cornerRadius={10}
@@ -427,19 +452,20 @@ export default function SignIn({ navigation }) {
                             onPress={handleAppleLogin}
                         /> */}
 
-                        <View style={styles.signupContainer}>
-                            <Text style={styles.signupText}>Don't have an account? </Text>
-                            <TouchableOpacity onPress={goToSignUp}>
-                                <Text style={styles.signupButton}>Sign Up</Text>
-                            </TouchableOpacity>
+                            <View style={styles.signupContainer}>
+                                <Text allowFontScaling={false} style={styles.signupText}>Don't have an account? </Text>
+                                <TouchableOpacity onPress={goToSignUp}>
+                                    <Text allowFontScaling={false} style={styles.signupButton}>Sign Up</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </View>
-                </Animated.View>
+                    </Animated.View>
+                </TouchableWithoutFeedback>
 
                 {showVerificationModal && (
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>
+                            <Text allowFontScaling={false} style={styles.modalTitle}>
                                 {resetStep === 1 && "Reset Password"}
                                 {resetStep === 2 && "Enter Verification Code"}
                                 {resetStep === 3 && "Set New Password"}
@@ -465,7 +491,7 @@ export default function SignIn({ navigation }) {
                                             }
                                         }}
                                     >
-                                        <Text style={styles.modalButtonText}>Send Code</Text>
+                                        <Text allowFontScaling={false} style={styles.modalButtonText}>Send Code</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -489,10 +515,10 @@ export default function SignIn({ navigation }) {
                                             }
                                         }}
                                     >
-                                        <Text style={styles.modalButtonText}>Verify Code</Text>
+                                        <Text allowFontScaling={false} style={styles.modalButtonText}>Verify Code</Text>
                                     </TouchableOpacity>
                                     {countdown > 0 ? (
-                                        <Text style={styles.countdownText}>
+                                        <Text allowFontScaling={false} style={styles.countdownText}>
                                             Resend code in {countdown}s
                                         </Text>
                                     ) : (
@@ -502,7 +528,7 @@ export default function SignIn({ navigation }) {
                                                 if (success) setCountdown(50);
                                             }}
                                         >
-                                            <Text style={styles.resendText}>Resend Code</Text>
+                                            <Text allowFontScaling={false} style={styles.resendText}>Resend Code</Text>
                                         </TouchableOpacity>
                                     )}
                                 </>
@@ -539,7 +565,7 @@ export default function SignIn({ navigation }) {
                                             }
                                         }}
                                     >
-                                        <Text style={styles.modalButtonText}>Reset Password</Text>
+                                        <Text allowFontScaling={false} style={styles.modalButtonText}>Reset Password</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -554,7 +580,7 @@ export default function SignIn({ navigation }) {
                                     setShowNewPassword(false);
                                 }}
                             >
-                                <Text style={styles.modalCloseText}>Cancel</Text>
+                                <Text allowFontScaling={false} style={styles.modalCloseText}>Cancel</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -758,5 +784,14 @@ const styles = StyleSheet.create({
         width: "100%",       // Adjust width as per your design
         borderRadius: 10, // Rounded corners for aesthetic compliance
         marginBottom: 20, // Optional, for spacing
+    },
+    accessoryButton: {
+        padding: 10,
+        backgroundColor: '#FFF',
+        alignItems: 'flex-start',
+    },
+    accessoryButtonText: {
+        color: '#4A90E2',
+        fontSize: 16,
     },
 });

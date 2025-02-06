@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   AppState,
   StatusBar,
+  I18nManager,
 } from "react-native";
 import * as Updates from "expo-updates";
 import { NavigationContainer } from '@react-navigation/native';
@@ -35,6 +36,11 @@ export default function App() {
       clearTimeout(backgroundTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    I18nManager.forceRTL(false);
+    I18nManager.allowRTL(false);
+  }, [])
   const maxBackgroundDuration = 90000;
   const handleAppStateChange = (nextAppState) => {
     if (
@@ -101,7 +107,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <RootNavigator onReady={onLayoutRootView} />
-      <StatusBar backgroundColor='#F5F6FA' barStyle="dark-content" />
+      <StatusBar backgroundColor='#4A90E2' barStyle="dark-content" />
     </Provider>
   );
 }

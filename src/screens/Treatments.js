@@ -21,6 +21,7 @@ import {
     Keyboard,
     Linking,
     KeyboardAvoidingView,
+    Touchable,
 } from "react-native";
 import {
     BannerAd,
@@ -338,6 +339,13 @@ const PAYMENT_METHODS = {
     OTHER: { label: 'Other', icon: 'more-horiz' }
 };
 
+const TREATMENT_STATUSES = {
+    PENDING: { label: 'Pending', icon: 'schedule', color: '#FF9800' },
+    COMPLETED: { label: 'Completed', icon: 'check-circle', color: '#4CAF50' },
+    CANCELED: { label: 'Cancelled', icon: 'cancel', color: '#F44336' },
+    NO_SHOW: { label: 'Refunded', icon: 'cancel', color: '#9C27B0' },
+    SCHEDULED: { label: 'Scheduled', icon: 'schedule', color: '#FF9800' },
+};
 // Add these new modal components
 const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
     <Modal
@@ -532,6 +540,7 @@ export default function Treatments({ navigation }) {
     const [lastName, setLastName] = useState("");
     const [isFullNameSaving, setIsFullNameSaving] = useState(false); // State to track saving status
     const [editPriceModalVisible, setEditPriceModalVisible] = useState(false);
+    const [editStatusModalVisible, setEditStatusModalVisible] = useState(false);
     const [isSavingPrice, setIsSavingPrice] = useState(false);
     const [price, setPrice] = useState(0);
     const priceInputRef = useRef(null); // Add a ref for price input
@@ -549,7 +558,7 @@ export default function Treatments({ navigation }) {
     const [selectedFile, setSelectedFile] = useState();
     const [loadingFiles, setLoadingFiles] = useState(false)
     const [uploadFileLoading, setUploadFileLoading] = useState(false)
-
+    const [status, setStatus] = useState("")
     const pickImage = async () => {
         const permissionResult =
             await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -722,55 +731,65 @@ export default function Treatments({ navigation }) {
 
     function checkTreatmentPaid() {
         const paymentsAmountArr = clientPayments.map(p => p.amount)
-        const treatmentPriceArr = treatments.slice() // Create a shallow copy to avoid mutating the original array
-            .sort((a, b) => new Date(a.treatmentDate) - new Date(b.treatmentDate))
-            .map(t => t.treatmentPrice);
+        const sortedTreatments = treatments.slice() // Create a shallow copy to avoid mutating the original array
+            .sort((a, b) => new Date(a.treatmentDate) - new Date(b.treatmentDate));
+        const treatmentPriceArr = sortedTreatments.map(t => t.treatmentPrice);
+
         console.log("paymentsAmountArr:", paymentsAmountArr, "treatmentPriceArr:", treatmentPriceArr)
         let paymentSum = paymentsAmountArr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-        // let paymentSum = 0; // Tracks the cumulative sum of payments
         let result = []; // Array to store the payment statuses
 
-        // Loop through the treatment prices
-        for (let i = 0; i < treatmentPriceArr.length; i++) {
-            // paymentSum += paymentsAmountArr.shift() || 0; // Add the next payment, or 0 if no payments left
-            console.log("paymentSum:", paymentSum, "treatmentPriceArr[i]:", treatmentPriceArr[i])
+        // Loop through the treatments
+        for (let i = 0; i < sortedTreatments.length; i++) {
+            // Check if treatment is canceled or no show
+            if (sortedTreatments[i].status === "CANCELED" || sortedTreatments[i].status === "NO_SHOW") {
+                result.push("-");
+                continue; // Skip to next iteration
+            }
+
+            // Handle payment status for non-canceled treatments
             if (paymentsAmountArr.length === 0) {
                 result.push("PENDING")
             }
             else if (paymentSum >= treatmentPriceArr[i]) {
                 result.push("PAID");
-                paymentSum -= treatmentPriceArr[i]; // Deduct the treatment price from the payment sum
+                paymentSum -= treatmentPriceArr[i];
             } else if (paymentSum > 0 && paymentSum < treatmentPriceArr[i]) {
                 result.push("PARTIALLY PAID");
-                break; // Stop further processing as payments can't cover subsequent treatments
-                // paymentSum = 0; // Remaining amount is used up for partial payment
+                break;
             } else {
-                result.push("PENDING"); // Payment is not sufficient for this treatment
+                result.push("PENDING");
             }
         }
+
         // Fill the rest with "pending" if there are more treatments than payments
         while (result.length < treatmentPriceArr.length) {
-            result.push("PENDING");
+            const currentTreatment = sortedTreatments[result.length];
+            if (currentTreatment.status !== "CANCELED" && currentTreatment.status !== "NO_SHOW") {
+                result.push("PENDING");
+            } else {
+                result.push("-");
+            }
         }
-        console.log(result)
+
+        // console.log("result:--------", result)
         setTreatmentPaid(result.reverse())
-        // return result;
     }
     useEffect(() => {
         checkTreatmentPaid()
     }, [clientPayments, treatments])
 
-    const fetchPayments = async () => {
-        // console.log("clientId for payments:", client._id);
+    const fetchPayments = async (clientId) => {
+        console.log("clientId for payments:", clientId);
         try {
             setLoadingPayments(true);
-            const response = await axios.get(`${Api}/payments/client/${client._id}`);
+            const response = await axios.get(`${Api}/payments/client/${clientId}`);
 
             // Check if the response is successful
-            if (response.status === 200) {
-                setClientPayments(response.data);
-                // checkTreatmentPaid()
-            } /* else {
+
+            setClientPayments(response.data);
+            // checkTreatmentPaid()
+            /* else {
                 console.error("Unexpected response status:", response.status);
             } */
         } catch (error) {
@@ -792,7 +811,15 @@ export default function Treatments({ navigation }) {
 
     useEffect(() => {
         fetchPayments(clientDetails._id);
-    }, []);
+    }, [clientDetails]);
+
+    /*  useEffect(() => {
+         const unsubscribe = navigation.addListener('focus', () => {
+             fetchPayments(clientDetails._id)
+         });
+ 
+         return unsubscribe;
+     }, [navigation]); */
 
     const openEditPriceModal = () => {
         setEditPriceModalVisible(true);
@@ -824,6 +851,22 @@ export default function Treatments({ navigation }) {
                 treatmentPrice: price,
             });
             fetchTreatments();
+            // Handle response if needed
+        } catch (error) {
+            console.error('Error updating treatment price:', error);
+        }
+    };
+
+    const updateTreatmentStatus = async (statusText) => {
+        try {
+            console.log("status:-----------------------------", statusText)
+            // console.log("id:", id)
+            const response = await axios.put(`${Api}/treatments/treatments/${selectedTreatmentId}`, {
+                status: statusText,
+            });
+            fetchTreatments();
+            checkTreatmentPaid();
+            setEditStatusModalVisible(false)
             // Handle response if needed
         } catch (error) {
             console.error('Error updating treatment price:', error);
@@ -1012,6 +1055,7 @@ export default function Treatments({ navigation }) {
             );
 
             setTreatments(uniqueTreatments);
+
             // checkTreatmentPaid()
             setTotalPages(totalPages); // Set total pages for pagination controls
             //  console.log("treatments:", uniqueTreatments);
@@ -1553,7 +1597,8 @@ export default function Treatments({ navigation }) {
 
     const PaymentsList = ({ treatments, payments, clientId, userId }) => {
         const paidTreatments = /* payments.filter(t => t.status === 'paid'); */ payments.map(t => t.amount)
-        const pendingTreatments = /* treatments.filter(t => t.paymentStatus === 'pending'); */treatments.map(t => t.treatmentPrice)
+        const pendingStatusFilter = treatments.filter((t) => t.status === "" || t.status === "PENDING" || t.status === "COMPLETED")
+        const pendingTreatments = /* treatments.filter(t => t.paymentStatus === 'pending'); */pendingStatusFilter.map(t => t.treatmentPrice)
 
         const totalPaid = paidTreatments.reduce((sum, t) => sum + (parseFloat(t) || 0), 0);
         const totalPending = pendingTreatments.reduce((sum, t) => sum + (parseFloat(t) || 0), 0) - totalPaid;
@@ -1891,7 +1936,74 @@ export default function Treatments({ navigation }) {
         );
     };
 
+    function getRelativeTime(date) {
+        const now = new Date();
+        const diff = now - date;
+        const diffInSeconds = Math.abs(diff) / 1000;
+        const diffInMinutes = diffInSeconds / 60;
+        const diffInHours = diffInMinutes / 60;
+        const diffInDays = diffInHours / 24;
+        const diffInWeeks = diffInDays / 7;
+        const diffInMonths = diffInDays / 30;
+        const diffInYears = diffInDays / 365;
 
+        const isFuture = diff < 0;
+
+        // Helper function to handle plural forms
+        const plural = (value, unit) =>
+            Math.floor(value) === 1 ? `${Math.floor(value)} ${unit}` : `${Math.floor(value)} ${unit}s`;
+
+        if (diffInSeconds < 60) {
+            return isFuture ? 'in a few seconds' : 'just now';
+        }
+
+        if (diffInMinutes < 60) {
+            return isFuture
+                ? `in ${plural(diffInMinutes, 'minute')}`
+                : `${plural(diffInMinutes, 'minute')} ago`;
+        }
+
+        if (diffInHours < 24) {
+            return isFuture
+                ? `in ${plural(diffInHours, 'hour')}`
+                : `${plural(diffInHours, 'hour')} ago`;
+        }
+
+        if (diffInDays < 7) {
+            if (diffInDays < 1) {
+                return isFuture ? 'tomorrow' : 'yesterday';
+            }
+            return isFuture
+                ? `in ${plural(diffInDays, 'day')}`
+                : `${plural(diffInDays, 'day')} ago`;
+        }
+
+        if (diffInWeeks < 4) {
+            if (diffInWeeks < 1) {
+                return isFuture ? 'next week' : 'last week';
+            }
+            return isFuture
+                ? `in ${plural(diffInWeeks, 'week')}`
+                : `${plural(diffInWeeks, 'week')} ago`;
+        }
+
+        if (diffInMonths < 12) {
+            if (diffInMonths < 1) {
+                return isFuture ? 'next month' : 'last month';
+            }
+            return isFuture
+                ? `in ${plural(diffInMonths, 'month')}`
+                : `${plural(diffInMonths, 'month')} ago`;
+        }
+
+        if (diffInYears < 1) {
+            return isFuture ? 'next year' : 'last year';
+        }
+
+        return isFuture
+            ? `in ${plural(diffInYears, 'year')}`
+            : `${plural(diffInYears, 'year')} ago`;
+    }
 
     return (
         <View style={styles.container}>
@@ -2236,29 +2348,37 @@ export default function Treatments({ navigation }) {
                                 <FlatList
                                     data={treatments}
                                     renderItem={({ item, index }) => (
-                                        <Animatable.View
-                                            animation="fadeInUp"
-                                            delay={index * 100}
-                                            style={styles.treatmentCard}
-                                        >
-                                            <View style={styles.treatmentHeader}>
-                                                <TouchableOpacity onPress={() => { setSelectedDate(new Date(item.treatmentDate)); setSelectedTreatmentId(item._id); setDateTimeModalVisible(true) }}>
-                                                    <View style={styles.treatmentDateTime}>
-                                                        <View style={styles.treatmentDate}>
-                                                            <MaterialIcons name="event" size={20} color="#014495" />
-                                                            <Text style={styles.dateText}>
-                                                                {new Date(item.treatmentDate).toLocaleDateString()}
-                                                            </Text>
+                                        <>
+                                            <Animatable.Text
+                                                animation="fadeIn"
+                                                style={styles.relativeTimeText}
+                                            >
+                                                {getRelativeTime(new Date(item.treatmentDate))}
+                                            </Animatable.Text>
+                                            <Animatable.View
+                                                animation="fadeInUp"
+                                                delay={index * 100}
+                                                style={[styles.treatmentCard, { backgroundColor: item.status === "NO_SHOW" || item.status === "CANCELED" ? "rgba(0,0,0,0.05)" : "white" }]}
+                                            >
+
+                                                <View style={styles.treatmentHeader}>
+                                                    <TouchableOpacity onPress={() => { setSelectedDate(new Date(item.treatmentDate)); setSelectedTreatmentId(item._id); setDateTimeModalVisible(true) }}>
+                                                        <View style={styles.treatmentDateTime}>
+                                                            <View style={styles.treatmentDate}>
+                                                                <MaterialIcons name="event" size={20} color="#014495" />
+                                                                <Text style={styles.dateText}>
+                                                                    {new Date(item.treatmentDate).toLocaleDateString()}
+                                                                </Text>
+                                                            </View>
+                                                            <View style={styles.treatmentTime}>
+                                                                <MaterialIcons name="access-time" size={20} color="#014495" />
+                                                                <Text style={styles.timeText}>
+                                                                    {formatTime(item.treatmentDate)}
+                                                                </Text>
+                                                            </View>
                                                         </View>
-                                                        <View style={styles.treatmentTime}>
-                                                            <MaterialIcons name="access-time" size={20} color="#014495" />
-                                                            <Text style={styles.timeText}>
-                                                                {formatTime(item.treatmentDate)}
-                                                            </Text>
-                                                        </View>
-                                                    </View>
-                                                </TouchableOpacity>
-                                                {/*  <TouchableOpacity onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
+                                                    </TouchableOpacity>
+                                                    {/*  <TouchableOpacity onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
                                                     <View style={styles.treatmentPrice}>
                                                         <MaterialIcons name="attach-money" size={20} color="#014495" />
                                                         <Text style={styles.priceText}>
@@ -2266,46 +2386,124 @@ export default function Treatments({ navigation }) {
                                                         </Text>
                                                     </View>
                                                 </TouchableOpacity> */}
-                                                <Modal
-                                                    animationType="slide"
-                                                    transparent={true}
-                                                    visible={editPriceModalVisible}
-                                                    onRequestClose={() => setEditPriceModalVisible(false)}
-                                                >
-                                                    <TouchableWithoutFeedback onPress={() => setEditPriceModalVisible(false)}>
-                                                        <KeyboardAvoidingView
-                                                            behavior={Platform.OS === "ios" ? "padding" : "height"}
-                                                            style={{ flex: 1 }}
-                                                        >
-                                                            <View style={styles.modalOverlay}>
-                                                                <View style={styles.editModalContainer}>
-                                                                    <View style={styles.editModalHeader}>
-                                                                        <MaterialIcons name="edit" size={24} color="#014495" />
-                                                                        <Text style={styles.editModalTitle}>
-                                                                            Edit Price
-                                                                        </Text>
-                                                                        <TouchableOpacity
-                                                                            onPress={() => setEditPriceModalVisible(false)}
-                                                                            style={styles.editModalCloseButton}
-                                                                        >
-                                                                            <MaterialIcons name="close" size={24} color="#666" />
-                                                                        </TouchableOpacity>
+                                                    <Modal
+                                                        animationType="slide"
+                                                        transparent={true}
+                                                        visible={editPriceModalVisible}
+                                                        onRequestClose={() => setEditPriceModalVisible(false)}
+                                                    >
+                                                        <TouchableWithoutFeedback onPress={() => setEditPriceModalVisible(false)}>
+                                                            <KeyboardAvoidingView
+                                                                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                                                                style={{ flex: 1 }}
+                                                            >
+                                                                <View style={styles.modalOverlay}>
+                                                                    <View style={styles.editModalContainer}>
+                                                                        <View style={styles.editModalHeader}>
+                                                                            <MaterialIcons name="edit" size={24} color="#014495" />
+                                                                            <Text style={styles.editModalTitle}>
+                                                                                Edit Price
+                                                                            </Text>
+                                                                            <TouchableOpacity
+                                                                                onPress={() => setEditPriceModalVisible(false)}
+                                                                                style={styles.editModalCloseButton}
+                                                                            >
+                                                                                <MaterialIcons name="close" size={24} color="#666" />
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                        {/* <Text style={styles.editModalTitle}>Edit Price</Text> */}
+                                                                        <View style={styles.editModalContent}>
+                                                                            <TextInput
+                                                                                ref={priceInputRef}
+                                                                                style={styles.editModalInput}
+                                                                                placeholder="Enter new price"
+                                                                                keyboardType="numeric"
+                                                                                value={price ? price.toString() : ''}
+                                                                                onChangeText={(text) => handlePriceChange(text, item._id)}
+                                                                            />
+                                                                        </View>
+                                                                        <View style={styles.editModalFooter}>
+                                                                            <TouchableOpacity
+                                                                                style={styles.editModalCancelButton}
+                                                                                onPress={() => setEditPriceModalVisible(false)}
+                                                                            >
+                                                                                <Text style={styles.editModalCancelText}>Cancel</Text>
+                                                                            </TouchableOpacity>
+                                                                            <TouchableOpacity
+                                                                                style={styles.editModalSaveButton}
+                                                                                onPress={() => handleSavePrice(item._id)}
+                                                                            >
+                                                                                {isSavingPrice ? <ActivityIndicator /> :
+                                                                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                                                                }
+
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                        {/*  <View style={styles.buttonEditPriceContainer}>
+                                                                <Button title="Cancel" onPress={() => setEditPriceModalVisible(false)} color="#FF3D00" />
+                                                                <Button title="Save" onPress={() => handleSavePrice(item._id)} color="#014495" />
+                                                            </View> */}
                                                                     </View>
-                                                                    {/* <Text style={styles.editModalTitle}>Edit Price</Text> */}
-                                                                    <View style={styles.editModalContent}>
-                                                                        <TextInput
-                                                                            ref={priceInputRef}
-                                                                            style={styles.editModalInput}
-                                                                            placeholder="Enter new price"
-                                                                            keyboardType="numeric"
-                                                                            value={price ? price.toString() : ''}
-                                                                            onChangeText={(text) => handlePriceChange(text, item._id)}
-                                                                        />
-                                                                    </View>
-                                                                    <View style={styles.editModalFooter}>
+                                                                </View>
+                                                            </KeyboardAvoidingView>
+                                                        </TouchableWithoutFeedback>
+                                                    </Modal>
+                                                    <Modal
+                                                        animationType="slide"
+                                                        transparent={true}
+                                                        visible={editStatusModalVisible}
+                                                        onRequestClose={() => setEditStatusModalVisible(false)}
+                                                    >
+                                                        <TouchableWithoutFeedback onPress={() => setEditStatusModalVisible(false)}>
+                                                            <KeyboardAvoidingView
+                                                                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                                                                style={{ flex: 1 }}
+                                                            >
+                                                                <View style={styles.modalOverlay}>
+                                                                    <View style={styles.editModalContainer}>
+                                                                        <View style={styles.editModalHeader}>
+                                                                            <MaterialIcons name="edit" size={24} color="#014495" />
+                                                                            <Text style={styles.editModalTitle}>
+                                                                                Edit Status
+                                                                            </Text>
+                                                                            <TouchableOpacity
+                                                                                onPress={() => setEditStatusModalVisible(false)}
+                                                                                style={styles.editModalCloseButton}
+                                                                            >
+                                                                                <MaterialIcons name="close" size={24} color="#666" />
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                        {/* <Text style={styles.editModalTitle}>Edit Price</Text> */}
+                                                                        <View style={styles.editModalContent}>
+                                                                            <Animatable.View animation="fadeIn" duration={300}>
+                                                                                <TouchableOpacity onPress={() => { setStatus("PENDING"); updateTreatmentStatus("PENDING") }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
+                                                                                    <MaterialIcons name="schedule" size={30} color="#FFA500" />
+                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>Pending</Text>
+                                                                                </TouchableOpacity>
+                                                                            </Animatable.View>
+                                                                            <Animatable.View animation="fadeIn" duration={300}>
+                                                                                <TouchableOpacity onPress={() => { setStatus("COMPLETED"); updateTreatmentStatus("COMPLETED") }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
+                                                                                    <MaterialIcons name="check-circle" size={30} color="#4CAF50" />
+                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>Completed</Text>
+                                                                                </TouchableOpacity>
+                                                                            </Animatable.View>
+                                                                            <Animatable.View animation="fadeIn" duration={300}>
+                                                                                <TouchableOpacity onPress={() => { setStatus("CANCELED"); updateTreatmentStatus("CANCELED"); }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
+                                                                                    <MaterialIcons name="cancel" size={30} color="#FF4444" />
+                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>Canceled</Text>
+                                                                                </TouchableOpacity>
+                                                                            </Animatable.View>
+                                                                            <Animatable.View animation="fadeIn" duration={300}>
+                                                                                <TouchableOpacity onPress={() => { setStatus("NO_SHOW"); updateTreatmentStatus("NO_SHOW"); }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
+                                                                                    <MaterialIcons name="remove-circle" size={30} color="#FFA500" />
+                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>No Show</Text>
+                                                                                </TouchableOpacity>
+                                                                            </Animatable.View>
+                                                                        </View>
+                                                                        {/*  <View style={styles.editModalFooter}>
                                                                         <TouchableOpacity
                                                                             style={styles.editModalCancelButton}
-                                                                            onPress={() => setEditPriceModalVisible(false)}
+                                                                            onPress={() => setEditStatusModalVisible(false)}
                                                                         >
                                                                             <Text style={styles.editModalCancelText}>Cancel</Text>
                                                                         </TouchableOpacity>
@@ -2318,62 +2516,62 @@ export default function Treatments({ navigation }) {
                                                                             }
 
                                                                         </TouchableOpacity>
-                                                                    </View>
-                                                                    {/*  <View style={styles.buttonEditPriceContainer}>
+                                                                    </View> */}
+                                                                        {/*  <View style={styles.buttonEditPriceContainer}>
                                                                 <Button title="Cancel" onPress={() => setEditPriceModalVisible(false)} color="#FF3D00" />
                                                                 <Button title="Save" onPress={() => handleSavePrice(item._id)} color="#014495" />
                                                             </View> */}
-                                                                </View>
-                                                            </View>
-                                                        </KeyboardAvoidingView>
-                                                    </TouchableWithoutFeedback>
-                                                </Modal>
-                                                <Modal
-                                                    animationType="slide"
-                                                    transparent={true}
-                                                    visible={dateTimeModalVisible}
-                                                    onRequestClose={() => setDateTimeModalVisible(false)}
-                                                >
-                                                    <TouchableWithoutFeedback onPress={() => setDateTimeModalVisible(false)}>
-                                                        <View style={styles.modalOverlay}>
-
-                                                            <View style={styles.modalContainer}>
-                                                                <View style={styles.editModalHeader}>
-                                                                    <MaterialIcons name="edit" size={24} color="#014495" />
-                                                                    <Text style={styles.editModalTitle}>
-                                                                        Update Date and Time
-                                                                    </Text>
-                                                                    <TouchableOpacity
-                                                                        onPress={() => setDateTimeModalVisible(false)}
-                                                                        style={styles.editModalCloseButton}
-                                                                    >
-                                                                        <MaterialIcons name="close" size={24} color="#666" />
-                                                                    </TouchableOpacity>
-                                                                </View>
-                                                                <ScrollView style={styles.modalContent}>
-                                                                    <View style={styles.dateTimeContainer}>
-                                                                        <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
-                                                                            <Text style={styles.pickerTitle}>Select Date</Text>
-                                                                            <DateTimePicker
-                                                                                value={selectedDate}
-                                                                                mode="date"
-                                                                                display="inline"
-                                                                                onChange={handleDateChange}
-                                                                            />
-                                                                        </View>
-
-                                                                        <View style={[styles.datePickerButton, { flex: 1 }]}>
-                                                                            <Text style={styles.pickerTitle}>Select Time</Text>
-                                                                            <DateTimePicker
-                                                                                value={selectedDate}
-                                                                                mode="time"
-                                                                                display="calendar"
-                                                                                onChange={handleDateChange}
-                                                                            />
-                                                                        </View>
                                                                     </View>
-                                                                    {/* <Text style={styles.modalDateTimeHeader}>Update Date and Time</Text> */}
-                                                                    {/* <DateTimePicker
+                                                                </View>
+                                                            </KeyboardAvoidingView>
+                                                        </TouchableWithoutFeedback>
+                                                    </Modal>
+                                                    <Modal
+                                                        animationType="slide"
+                                                        transparent={true}
+                                                        visible={dateTimeModalVisible}
+                                                        onRequestClose={() => setDateTimeModalVisible(false)}
+                                                    >
+                                                        <TouchableWithoutFeedback onPress={() => setDateTimeModalVisible(false)}>
+                                                            <View style={styles.modalOverlay}>
+
+                                                                <View style={styles.modalContainer}>
+                                                                    <View style={styles.editModalHeader}>
+                                                                        <MaterialIcons name="edit" size={24} color="#014495" />
+                                                                        <Text style={styles.editModalTitle}>
+                                                                            Update Date and Time
+                                                                        </Text>
+                                                                        <TouchableOpacity
+                                                                            onPress={() => setDateTimeModalVisible(false)}
+                                                                            style={styles.editModalCloseButton}
+                                                                        >
+                                                                            <MaterialIcons name="close" size={24} color="#666" />
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                    <ScrollView style={styles.modalContent}>
+                                                                        <View style={styles.dateTimeContainer}>
+                                                                            <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
+                                                                                <Text style={styles.pickerTitle}>Select Date</Text>
+                                                                                <DateTimePicker
+                                                                                    value={selectedDate}
+                                                                                    mode="date"
+                                                                                    display="inline"
+                                                                                    onChange={handleDateChange}
+                                                                                />
+                                                                            </View>
+
+                                                                            <View style={[styles.datePickerButton, { flex: 1 }]}>
+                                                                                <Text style={styles.pickerTitle}>Select Time</Text>
+                                                                                <DateTimePicker
+                                                                                    value={selectedDate}
+                                                                                    mode="time"
+                                                                                    display="calendar"
+                                                                                    onChange={handleDateChange}
+                                                                                />
+                                                                            </View>
+                                                                        </View>
+                                                                        {/* <Text style={styles.modalDateTimeHeader}>Update Date and Time</Text> */}
+                                                                        {/* <DateTimePicker
                                                                         value={selectedDate}
                                                                         mode="datetime"
                                                                         display="default"
@@ -2381,27 +2579,27 @@ export default function Treatments({ navigation }) {
                                                                         confirmBtnText="confirm"
                                                                         cancelBtnText="dismiss"
                                                                     /> */}
-                                                                    <View style={styles.editModalFooter}>
-                                                                        <TouchableOpacity
-                                                                            style={styles.editModalCancelButton}
-                                                                            onPress={() => setDateTimeModalVisible(false)}
-                                                                        >
-                                                                            <Text style={styles.editModalCancelText}>Cancel</Text>
-                                                                        </TouchableOpacity>
-                                                                        <TouchableOpacity
-                                                                            style={styles.editModalSaveButton}
-                                                                            onPress={() => { setSelectedTreatmentId(item._id); handleSaveDateTime(item._id) }}
-                                                                        >
-                                                                            {isSaving ? (
-                                                                                <ActivityIndicator size="small" color="#014495" />
-                                                                            ) : (
-                                                                                <Text style={styles.editModalSaveText}>Save</Text>
+                                                                        <View style={styles.editModalFooter}>
+                                                                            <TouchableOpacity
+                                                                                style={styles.editModalCancelButton}
+                                                                                onPress={() => setDateTimeModalVisible(false)}
+                                                                            >
+                                                                                <Text style={styles.editModalCancelText}>Cancel</Text>
+                                                                            </TouchableOpacity>
+                                                                            <TouchableOpacity
+                                                                                style={styles.editModalSaveButton}
+                                                                                onPress={() => { setSelectedTreatmentId(item._id); handleSaveDateTime(item._id) }}
+                                                                            >
+                                                                                {isSaving ? (
+                                                                                    <ActivityIndicator size="small" color="#014495" />
+                                                                                ) : (
+                                                                                    <Text style={styles.editModalSaveText}>Save</Text>
 
-                                                                            )}
+                                                                                )}
 
-                                                                        </TouchableOpacity>
-                                                                    </View>
-                                                                    {/* <View style={styles.buttonDateTimeContainer}>
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                        {/* <View style={styles.buttonDateTimeContainer}>
                                                                 <Button title="Cancel" onPress={() => setDateTimeModalVisible(false)} color="#FF3D00" />
                                                                 <View style={styles.saveDateTimeButtonContainer}>
                                                                     {isSaving ? (
@@ -2411,128 +2609,135 @@ export default function Treatments({ navigation }) {
                                                                     )}
                                                                 </View>
                                                             </View> */}
-                                                                </ScrollView>
+                                                                    </ScrollView>
+                                                                </View>
                                                             </View>
-                                                        </View>
-                                                    </TouchableWithoutFeedback>
-                                                </Modal>
-                                                <View style={styles.headerActions}>
-                                                    <Text style={styles.sessionNumber}>Session #{treatments.length - index}</Text>
-                                                    <TouchableOpacity
-                                                        style={styles.deleteButton}
-                                                        onPress={() => {
-                                                            setTreatmentToDelete(item._id);
-                                                            setDeleteModalVisible(true);
-                                                        }}
-                                                    >
-                                                        <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
-                                                    </TouchableOpacity>
+                                                        </TouchableWithoutFeedback>
+                                                    </Modal>
+                                                    <View style={styles.headerActions}>
+                                                        <Text style={styles.sessionNumber}>Session #{treatments.length - index}</Text>
+                                                        <TouchableOpacity
+                                                            style={styles.deleteButton}
+                                                            onPress={() => {
+                                                                setTreatmentToDelete(item._id);
+                                                                setDeleteModalVisible(true);
+                                                            }}
+                                                        >
+                                                            <MaterialIcons name="delete-outline" size={24} color="#FF4444" />
+                                                        </TouchableOpacity>
+                                                    </View>
                                                 </View>
-                                            </View>
-                                            <DeleteConfirmationModal
-                                                visible={deleteModalVisible}
-                                                onClose={handleCloseDeleteModal}
-                                                onDelete={handleDeleteTreatment}
-                                            />
-                                            <View style={styles.treatmentContent}>
-                                                <TouchableOpacity
-                                                    style={styles.editableField}
-                                                    onPress={() => handleEditField(item._id, 'treatmentSummary')}
-                                                >
-                                                    <Text style={styles.fieldLabel}>Treatment Summary</Text>
-                                                    <Text style={[
-                                                        styles.fieldValue,
-                                                        { textAlign: /^[\u0590-\u05FF]/.test(item.treatmentSummary) ? 'right' : 'left' }
-                                                    ]}>
-                                                        {item.treatmentSummary || 'Add summary...'}
-                                                    </Text>
-                                                </TouchableOpacity>
-
-                                                <TouchableOpacity
-                                                    style={styles.editableField}
-                                                    onPress={() => handleEditField(item._id, 'whatNext')}
-                                                >
-                                                    <Text style={styles.fieldLabel}>Next Steps</Text>
-                                                    <Text style={[
-                                                        styles.fieldValue,
-                                                        { textAlign: /^[\u0590-\u05FF]/.test(item.whatNext) ? 'right' : 'left' }
-                                                    ]}>
-                                                        {item.whatNext || 'Add next steps...'}
-                                                    </Text>
-                                                </TouchableOpacity>
-
-                                                <TouchableOpacity
-                                                    style={styles.editableField}
-                                                    onPress={() => handleEditField(item._id, 'homework')}
-                                                >
-                                                    <Text style={styles.fieldLabel}>Homework</Text>
-                                                    <Text style={[
-                                                        styles.fieldValue,
-                                                        { textAlign: /^[\u0590-\u05FF]/.test(item.homework) ? 'right' : 'left' }
-                                                    ]}>
-                                                        {item.homework || 'Add homework...'}
-                                                    </Text>
-                                                </TouchableOpacity>
-
-                                                <View style={styles.paymentSection}>
-                                                    <View
-                                                        style={[styles.paymentStatus, {
-                                                            backgroundColor: PAYMENT_STATUSES[treatmentPaid[index]]?.color + '20' || '#FFF3E0'
-                                                        }]}
+                                                <DeleteConfirmationModal
+                                                    visible={deleteModalVisible}
+                                                    onClose={handleCloseDeleteModal}
+                                                    onDelete={handleDeleteTreatment}
+                                                />
+                                                <View style={styles.treatmentContent}>
+                                                    <TouchableOpacity
+                                                        disabled={item.status !== "COMPLETED"}
+                                                        style={styles.editableField}
+                                                        onPress={() => handleEditField(item._id, 'treatmentSummary')}
                                                     >
-                                                        <MaterialIcons
-                                                            name={PAYMENT_STATUSES[treatmentPaid[index]]?.icon || 'schedule'}
-                                                            size={16}
-                                                            color={PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800'}
-                                                        />
-                                                        <Text style={[styles.statusText, { color: PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800' }]}>
-                                                            {treatmentPaid[index]}
+                                                        <Text style={styles.fieldLabel}>Treatment Summary</Text>
+                                                        <Text style={[
+                                                            styles.fieldValue,
+                                                            { textAlign: /^[\u0590-\u05FF]/.test(item.treatmentSummary) ? 'right' : 'left' }
+                                                        ]}>
+                                                            {item.treatmentSummary || 'Add summary...'}
                                                         </Text>
-                                                        {/* <Text>{treatmentPaid[index]}</Text> */}
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        disabled={item.status !== "COMPLETED"}
+                                                        style={styles.editableField}
+                                                        onPress={() => handleEditField(item._id, 'whatNext')}
+                                                    >
+                                                        <Text style={styles.fieldLabel}>Next Steps</Text>
+                                                        <Text style={[
+                                                            styles.fieldValue,
+                                                            { textAlign: /^[\u0590-\u05FF]/.test(item.whatNext) ? 'right' : 'left' }
+                                                        ]}>
+                                                            {item.whatNext || 'Add next steps...'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        disabled={item.status !== "COMPLETED"}
+                                                        style={styles.editableField}
+                                                        onPress={() => handleEditField(item._id, 'homework')}
+                                                    >
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Homework</Text>
+                                                        <Text style={[
+                                                            styles.fieldValue,
+                                                            { textAlign: /^[\u0590-\u05FF]/.test(item.homework) ? 'right' : 'left' }
+                                                        ]}>
+                                                            {item.homework || 'Add homework...'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+
+                                                    <View style={styles.paymentSection}>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Payment status</Text>
+                                                        <View
+                                                            style={[styles.paymentStatus, {
+                                                                backgroundColor: PAYMENT_STATUSES[treatmentPaid[index]]?.color + '20' || '#FFF3E0'
+                                                            }]}
+                                                        >
+                                                            <MaterialIcons
+                                                                name={PAYMENT_STATUSES[treatmentPaid[index]]?.icon || 'schedule'}
+                                                                size={16}
+                                                                color={PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800'}
+                                                            />
+                                                            <Text style={[styles.statusText, { color: PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800' }]}>
+                                                                {treatmentPaid[index]}
+                                                            </Text>
+                                                            {/* <Text>{treatmentPaid[index]}</Text> */}
+                                                        </View>
+
+
+
+                                                        <TouchableOpacity disabled={item.status !== "COMPLETED"} onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
+                                                            <View style={styles.treatmentPrice}>
+                                                                {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
+                                                                <Text style={styles.priceText}>
+                                                                    {item.treatmentPrice === 0 ? 'Add price ' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
+                                                                </Text>
+                                                            </View>
+                                                        </TouchableOpacity>
                                                     </View>
 
-
-                                                    {/* <TouchableOpacity
-                                                        style={[styles.paymentStatus, {
-                                                            backgroundColor: PAYMENT_STATUSES[item.paymentStatus]?.color + '20' || '#FFF3E0'
-                                                        }]}
-                                                        onPress={() => handleStatusModalOpen(item._id)}
-                                                    >
-                                                        <MaterialIcons
-                                                            name={PAYMENT_STATUSES[item.paymentStatus]?.icon || 'schedule'}
-                                                            size={16}
-                                                            color={PAYMENT_STATUSES[item.paymentStatus]?.color || '#FF9800'}
-                                                        />
-                                                        <Text style={[styles.statusText, { color: PAYMENT_STATUSES[item.paymentStatus]?.color || '#FF9800' }]}>
-                                                            {PAYMENT_STATUSES[item.paymentStatus]?.label || 'Set status'}
-                                                        </Text>
-                                                    </TouchableOpacity>
-
-                                                    <TouchableOpacity
-                                                        style={styles.paymentMethod}
-                                                        onPress={() => handleMethodModalOpen(item._id)}
-                                                    >
-                                                        <MaterialIcons
-                                                            name={PAYMENT_METHODS[item.PaymentMethod]?.icon || 'payment'}
-                                                            size={16}
-                                                            color="#014495"
-                                                        />
-                                                        <Text style={styles.methodText}>
-                                                            {item.PaymentMethod === 'OTHER' ? item.otherPaymentMethod :
-                                                                PAYMENT_METHODS[item.PaymentMethod]?.label || 'Set method'}
-                                                        </Text>
-                                                    </TouchableOpacity> */}
-                                                    <TouchableOpacity onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
-                                                        <View style={styles.treatmentPrice}>
-                                                            {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
-                                                            <Text style={styles.priceText}>
-                                                                {item.treatmentPrice === 0 ? 'Add price ' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
+                                                    <View style={styles.paymentSection}>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>treatment status</Text>
+                                                        <View
+                                                            style={[styles.paymentStatus, {
+                                                                backgroundColor: TREATMENT_STATUSES[item.status]?.color + '20' || '#FFF3E0'
+                                                            }]}
+                                                        >
+                                                            <MaterialIcons
+                                                                name={TREATMENT_STATUSES[item.status]?.icon || 'schedule'}
+                                                                size={16}
+                                                                color={TREATMENT_STATUSES[item.status]?.color || '#FF9800'}
+                                                            />
+                                                            <Text style={[styles.statusText, { color: TREATMENT_STATUSES[item.status]?.color || '#FF9800' }]}>
+                                                                {item.status}
                                                             </Text>
+                                                            {/* <Text>{treatmentPaid[index]}</Text> */}
                                                         </View>
-                                                    </TouchableOpacity>
+
+
+
+                                                        <TouchableOpacity onPress={() => { setSelectedTreatmentId(item._id); setEditStatusModalVisible(true) }}>
+                                                            <View style={styles.treatmentPrice}>
+                                                                {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
+                                                                <Text style={styles.priceText}>
+                                                                    Change Status
+                                                                </Text>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                    </View>
                                                 </View>
-                                            </View>
-                                        </Animatable.View>
+
+                                            </Animatable.View>
+                                        </>
                                     )}
                                     keyExtractor={(item) => item._id}
                                     contentContainerStyle={styles.treatmentsList}
@@ -2798,6 +3003,7 @@ export default function Treatments({ navigation }) {
                 treatments={treatments}
                 setTreatment={setNewTreatment}
                 clientDetails={clientDetails}
+                setClientDetails={setClientDetails}
                 setRepeat={setRepeat}
                 repeat={repeat}
             />
@@ -2933,12 +3139,13 @@ export default function Treatments({ navigation }) {
     );
 }
 
-const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, clientDetails, setTreatment, setRepeat, repeat }) => {
+const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, clientDetails, setClientDetails, setTreatment, setRepeat, repeat }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
-
+    const [clientPrice, setClientPrice] = useState(0);
+    const [treatmentStage, setTreatmentStage] = useState(clientDetails.clientPrice === 0 ? 0 : 1)
     const [isSaving, setIsSaving] = useState(false);
-    console.log("treatment.length:", Treatments.length, "clientDetails.numberOfMeetings:", clientDetails.numberOfMeetings)
+    // console.log("treatment.length:", Treatments.length, "clientDetails.numberOfMeetings:", clientDetails.numberOfMeetings)
     const formatTime = (date) => {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
@@ -2954,11 +3161,12 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
             visible={visible}
             animationType="slide"
             transparent={true}
-            onRequestClose={onClose}
+            onRequestClose={() => { setTreatmentStage(0); onClose(); }}
         >
             <TouchableWithoutFeedback onPress={onClose}>
                 <View style={styles.modalOverlay}>
                     <TouchableWithoutFeedback>
+
                         <Animatable.View
                             animation="slideInUp"
                             duration={300}
@@ -2967,207 +3175,172 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                             <View style={styles.modalHeader}>
                                 <Text style={styles.modalTitle}>Add Treatment</Text>
                                 <TouchableOpacity
-                                    onPress={onClose}
+                                    onPress={() => { setTreatmentStage(0); onClose(); }}
                                     style={styles.modalCloseButton}
                                 >
                                     <MaterialIcons name="close" size={24} color="#666" />
                                 </TouchableOpacity>
                             </View>
-
-                            <ScrollView style={styles.modalContent}>
-                                <View style={styles.dateTimeContainer}>
-                                    <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
-                                        <Text style={styles.pickerTitle}>Select Date</Text>
-                                        <DateTimePicker
-                                            value={treatment.treatmentDate}
-                                            mode="date"
-                                            display="inline"
-                                            onChange={(event, selectedDate) => {
-                                                setShowDatePicker(false);
-                                                if (selectedDate) {
-                                                    setTreatment({
-                                                        ...treatment,
-                                                        treatmentDate: selectedDate
-                                                    });
-                                                }
-                                            }}
+                            {treatmentStage === 0 && clientDetails.clientPrice === 0 ? (
+                                <View>
+                                    <Text allowFontScaling={false} style={styles.clientPricePrompt}>{"Treatment Price:"}</Text>
+                                    <View style={styles.editModalContent}>
+                                        <TextInput
+                                            style={styles.editModalInput}
+                                            placeholder="Enter new price"
+                                            keyboardType="numeric"
+                                            value={clientPrice.toString()}
+                                            onChangeText={setClientPrice}
                                         />
                                     </View>
-
-                                    <View style={[styles.datePickerButton, { flex: 1 }]}>
-                                        <Text style={styles.pickerTitle}>Select Time</Text>
-                                        <DateTimePicker
-                                            value={treatment.treatmentTime}
-                                            mode="time"
-                                            display="calendar"
-                                            onChange={(event, selectedTime) => {
-                                                setShowTimePicker(false);
-                                                if (selectedTime) {
-                                                    setTreatment({
-                                                        ...treatment,
-                                                        treatmentTime: selectedTime
+                                    <View style={styles.modalFooter}>
+                                        <TouchableOpacity
+                                            style={styles.cancelButtonTreatment}
+                                            onPress={() => setTreatmentStage(1)}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Skip</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                                            onPress={async () => {
+                                                try {
+                                                    console.log("clientDetails._id:", clientDetails._id)
+                                                    setIsSaving(true); let field = "clientPrice"; let value = parseInt(clientPrice); const response = await axios.patch(`${Api}/clients/${clientDetails._id}/updateField`, {
+                                                        field,
+                                                        value
                                                     });
+                                                    setClientDetails(response.data);
+                                                    setIsSaving(false);
+                                                    setTreatmentStage(1);
+                                                } catch (error) {
+                                                    console.log("error update client price:", error)
                                                 }
+
                                             }}
-                                        />
+                                            disabled={isSaving}
+                                        >
+                                            {isSaving ? (
+                                                <ActivityIndicator color="white" size="small" />
+                                            ) : (
+                                                <Text style={styles.saveButtonText}>Next</Text>
+                                            )}
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
+                            ) :
+                                <>
 
-                                {/* {showDatePicker && (
-                                    <DateTimePicker
-                                        value={treatment.treatmentDate}
-                                        mode="date"
-                                        display="default"
-                                        onChange={(event, selectedDate) => {
-                                            setShowDatePicker(false);
-                                            if (selectedDate) {
-                                                setTreatment({
-                                                    ...treatment,
-                                                    treatmentDate: selectedDate
-                                                });
-                                            }
-                                        }}
-                                    />
-                                )}
+                                    <ScrollView style={styles.modalContent}>
 
-                                {showTimePicker && (
-                                    <DateTimePicker
-                                        value={treatment.treatmentTime}
-                                        mode="time"
-                                        display="default"
-                                        onChange={(event, selectedTime) => {
-                                            setShowTimePicker(false);
-                                            if (selectedTime) {
-                                                setTreatment({
-                                                    ...treatment,
-                                                    treatmentTime: selectedTime
-                                                });
-                                            }
-                                        }}
-                                    />
-                                )} */}
 
-                                {/* <Text style={styles.inputLabel}>Treatment Summary</Text>
-                                <TextInput
-                                    style={styles.textArea}
-                                    multiline
-                                    numberOfLines={4}
-                                    value={treatment.treatmentSummary}
-                                    onChangeText={(text) =>
-                                        setTreatment({ ...treatment, treatmentSummary: text })
-                                    }
-                                    placeholder="Describe the treatment..."
-                                />
-
-                                <Text style={styles.inputLabel}>Next Steps</Text>
-                                <TextInput
-                                    style={styles.textArea}
-                                    multiline
-                                    numberOfLines={4}
-                                    value={treatment.whatNext}
-                                    onChangeText={(text) =>
-                                        setTreatment({ ...treatment, whatNext: text })
-                                    }
-                                    placeholder="What's next..."
-                                />
-
-                                <Text style={styles.inputLabel}>Payment Status</Text>
-                                <View style={styles.paymentStatusSelector}>
-                                    {['paid', 'pending'].map((status) => (
-                                        <TouchableOpacity
-                                            key={status}
-                                            style={[
-                                                styles.statusOption,
-                                                treatment.paymentStatus === status &&
-                                                styles.statusOptionActive
-                                            ]}
-                                            onPress={() =>
-                                                setTreatment({ ...treatment, paymentStatus: status })
-                                            }
-                                        >
-                                            <MaterialIcons
-                                                name={status === 'paid' ? 'check-circle' : 'schedule'}
-                                                size={20}
-                                                color={treatment.paymentStatus === status ?
-                                                    'white' : '#666'}
-                                            />
-                                            <Text style={[
-                                                styles.statusOptionText,
-                                                treatment.paymentStatus === status &&
-                                                styles.statusOptionTextActive
-                                            ]}>
-                                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View> */}
-                                {treatments.length < clientDetails.numberOfMeetings - 1 && <View style={styles.repeatContainer}>
-                                    <Text style={styles.repeatLabel}>
-                                        <MaterialIcons name="repeat" size={20} color="#014495" />
-                                        <Text style={styles.repeatLabelText}> Repeat</Text>
-                                    </Text>
-
-                                    <View style={styles.repeatOptions}>
-                                        {[
-                                            { label: 'Every week', value: 'weekly' },
-                                            { label: 'Never', value: 'never' },
-
-                                            /* { label: 'Every 2 weeks', value: 'biweekly' } */
-                                        ].map((option) => (
-                                            <Animatable.View
-                                                key={option.value}
-                                                animation="fadeIn"
-                                                duration={500}
-                                                delay={100}
-                                            >
-                                                <TouchableOpacity
-                                                    style={[
-                                                        styles.repeatOption,
-                                                        repeat === option.value && styles.repeatOptionActive
-                                                    ]}
-                                                    onPress={() => setRepeat(option.value)}
-                                                >
-                                                    <MaterialIcons
-                                                        name={
-                                                            option.value === 'never' ? 'close' :
-                                                                option.value === 'weekly' ? 'event-repeat' :
-                                                                    'date-range'
+                                        <View style={styles.dateTimeContainer}>
+                                            <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
+                                                <Text style={styles.pickerTitle}>Select Date</Text>
+                                                <DateTimePicker
+                                                    value={treatment.treatmentDate}
+                                                    mode="date"
+                                                    display="inline"
+                                                    onChange={(event, selectedDate) => {
+                                                        setShowDatePicker(false);
+                                                        if (selectedDate) {
+                                                            setTreatment({
+                                                                ...treatment,
+                                                                treatmentDate: selectedDate
+                                                            });
                                                         }
-                                                        size={20}
-                                                        color={repeat === option.value ? 'white' : '#014495'}
-                                                    />
-                                                    <Text style={[
-                                                        styles.repeatOptionText,
-                                                        repeat === option.value && styles.repeatOptionTextActive
-                                                    ]}>
-                                                        {option.label}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            </Animatable.View>
-                                        ))}
-                                    </View>
-                                </View>}
-                            </ScrollView>
+                                                    }}
+                                                />
+                                            </View>
 
-                            <View style={styles.modalFooter}>
-                                <TouchableOpacity
-                                    style={styles.cancelButtonTreatment}
-                                    onPress={onClose}
-                                >
-                                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                                    onPress={() => handleSave(repeat)}
-                                    disabled={isSaving}
-                                >
-                                    {isSaving ? (
-                                        <ActivityIndicator color="white" size="small" />
-                                    ) : (
-                                        <Text style={styles.saveButtonText}>Save</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
+                                            <View style={[styles.datePickerButton, { flex: 1 }]}>
+                                                <Text style={styles.pickerTitle}>Select Time</Text>
+                                                <DateTimePicker
+                                                    value={treatment.treatmentTime}
+                                                    mode="time"
+                                                    display="calendar"
+                                                    onChange={(event, selectedTime) => {
+                                                        setShowTimePicker(false);
+                                                        if (selectedTime) {
+                                                            setTreatment({
+                                                                ...treatment,
+                                                                treatmentTime: selectedTime
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                            </View>
+                                        </View>
+
+
+                                        {treatments.length < clientDetails.numberOfMeetings - 1 && <View style={styles.repeatContainer}>
+                                            <Text style={styles.repeatLabel}>
+                                                <MaterialIcons name="repeat" size={20} color="#014495" />
+                                                <Text style={styles.repeatLabelText}> Repeat</Text>
+                                            </Text>
+
+                                            <View style={styles.repeatOptions}>
+                                                {[
+                                                    { label: 'Every week', value: 'weekly' },
+                                                    { label: 'Never', value: 'never' },
+
+                                                    /* { label: 'Every 2 weeks', value: 'biweekly' } */
+                                                ].map((option) => (
+                                                    <Animatable.View
+                                                        key={option.value}
+                                                        animation="fadeIn"
+                                                        duration={500}
+                                                        delay={100}
+                                                    >
+                                                        <TouchableOpacity
+                                                            style={[
+                                                                styles.repeatOption,
+                                                                repeat === option.value && styles.repeatOptionActive
+                                                            ]}
+                                                            onPress={() => setRepeat(option.value)}
+                                                        >
+                                                            <MaterialIcons
+                                                                name={
+                                                                    option.value === 'never' ? 'close' :
+                                                                        option.value === 'weekly' ? 'event-repeat' :
+                                                                            'date-range'
+                                                                }
+                                                                size={20}
+                                                                color={repeat === option.value ? 'white' : '#014495'}
+                                                            />
+                                                            <Text style={[
+                                                                styles.repeatOptionText,
+                                                                repeat === option.value && styles.repeatOptionTextActive
+                                                            ]}>
+                                                                {option.label}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    </Animatable.View>
+                                                ))}
+                                            </View>
+                                        </View>}
+
+                                    </ScrollView>
+
+                                    <View style={styles.modalFooter}>
+                                        <TouchableOpacity
+                                            style={styles.cancelButtonTreatment}
+                                            onPress={() => { setTreatmentStage(0); onClose(); }}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                                            onPress={() => { setTreatmentStage(0); handleSave(repeat); }}
+                                            disabled={isSaving}
+                                        >
+                                            {isSaving ? (
+                                                <ActivityIndicator color="white" size="small" />
+                                            ) : (
+                                                <Text style={styles.saveButtonText}>Save</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                </>}
                         </Animatable.View>
                     </TouchableWithoutFeedback>
                 </View>
@@ -4121,6 +4294,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginTop: 12,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
         // backgroundColor: "yellow",
     },
     paymentMethod: {
@@ -4817,5 +4993,25 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         height: windowHeight * 0.1
-    }
+    },
+    clientPricePrompt: {
+        fontSize: 18,
+        color: '#333', // Dark gray for better readability
+        margin: 10, // Space above and below the text
+        textAlign: 'flex-start', // Center the text
+    },
+
+    relativeTimeText: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '500',
+        marginBottom: 8,
+        marginLeft: 4,
+        fontStyle: 'italic',
+        opacity: 0.8
+    },
+
+
+
+
 });

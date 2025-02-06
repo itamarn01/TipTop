@@ -108,7 +108,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
     return (
         <Animatable.View animation="fadeIn" duration={1000} style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Parents</Text>
+                <Text allowFontScaling={false} style={styles.title}>Parents</Text>
                 <TouchableOpacity
                     style={styles.addButton}
                     onPress={() => {
@@ -133,7 +133,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                             size={24}
                             color="#014495"
                         />
-                        <Text style={styles.parentName}>{parent.parentName}</Text>
+                        <Text allowFontScaling={false} style={styles.parentName}>{parent.parentName}</Text>
                     </View>
 
                     <View style={styles.contactButtons}>
@@ -143,7 +143,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                 onPress={() => handleContact('phone', parent.phone)}
                             >
                                 <MaterialIcons name="phone" size={20} color="#014495" />
-                                <Text style={styles.contactText}>{parent.phone}</Text>
+                                <Text allowFontScaling={false} style={styles.contactText}>{parent.phone}</Text>
                             </TouchableOpacity>
                         )}
                         {parent.email && (
@@ -152,7 +152,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                 onPress={() => handleContact('email', parent.email)}
                             >
                                 <MaterialIcons name="email" size={20} color="#014495" />
-                                <Text style={styles.contactText}>{parent.email}</Text>
+                                <Text allowFontScaling={false} style={styles.contactText}>{parent.email}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -200,7 +200,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                 duration={300}
                                 style={styles.modalContent}
                             >
-                                <Text style={styles.modalTitle}>
+                                <Text allowFontScaling={false} style={styles.modalTitle}>
                                     {editingParent ? 'Edit Parent' : 'Add Parent'}
                                 </Text>
 
@@ -226,7 +226,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                             size={24}
                                             color={parentData.gender === 'male' ? '#fff' : '#014495'}
                                         />
-                                        <Text style={[
+                                        <Text allowFontScaling={false} style={[
                                             styles.genderText,
                                             parentData.gender === 'male' && styles.selectedGenderText
                                         ]}>
@@ -246,7 +246,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                             size={24}
                                             color={parentData.gender === 'female' ? '#fff' : '#014495'}
                                         />
-                                        <Text style={[
+                                        <Text allowFontScaling={false} style={[
                                             styles.genderText,
                                             parentData.gender === 'female' && styles.selectedGenderText
                                         ]}>
@@ -282,7 +282,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                             resetForm();
                                         }}
                                     >
-                                        <Text style={styles.buttonText}>Cancel</Text>
+                                        <Text allowFontScaling={false} style={styles.buttonText}>Cancel</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.saveButton, isSaving && styles.savingButton]}
@@ -303,7 +303,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                         {isSaving ? (
                                             <ActivityIndicator size="small" color="white" />
                                         ) : (
-                                            <Text style={styles.buttonText}>Save</Text>
+                                            <Text allowFontScaling={false} style={styles.buttonText}>Save</Text>
                                         )}
                                     </TouchableOpacity>
                                 </View>
