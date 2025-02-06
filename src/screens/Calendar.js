@@ -148,10 +148,10 @@ export default function Calendar({ navigation }) {
             <TouchableOpacity onPress={() => handleClientPress(item.clientId)}>
 
                 <View style={styles.treatmentHeader}>
-                    <Text style={styles.clientName}>
+                    <Text allowFontScaling={false} style={styles.clientName}>
                         {item.clientId?.name} {item.clientId?.lastName}
                     </Text>
-                    <Text style={styles.dateTime}>
+                    <Text allowFontScaling={false} style={styles.dateTime}>
                         {new Date(item.treatmentDate).toLocaleDateString([], {
                             year: 'numeric',
                             month: 'short',
@@ -164,7 +164,7 @@ export default function Calendar({ navigation }) {
                     </Text>
                 </View>
 
-                <Text
+                <Text allowFontScaling={false}
                     style={styles.summary}
                     numberOfLines={2}
                     ellipsizeMode="tail"
@@ -173,7 +173,7 @@ export default function Calendar({ navigation }) {
                 </Text>
 
                 <View style={styles.priceContainer}>
-                    <Text style={styles.price}>${item.treatmentPrice}</Text>
+                    <Text allowFontScaling={false} style={styles.price}>${item.treatmentPrice}</Text>
                 </View>
             </TouchableOpacity>
         </Animatable.View>
@@ -228,7 +228,7 @@ export default function Calendar({ navigation }) {
                     }
                     ListEmptyComponent={() => (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>
+                            <Text allowFontScaling={false} style={styles.emptyText}>
                                 No treatments found for {selected ? 'this date' : 'this month'}
                             </Text>
                         </View>

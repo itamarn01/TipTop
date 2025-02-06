@@ -116,14 +116,15 @@ const SignUp = ({ navigation }) => {
                                 loop
                                 style={styles.animation}
                             />
-                            <Text style={styles.title}>Create Account</Text>
-                            <Text style={styles.subtitle}>Join us today!</Text>
+                            <Text allowFontScaling={false} style={styles.title}>Create Account</Text>
+                            <Text allowFontScaling={false} style={styles.subtitle}>Join us today!</Text>
                         </View>
 
                         <View style={styles.formContainer}>
                             <View style={styles.inputContainer}>
                                 <MaterialIcons name="person" size={24} color="#4A90E2" />
                                 <TextInput
+                                    allowFontScaling={false}
                                     style={styles.input}
                                     placeholder="Full Name"
                                     value={name}
@@ -131,11 +132,12 @@ const SignUp = ({ navigation }) => {
                                     placeholderTextColor="#A0A0A0"
                                 />
                             </View>
-                            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+                            {errors.name && <Text allowFontScaling={false} style={styles.errorText}>{errors.name}</Text>}
 
                             <View style={styles.inputContainer}>
                                 <MaterialIcons name="email" size={24} color="#4A90E2" />
                                 <TextInput
+                                    allowFontScaling={false}
                                     style={styles.input}
                                     placeholder="Email"
                                     value={email}
@@ -145,7 +147,7 @@ const SignUp = ({ navigation }) => {
                                     placeholderTextColor="#A0A0A0"
                                 />
                             </View>
-                            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                            {errors.email && <Text allowFontScaling={false} style={styles.errorText}>{errors.email}</Text>}
 
                             <View style={styles.inputContainer}>
                                 <MaterialIcons name="lock" size={24} color="#4A90E2" />
@@ -168,9 +170,9 @@ const SignUp = ({ navigation }) => {
                                     />
                                 </TouchableOpacity>
                             </View>
-                            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                            {errors.password && <Text allowFontScaling={false} style={styles.errorText}>{errors.password}</Text>}
 
-                            {errors.form && <Text style={styles.errorText}>{errors.form}</Text>}
+                            {errors.form && <Text allowFontScaling={false} style={styles.errorText}>{errors.form}</Text>}
 
                             <TouchableOpacity
                                 style={styles.signupButton}
@@ -185,14 +187,14 @@ const SignUp = ({ navigation }) => {
                                         style={styles.loadingAnimation}
                                     />
                                 ) : (
-                                    <Text style={styles.signupButtonText}>Create Account</Text>
+                                    <Text allowFontScaling={false} style={styles.signupButtonText}>Create Account</Text>
                                 )}
                             </TouchableOpacity>
 
                             <View style={styles.signinContainer}>
-                                <Text style={styles.signinText}>Already have an account? </Text>
+                                <Text allowFontScaling={false} style={styles.signinText}>Already have an account? </Text>
                                 <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-                                    <Text style={styles.signinButton}>Sign In</Text>
+                                    <Text allowFontScaling={false} style={styles.signinButton}>Sign In</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

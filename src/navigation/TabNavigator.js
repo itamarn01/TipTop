@@ -36,25 +36,25 @@ function TabNavigator() {
         >
             <Tab.Screen name="Home" component={Home} options={{
                 headerShown: true,
-                headerStyle: { backgroundColor: '#1F609A' },
+                headerStyle: { backgroundColor: '#4A90E2' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic", /* fontSize: 24, */ }, // You can customize the font style if needed
             }} />
             <Tab.Screen name="Patients" component={ClientStack} options={{
                 headerShown: false,
-                headerStyle: { backgroundColor: '#1F609A' },
+                headerStyle: { backgroundColor: '#4A90E2' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
             }} />
             <Tab.Screen name="Calendar" component={Calendar} options={{
                 headerShown: true,
-                headerStyle: { backgroundColor: '#1F609A' },
+                headerStyle: { backgroundColor: '#4A90E2' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
             }} />
             <Tab.Screen name="Profile" component={Profile} options={{
                 headerShown: true,
-                headerStyle: { backgroundColor: '#1F609A' },
+                headerStyle: { backgroundColor: '#4A90E2' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
             }} />

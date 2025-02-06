@@ -142,32 +142,55 @@ export default function Home({ navigation }) {
                     duration={1500}
                     style={styles.welcomeContainer}
                 >
-                    <Text style={styles.greetingText}>
+                    <Text allowFontScaling={false} style={styles.greetingText}>
                         {(() => {
                             const hour = new Date().getHours();
-                            if (hour < 12) return 'Good Morning';
-                            if (hour < 17) return 'Good Afternoon';
-                            if (hour < 21) return 'Good Evening';
+                            if (hour > 4 && hour < 12) return 'Good Morning';
+                            if (hour > 12 && hour < 17) return 'Good Afternoon';
+                            if (hour > 17 && hour < 21) return 'Good Evening';
                             return 'Good Night';
                         })()}
                     </Text>
-                    <Text style={styles.userName}>
+                    <Text allowFontScaling={false} style={styles.userName}>
                         {user.name || 'User'}
                     </Text>
-                    <Text style={styles.welcomeMessage}>
-                        Welcome back to your therapy dashboard
+                    <Text allowFontScaling={false} style={styles.welcomeMessage}>
+                        {stats.clientCount > 0 ? "Welcome back to your therapy dashboard" : "Welcome to your therapy dashboard"}
                     </Text>
                 </Animatable.View>
-                <View style={styles.statsRow}>
+                {stats.clientCount === 0 &&
+                    <Animatable.View
+                        animation="fadeIn"
+                        duration={1000}
+                        style={styles.newUserContainer}
+                    >
+                        <Text allowFontScaling={false} style={styles.newUserText}>
+                            Hey there! Welcome to TipTop! To kick things off, just add some patients and schedule their treatments. Let's get started!
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.newUserButton}
+                            onPress={() => navigation.navigate('Patients')}
+                        >
+                            <Text allowFontScaling={false} style={styles.newUserButtonText}>Add Patients</Text>
+                        </TouchableOpacity>
+                    </Animatable.View>}
+
+                <TouchableOpacity onPress={() => navigation.navigate('Patients')} style={styles.statsRow}>
+
+
                     <Animatable.View
                         animation="zoomIn"
                         duration={1000}
                         style={[styles.statsBox, { backgroundColor: COLORS.secondary }]}
                     >
+
                         <MaterialIcons name="people" size={24} color="#FFF" />
-                        <Text style={styles.statsLabel}>Patients</Text>
-                        <Text style={styles.statsValue}>{stats.clientCount}</Text>
+                        <Text allowFontScaling={false} style={styles.statsLabel}>Patients</Text>
+                        <Text allowFontScaling={false} style={styles.statsValue}>{stats.clientCount}</Text>
+
                     </Animatable.View>
+
+
 
                     <Animatable.View
                         animation="zoomIn"
@@ -176,10 +199,10 @@ export default function Home({ navigation }) {
                         style={[styles.statsBox, { backgroundColor: COLORS.female }]}
                     >
                         <MaterialIcons name="medical-services" size={24} color="#FFF" />
-                        <Text style={styles.statsLabel}>Treatments</Text>
-                        <Text style={styles.statsValue}>{stats.treatmentCount}</Text>
+                        <Text allowFontScaling={false} style={styles.statsLabel}>Treatments</Text>
+                        <Text allowFontScaling={false} style={styles.statsValue}>{stats.treatmentCount}</Text>
                     </Animatable.View>
-                </View>
+                </TouchableOpacity>
                 {stats.nextTreatment && (
                     <Animatable.View
                         animation="slideInDown"
@@ -202,13 +225,13 @@ export default function Home({ navigation }) {
                                 >
                                     <View style={styles.titleContainer}>
                                         <MaterialIcons name="event" size={24} color="#FFF" />
-                                        <Text style={styles.nextTreatmentTitle}>Next Treatment</Text>
+                                        <Text allowFontScaling={false} style={styles.nextTreatmentTitle}>Next Treatment</Text>
                                     </View>
 
                                     <View style={styles.treatmentDetails}>
                                         <View style={styles.dateTimeContainer}>
                                             <MaterialIcons name="access-time" size={20} color="#FFF" />
-                                            <Text style={styles.dateTimeText}>
+                                            <Text allowFontScaling={false} style={styles.dateTimeText}>
                                                 {new Date(stats.nextTreatment.treatmentDate).toLocaleString([], {
                                                     hour: '2-digit',
                                                     minute: '2-digit'
@@ -218,7 +241,7 @@ export default function Home({ navigation }) {
 
                                         <View style={styles.dateTimeContainer}>
                                             <MaterialIcons name="calendar-today" size={20} color="#FFF" />
-                                            <Text style={styles.dateTimeText}>
+                                            <Text allowFontScaling={false} style={styles.dateTimeText}>
                                                 {new Date(stats.nextTreatment.treatmentDate).toLocaleDateString([], {
                                                     year: 'numeric',
                                                     month: 'short',
@@ -235,7 +258,7 @@ export default function Home({ navigation }) {
                                                 size={24}
                                                 color="#FFF"
                                             />
-                                            <Text style={styles.clientName}>
+                                            <Text allowFontScaling={false} style={styles.clientName}>
                                                 {stats.nextTreatment.clientId.name} {stats.nextTreatment.clientId.lastName}
                                             </Text>
                                         </View>
@@ -245,8 +268,8 @@ export default function Home({ navigation }) {
                                             style={styles.emptyTreatmentContainer}
                                         >
                                             <MaterialIcons name="event-busy" size={40} color="rgba(255, 255, 255, 0.8)" />
-                                            <Text style={styles.emptyTreatmentTitle}>No Upcoming Treatments</Text>
-                                            <Text style={styles.emptyTreatmentText}>
+                                            <Text allowFontScaling={false} style={styles.emptyTreatmentTitle}>No Upcoming Treatments</Text>
+                                            <Text allowFontScaling={false} style={styles.emptyTreatmentText}>
                                                 You don't have any treatments scheduled yet
                                             </Text>
                                         </Animatable.View>
@@ -255,7 +278,9 @@ export default function Home({ navigation }) {
                             </LinearGradient>
                         </ImageBackground>
                     </Animatable.View>
-                )}
+                )
+
+                }
 
 
                 <Animatable.View
@@ -266,22 +291,22 @@ export default function Home({ navigation }) {
                 >
                     <View style={styles.paymentsHeader}>
                         <MaterialIcons name="account-balance-wallet" size={24} color="#014495" />
-                        <Text style={styles.paymentsTitle}>Payments Overview</Text>
+                        <Text allowFontScaling={false} style={styles.paymentsTitle}>Payments Overview</Text>
                     </View>
 
                     <View style={styles.paymentsGrid}>
                         <View style={[styles.paymentBox, styles.successPaymentBox]}>
                             <MaterialIcons name="check-circle" size={24} color={COLORS.success} />
-                            <Text style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Paid</Text>
-                            <Text style={[styles.paymentAmount, { color: COLORS.success }]}>
+                            <Text allowFontScaling={false} style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Paid</Text>
+                            <Text allowFontScaling={false} style={[styles.paymentAmount, { color: COLORS.success }]}>
                                 ${stats.payments.find(p => p._id === 'paid')?.totalAmount || 0}
                             </Text>
                         </View>
 
                         <View style={[styles.paymentBox, styles.warningPaymentBox]}>
                             <MaterialIcons name="schedule" size={24} color={COLORS.warning} />
-                            <Text style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Pending</Text>
-                            <Text style={[styles.paymentAmount, { color: COLORS.warning }]}>
+                            <Text allowFontScaling={false} style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Pending</Text>
+                            <Text allowFontScaling={false} style={[styles.paymentAmount, { color: COLORS.warning }]}>
                                 ${stats.totalPending/*  ${stats.payments.find(p => p._id === 'pending')?.totalAmount || 0} */}
                             </Text>
                         </View>
@@ -434,6 +459,7 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 12,
         padding: 16,
+        // width: "40%",
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: COLORS.primary,
@@ -525,5 +551,37 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: 'rgba(255, 255, 255, 0.8)',
         textAlign: 'center',
+    },
+    newUserContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        borderRadius: 12,
+        marginTop: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+        marginBottom: 20,
+    },
+    newUserButton: {
+        backgroundColor: COLORS.secondary,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginTop: 10,
+    },
+    newUserButtonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    newUserText: {
+        fontSize: 16,
+        color: '#333', // You can adjust the color as needed
+        textAlign: 'center', // Center the text
+        marginBottom: 10, // Add some space below the text
     },
 });

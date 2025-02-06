@@ -64,14 +64,14 @@ const TreatmentForm = ({ route, navigation }) => {
         <ScrollView style={styles.container}>
             <View style={styles.header}>
                 <MaterialIcons name="medical-services" size={40} color="#4A90E2" />
-                <Text style={styles.headerText}>
+                <Text allowFontScaling={false} style={styles.headerText}>
                     {isEditing ? "Update Treatment" : "New Treatment"}
                 </Text>
             </View>
 
             <View style={styles.formContainer}>
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Client ID</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Client ID</Text>
                     <TextInput
                         value={clientId}
                         onChangeText={setClientId}
@@ -83,7 +83,7 @@ const TreatmentForm = ({ route, navigation }) => {
 
                 <View style={styles.row}>
                     <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-                        <Text style={styles.label}>Price</Text>
+                        <Text allowFontScaling={false} style={styles.label}>Price</Text>
                         <TextInput
                             value={treatmentPrice}
                             onChangeText={setTreatmentPrice}
@@ -95,7 +95,7 @@ const TreatmentForm = ({ route, navigation }) => {
                     </View>
 
                     <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>Session #</Text>
+                        <Text allowFontScaling={false} style={styles.label}>Session #</Text>
                         <TextInput
                             value={sessionNumber}
                             onChangeText={setSessionNumber}
@@ -108,13 +108,13 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Treatment Date</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Treatment Date</Text>
                     <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         style={styles.dateButton}
                     >
                         <MaterialIcons name="event" size={24} color="#4A90E2" />
-                        <Text style={styles.dateText}>{treatmentDate.toDateString()}</Text>
+                        <Text allowFontScaling={false} style={styles.dateText}>{treatmentDate.toDateString()}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -131,7 +131,7 @@ const TreatmentForm = ({ route, navigation }) => {
                 )}
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Treatment Summary</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Treatment Summary</Text>
                     <TextInput
                         value={treatmentSummary}
                         onChangeText={setTreatmentSummary}
@@ -143,7 +143,7 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Homework</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Homework</Text>
                     <TextInput
                         value={homework}
                         onChangeText={setHomework}
@@ -155,7 +155,7 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Next Steps</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Next Steps</Text>
                     <TextInput
                         value={whatNext}
                         onChangeText={setWhatNext}
@@ -167,7 +167,7 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Payment Status</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Payment Status</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
                             selectedValue={paymentStatus}
@@ -182,7 +182,7 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Payment Method</Text>
+                    <Text allowFontScaling={false} style={styles.label}>Payment Method</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
                             selectedValue={paymentMethod}
@@ -200,7 +200,7 @@ const TreatmentForm = ({ route, navigation }) => {
                     style={styles.submitButton}
                     onPress={handleSubmit}
                 >
-                    <Text style={styles.submitButtonText}>
+                    <Text allowFontScaling={false} style={styles.submitButtonText}>
                         {isEditing ? "Update Treatment" : "Add Treatment"}
                     </Text>
                 </TouchableOpacity>

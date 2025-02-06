@@ -22,6 +22,8 @@ import {
     KeyboardAvoidingView,
     SafeAreaView,
     StatusBar,
+    Linking,
+    Share,
 } from "react-native";
 import {
     BannerAd,
@@ -80,22 +82,7 @@ const fadeIn = {
     },
 };
 
-const NoClientsComponent = ({ onAddClient }) => (
-    <Animatable.View
-        animation="fadeIn"
-        style={styles.emptyStateContainer}
-        duration={1000}
-    >
-        <Text style={styles.emptyStateTitle}>No Clients Yet</Text>
-        <TouchableOpacity
-            style={styles.emptyStateButton}
-            onPress={onAddClient}
-        >
-            <MaterialIcons name="person-add" size={24} color="white" />
-            <Text style={styles.emptyStateButtonText}>Add New Patient</Text>
-        </TouchableOpacity>
-    </Animatable.View>
-);
+
 
 const NoSearchResultsComponent = ({ search }) => (
     <Animatable.View
@@ -157,7 +144,8 @@ export default function Clients({ navigation }) {
     const [isSaving, setIsSaving] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const nameRef = useRef(null);
-
+    const [link, setLink] = useState("");
+    const [modalformvisible, setModalFormVisible] = useState(false)
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             setPage(1);
@@ -317,9 +305,50 @@ export default function Clients({ navigation }) {
         }
     };
 
+    const NoClientsComponent = ({ onAddClient }) => (
+        <Animatable.View
+            animation="fadeIn"
+            style={styles.emptyStateContainer}
+            duration={1000}
+        >
+            <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Patients Yet</Text>
+            <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={onAddClient}
+            >
+                <MaterialIcons name="person-add" size={24} color="white" />
+                <Text allowFontScaling={false} style={styles.emptyStateButtonText}>Add New Patient</Text>
+            </TouchableOpacity>
+            <Text allowFontScaling={false} style={styles.orText}>or</Text>
+            <TouchableOpacity
+                style={styles.generateLinkButton}
+                onPress={() => navigation.navigate("ClientForm")}
+            >
+                <MaterialIcons name="link" size={24} color="white" />
+                <Text allowFontScaling={false} style={styles.generateLinkText}>Send Patient Link For Details</Text>
+            </TouchableOpacity>
+        </Animatable.View>
+    );
+
+    const generateLink = async () => {
+        /*  if (!adminId) {
+             Alert.alert("Error", "Admin ID is required.");
+             return;
+         } */
+
+        try {
+            const response = await axios.post(`${Api}/clients/generate-form-link`, { adminId: user._id, api: Api.slice(0, -4) });
+            setLink(response.data.link);
+            Alert.alert("Success", "Form link generated successfully.");
+        } catch (error) {
+            console.error("Error generating form link:", error);
+            Alert.alert("Error", "Could not generate form link.");
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="orange" barStyle="dark-content" />
+            <StatusBar backgroundColor="#4A90E2" barStyle="dark-content" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}
@@ -331,7 +360,7 @@ export default function Clients({ navigation }) {
                     duration={1000}
                     style={styles.header}
                 >
-                    <Text style={styles.headerTitle}>My Patients</Text>
+                    <Text allowFontScaling={false} style={styles.headerTitle}>My Patients</Text>
 
                     <TouchableOpacity
                         onPress={() => {
@@ -357,12 +386,69 @@ export default function Clients({ navigation }) {
                         requestNonPersonalizedAdsOnly: !isTrackingPermission,
                     }}
                 />}
+
+                {/*  {user.formLink ?
+                    <View style={{ flexDirection: "row", justifyContent: "space-around", alignItems: "center" }}>
+                      
+                        <TouchableOpacity
+                            style={styles.copyButton}
+                            onPress={() => Linking.openURL(user.formLink)}
+                        >
+                            <MaterialIcons name="open-in-browser" size={24} color="white" />
+                            <Text allowFontScaling={false} style={styles.copyButtonText}>Preview</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.copyButton}
+                            onPress={() => {
+                                // Functionality to share the link
+                                Share.share({
+                                    message: `${user.formLink}`,
+                                });
+                            }}
+                        >
+                            <MaterialIcons name="share" size={24} color="white" />
+                            <Text allowFontScaling={false} style={styles.copyButtonText}>Share Link</Text>
+                        </TouchableOpacity>
+                    </View> : null}
+                <Button title="Generate Form Link" onPress={generateLink} style={{ height: 50 }} />
+                {link ? (
+                    <View style={styles.linkContainer}>
+                        <Text allowFontScaling={false} style={styles.linkLabel}>Form Link:</Text>
+                        <Text allowFontScaling={false}
+                            style={styles.link}
+                            selectable // Make the text selectable for manual copying
+                        >
+                            {link}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.openLinkButton}
+                            onPress={() => Linking.openURL(link)}
+                        >
+                            <MaterialIcons name="open-in-browser" size={24} color="white" />
+                            <Text allowFontScaling={false} style={styles.openLinkButtonText}>Preview</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.copyButton}
+                            onPress={() => {
+                                // Functionality to share the link
+                                Share.share({
+                                    message: `Check out this link: ${link}`,
+                                });
+                            }}
+                        >
+                            <MaterialIcons name="share" size={24} color="white" />
+                            <Text style={styles.copyButtonText}>Share Link</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : null} */}
+
                 {isSearchVisible ? (
                     // Search View
                     <Animated.View style={styles.searchView}>
                         <View style={styles.searchInputContainer}>
                             <MaterialIcons name="search" size={20} color="#666" />
                             <TextInput
+                                allowFontScaling={false}
                                 style={styles.searchInput}
                                 placeholder="Search clients..."
                                 value={search}
@@ -393,8 +479,8 @@ export default function Clients({ navigation }) {
                                         />
                                     </View>
                                     <View style={styles.clientInfo}>
-                                        <Text style={styles.name}>{item.name} {item.lastName}</Text>
-                                        <Text style={styles.clientDetails}>
+                                        <Text allowFontScaling={false} style={styles.name}>{item.name} {item.lastName}</Text>
+                                        <Text allowFontScaling={false} style={styles.clientDetails}>
                                             {new Date(item.birthday).toLocaleDateString()}
                                         </Text>
                                     </View>
@@ -411,17 +497,28 @@ export default function Clients({ navigation }) {
                 ) : (
                     // Main Clients View
                     <>
-                        {clients.length === 0 ? (
+                        {clients.length === 0 && !isLoading ? (
                             <NoClientsComponent onAddClient={handleAddClient} />
                         ) : (
                             <>
-                                <TouchableOpacity
-                                    style={styles.addButton}
-                                    onPress={handleAddClient}
-                                >
-                                    <MaterialIcons name="person-add" size={24} color="white" />
-                                    <Text style={styles.addButtonText}>Add New Patient</Text>
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: "row", justifyContent: "space-between", width: "90%", marginVertical: 20, alignItems: "center", alignSelf: "center" }}>
+
+
+                                    <TouchableOpacity
+                                        style={[styles.addButton, { width: "83%" }]}
+                                        onPress={handleAddClient}
+                                    >
+                                        <MaterialIcons name="person-add" size={24} color="white" />
+                                        <Text allowFontScaling={false} style={styles.addButtonText}>Add New Patient</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.addButton, { width: "15%" }]}
+                                        onPress={() => navigation.navigate("ClientForm")}
+                                    >
+                                        <MaterialIcons name="link" size={24} color="white" />
+                                        {/* <Text allowFontScaling={false} style={styles.generateLinkText}>Send Patient Link For Details</Text> */}
+                                    </TouchableOpacity>
+                                </View>
 
                                 {isLoading && page === 1 ? (
                                     // Show skeleton loading for initial load
@@ -476,8 +573,8 @@ export default function Clients({ navigation }) {
                                                             />
                                                         </View>
                                                         <View style={styles.clientInfo}>
-                                                            <Text style={styles.name}>{item.name} {item.lastName}</Text>
-                                                            <Text style={styles.clientDetails}>
+                                                            <Text allowFontScaling={false} style={styles.name}>{item.name} {item.lastName}</Text>
+                                                            <Text allowFontScaling={false} style={styles.clientDetails}>
                                                                 {new Date(item.birthday).toLocaleDateString()}
                                                             </Text>
                                                         </View>
@@ -555,7 +652,7 @@ export default function Clients({ navigation }) {
                                             <MaterialIcons name="close" size={24} color="#666" />
                                             {/* <Text style={styles.cancelButtonText}>Cancel</Text> */}
                                         </TouchableOpacity>
-                                        <Text style={styles.modalTitle}>Add New Patient</Text>
+                                        <Text allowFontScaling={false} style={styles.modalTitle}>Add New Patient</Text>
                                         <TouchableOpacity
                                             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
                                             onPress={async () => {
@@ -568,7 +665,7 @@ export default function Clients({ navigation }) {
                                             {isSaving ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text style={styles.saveButtonText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.saveButtonText}>Save</Text>
                                             )}
                                         </TouchableOpacity>
                                     </Animated.View>
@@ -585,8 +682,9 @@ export default function Clients({ navigation }) {
                                     <ScrollView style={styles.modalScroll} keyboardShouldPersistTaps={"handled"}>
 
                                         <View style={styles.inputGroup}>
-                                            <Text style={styles.inputLabel}>Patient name</Text>
+                                            <Text allowFontScaling={false} style={styles.inputLabel}>Patient name</Text>
                                             <TextInput
+                                                allowFontScaling={false}
                                                 ref={nameRef}
                                                 style={[styles.input, errors.name && styles.errorInput]}
                                                 placeholder="Name"
@@ -605,8 +703,9 @@ export default function Clients({ navigation }) {
                                         </View>
 
                                         <View style={styles.inputGroup}>
-                                            <Text style={styles.inputLabel}>Patient last name</Text>
+                                            <Text allowFontScaling={false} style={styles.inputLabel}>Patient last name</Text>
                                             <TextInput
+                                                allowFontScaling={false}
                                                 style={[styles.input, errors.lastName && styles.errorInput]}
                                                 placeholder="Last Name"
                                                 value={newClient.lastName}
@@ -623,7 +722,7 @@ export default function Clients({ navigation }) {
                                             )}
                                         </View>
                                         <View style={styles.inputGroup}>
-                                            <Text style={styles.inputLabel}>Client gender</Text>
+                                            <Text allowFontScaling={false} style={styles.inputLabel}>Client gender</Text>
                                             <View style={styles.genderContainer}>
                                                 <TouchableOpacity
                                                     onPress={() => {
@@ -640,7 +739,7 @@ export default function Clients({ navigation }) {
                                                         size={24}
                                                         color={gender === "male" ? "white" : "#666"}
                                                     />
-                                                    <Text style={[
+                                                    <Text allowFontScaling={false} style={[
                                                         styles.genderText,
                                                         gender === "male" && styles.genderTextActive
                                                     ]}>Male</Text>
@@ -661,7 +760,7 @@ export default function Clients({ navigation }) {
                                                         size={24}
                                                         color={gender === "female" ? "#FF69B4" : "#666"}
                                                     />
-                                                    <Text style={[
+                                                    <Text allowFontScaling={false} style={[
                                                         styles.genderText,
                                                         gender === "female" && styles.genderTextActive
                                                     ]}>Female</Text>
@@ -746,7 +845,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#014495',
         padding: 15,
         borderRadius: 12,
-        margin: 20,
+        // margin: 20,
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -867,8 +966,8 @@ const styles = StyleSheet.create({
         padding: 40,
     },
     emptyStateAnimation: {
-        width: windowWidth * 0.3,
-        height: windowWidth * 0.3,
+        width: windowWidth * 0.2,
+        height: windowWidth * 0.2,
         marginBottom: 20,
     },
     emptyStateTitle: {
@@ -1035,5 +1134,41 @@ const styles = StyleSheet.create({
     datePicker: {
         width: '100%',
         height: 150,
+    },
+    linkContainer: { marginTop: 20 },
+    linkLabel: { fontWeight: "bold" },
+    link: { color: "blue", marginTop: 5 },
+    copyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#014495',
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 10,
+    },
+    copyButtonText: {
+        color: 'white',
+        marginLeft: 5,
+        fontWeight: 'bold',
+    },
+    orText: {
+        fontSize: 16,
+        color: '#666',
+        marginVertical: 10,
+        textAlign: 'center',
+    },
+    generateLinkButton: {
+        backgroundColor: '#014495', // Same color as Add New Patient button
+        padding: 15,
+        borderRadius: 12,
+        flexDirection: 'row', // Align icon and text horizontally
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    generateLinkText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginLeft: 10, // Space between icon and text
     },
 });

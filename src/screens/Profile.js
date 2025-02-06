@@ -37,14 +37,18 @@ export default function Profile({ navigation }) {
     const [image, setImage] = useState(user.profileImage); // For displaying selected image
     const [name, setName] = useState(user.name)
     const [email, setEmail] = useState(user.email)
+    const [phone, setPhone] = useState(user.phone)
     const [deleteLoading, setDeleteLoading] = useState(false)
     const [nameModalVisible, setNameModalVisible] = useState(false)
     const [emailModalVisible, setEmailModalVisible] = useState(false)
+    const [phoneModalVisible, setPhoneModalVisible] = useState(false)
     const dispatch = useDispatch();
     const nameInputRef = useRef(null);
     const emailInputRef = useRef(null);
+    const phoneInputRef = useRef(null);
     const [isNameSaving, setIsNameSaving] = useState(false);
     const [isEmailSaving, setIsEmailSaving] = useState(false);
+    const [isPhoneSaving, setIsPhoneSaving] = useState(false);
     const [emailStep, setEmailStep] = useState(1); // 1 for email input, 2 for verification code
     const [newEmail, setNewEmail] = useState(user.email);
     const [verificationCode, setVerificationCode] = useState('');
@@ -172,6 +176,34 @@ export default function Profile({ navigation }) {
         }
     };
 
+    const handleSavePhone = async () => {
+        if (!phone) return; // Ensure name is not empty
+        setIsPhoneSaving(true);
+        try {
+            const token = await AsyncStorage.getItem('userToken'); // Get the token for authorization
+
+            const response = await axios.put(`${Api}/auth/update-phone`, {
+                newPhone: phone // Send the new name in the request body
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Include the token in the headers
+                }
+            });
+
+            if (response.data.message) {
+                // Alert.alert('Success', response.data.message); // Show success message
+                fetchUserDetails(); // Fetch updated user details
+                setPhoneModalVisible(false); // Close the modal
+            }
+        } catch (error) {
+            console.error('Error updating Name:', error);
+            Alert.alert('Error', error.response?.data?.message || 'Failed to update phone'); // Show error message
+        } finally {
+            setIsPhoneSaving(false); // Reset saving state
+        }
+    };
+
     const handleSaveEmail = async (clientId) => {
         if (!name) return;
         setIsEmailSaving(true);
@@ -288,7 +320,7 @@ export default function Profile({ navigation }) {
                                 onPress={handleDeleteProfileImage}
                             >
                                 {/*  <MaterialIcons name="delete" size={24} color="#fff" /> */}
-                                <Text style={styles.buttonDeleteImageText}>Delete Profile Image</Text>
+                                <Text allowFontScaling={false} style={styles.buttonDeleteImageText}>Delete Profile Image</Text>
                             </TouchableOpacity>
                         )}
                     </>
@@ -297,10 +329,10 @@ export default function Profile({ navigation }) {
                         <MaterialIcons name="account-circle" size={200} color="#ccc" style={styles.defaultImageIcon} />
                     </TouchableOpacity>
                 )}
-                {/*  {message && <Text style={styles.message}>{message}</Text>} */}
+                {/*  {message && <Text allowFontScaling={false}  style={styles.message}>{message}</Text>} */}
                 <TouchableOpacity style={styles.button} onPress={pickImage}>
                     {/* <MaterialIcons name="photo" size={24} color='#014495' /> */}
-                    <Text style={styles.buttonText}>Edit picture</Text>
+                    <Text allowFontScaling={false} style={styles.buttonText}>Edit picture</Text>
                 </TouchableOpacity>
 
             </Animatable.View>
@@ -308,7 +340,7 @@ export default function Profile({ navigation }) {
                 <Animatable.View animation="fadeIn" duration={300}>
                     <TouchableOpacity style={styles.settingOption} onPress={() => setNameModalVisible(true)}>
                         <MaterialIcons name="person" size={24} color="#333" />
-                        <Text style={styles.settingText}>{user.name}</Text>
+                        <Text allowFontScaling={false} style={styles.settingText}>{user.name}</Text>
                         <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
                     </TouchableOpacity>
                 </Animatable.View>
@@ -316,7 +348,15 @@ export default function Profile({ navigation }) {
                 <Animatable.View animation="fadeIn" duration={300} delay={100}>
                     <TouchableOpacity style={styles.settingOption} onPress={() => { setNewEmail(user.email); setEmailModalVisible(true) }}>
                         <MaterialIcons name="email" size={24} color="#333" />
-                        <Text style={styles.settingText}>{user.email}</Text>
+                        <Text allowFontScaling={false} style={styles.settingText}>{user.email}</Text>
+                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                    </TouchableOpacity>
+                </Animatable.View>
+
+                <Animatable.View animation="fadeIn" duration={300}>
+                    <TouchableOpacity style={styles.settingOption} onPress={() => setPhoneModalVisible(true)}>
+                        <MaterialIcons name="phone" size={24} color={user.phone ? "#333" : "rgba(0,0,0,0.3)"} />
+                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.phone ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.phone ? user.phone : "Add Phone"}</Text>
                         <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
                     </TouchableOpacity>
                 </Animatable.View>
@@ -324,16 +364,16 @@ export default function Profile({ navigation }) {
                 <Animatable.View animation="fadeIn" duration={300} delay={200}>
                     <TouchableOpacity style={styles.settingOption} onPress={logOutPressed}>
                         <MaterialIcons name="logout" size={24} color="#333" />
-                        <Text style={styles.settingText}>Logout</Text>
+                        <Text allowFontScaling={false} style={styles.settingText}>Logout</Text>
                         <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
                     </TouchableOpacity>
                 </Animatable.View>
             </View>
             {/*  <TouchableOpacity onPress={() => setNameModalVisible(true)}>
-                <Text>{user.name}</Text>
+                <Text allowFontScaling={false} >{user.name}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setNewEmail(user.email); setEmailModalVisible(true) }}>
-                <Text>{user.email}</Text>
+                <Text allowFontScaling={false} >{user.email}</Text>
             </TouchableOpacity>
             <Button
                 onPress={logOutPressed}
@@ -371,7 +411,7 @@ export default function Profile({ navigation }) {
                                     >
                                         <MaterialIcons name="close" size={24} color="#666" />
                                     </TouchableOpacity>
-                                    <Text style={styles.modalIdTitle}>Edit your Name</Text>
+                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>Edit your Name</Text>
                                     <TouchableOpacity
                                         style={[
                                             styles.saveIdButton,
@@ -383,14 +423,14 @@ export default function Profile({ navigation }) {
                                         {isNameSaving ? (
                                             <ActivityIndicator color="white" size="small" />
                                         ) : (
-                                            <Text style={styles.saveButtonIdText}>Save</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>Save</Text>
                                         )}
                                     </TouchableOpacity>
                                 </View>
 
                                 <View style={styles.modalIdBody}>
                                     <View style={styles.inputIdContainer}>
-                                        <Text style={styles.inputIdLabel}>FullName</Text>
+                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>FullName</Text>
                                         <TextInput
                                             ref={nameInputRef}
                                             style={styles.inputId}
@@ -398,7 +438,7 @@ export default function Profile({ navigation }) {
                                             value={name}
                                             onChangeText={setName}
                                             keyboardType="name-phone-pad"
-                                            maxLength={9}
+                                            // maxLength={20}
                                             placeholderTextColor="#999"
                                         />
                                         {name === "" && (
@@ -451,7 +491,7 @@ export default function Profile({ navigation }) {
                                     >
                                         <MaterialIcons name="close" size={24} color="#666" />
                                     </TouchableOpacity>
-                                    <Text style={styles.modalIdTitle}>
+                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>
                                         {emailStep === 1 ? 'Change Email' : 'Verify Email'}
                                     </Text>
                                     <TouchableOpacity
@@ -471,7 +511,7 @@ export default function Profile({ navigation }) {
                                         {isVerifying || isEmailSaving ? (
                                             <ActivityIndicator color="white" size="small" />
                                         ) : (
-                                            <Text style={styles.saveButtonIdText}>
+                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>
                                                 {emailStep === 1 ? 'Send Code' : 'Verify'}
                                             </Text>
                                         )}
@@ -484,8 +524,9 @@ export default function Profile({ navigation }) {
                                     >
                                         {emailStep === 1 ? (
                                             <>
-                                                <Text style={styles.inputIdLabel}>New Email Address</Text>
+                                                <Text allowFontScaling={false} style={styles.inputIdLabel}>New Email Address</Text>
                                                 <TextInput
+                                                    allowFontScaling={false}
                                                     ref={emailInputRef}
                                                     style={[
                                                         styles.inputId,
@@ -517,8 +558,9 @@ export default function Profile({ navigation }) {
                                             </>
                                         ) : (
                                             <>
-                                                <Text style={styles.inputIdLabel}>Verification Code sent to {newEmail}</Text>
+                                                <Text allowFontScaling={false} style={styles.inputIdLabel}>Verification Code sent to {newEmail}</Text>
                                                 <TextInput
+                                                    allowFontScaling={false}
                                                     ref={emailInputRef}
                                                     style={styles.inputId}
                                                     placeholder="Enter verification code"
@@ -545,7 +587,82 @@ export default function Profile({ navigation }) {
                     </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
             </Modal>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={phoneModalVisible}
+                onRequestClose={() => setPhoneModalVisible(false)}
+                onShow={() => {
+                    // Focus the amount input when the modal is shown
+                    setTimeout(() => {
+                        phoneInputRef.current?.focus();
+                    }, 100);
+                }}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
+                >
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                        <View style={styles.modalIdOverlay}>
+                            <Animatable.View
+                                animation="slideInUp"
+                                duration={300}
+                                style={styles.modalIdContent}
+                            >
+                                <View style={styles.modalIdHeader}>
+                                    <TouchableOpacity
+                                        style={styles.descriptionModalClose}
+                                        onPress={() => setPhoneModalVisible(false)}
+                                    >
+                                        <MaterialIcons name="close" size={24} color="#666" />
+                                    </TouchableOpacity>
+                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>Edit your phone number</Text>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.saveIdButton,
+                                            phone === "" && styles.saveButtonIdDisabled
+                                        ]}
+                                        onPress={() => handleSavePhone()}
+                                        disabled={isPhoneSaving || phone === ""}
+                                    >
+                                        {isPhoneSaving ? (
+                                            <ActivityIndicator color="white" size="small" />
+                                        ) : (
+                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>Save</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
 
+                                <View style={styles.modalIdBody}>
+                                    <View style={styles.inputIdContainer}>
+                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>Phone Number</Text>
+                                        <TextInput
+                                            allowFontScaling={false}
+                                            ref={phoneInputRef}
+                                            style={styles.inputId}
+                                            placeholder="Enter your phone number"
+                                            value={phone}
+                                            onChangeText={setPhone}
+                                            keyboardType="phone-pad"
+                                            maxLength={10}
+                                            placeholderTextColor="#999"
+                                        />
+                                        {phone === "" && (
+                                            <Animatable.Text
+                                                animation="shake"
+                                                style={styles.errorIdText}
+                                            >
+                                                Phone cannot be empty
+                                            </Animatable.Text>
+                                        )}
+                                    </View>
+                                </View>
+                            </Animatable.View>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }
