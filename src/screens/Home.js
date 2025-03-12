@@ -58,6 +58,13 @@ const productionID1 =
 
 const adUnitId1 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID1;
 
+const iosAdmobBanner2 = "ca-app-pub-8754599705550429~7718527397";
+const androidAdmobBanner2 = "ca-app-pub-8754599705550429~4996995283";
+const productionID2 =
+    Platform.OS === "android" ? androidAdmobBanner2 : iosAdmobBanner2;
+
+const adUnitId2 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID2;
+
 const COLORS = {
     primary: '#2C3E50',       // Deep blue-gray
     secondary: '#3498DB',     // Bright blue
@@ -77,8 +84,8 @@ export default function Home({ navigation }) {
     const dispatch = useDispatch();
     const isTrackingPermission = useSelector((state) => state.tracking.isTrackingPermission);
     const user = useSelector((state) => state.auth.user);
-    console.log("trackingpermos:", isTrackingPermission)
-    console.log("user:", user)
+    // console.log("trackingpermos:", isTrackingPermission)
+    // console.log("user:", user)
     const [stats, setStats] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -86,7 +93,7 @@ export default function Home({ navigation }) {
         try {
             const response = await axios.get(`${Api}/home/user/${user._id}/stats`);
             setStats(response.data);
-            console.log("stat:", response.data)
+            // console.log("stat:", response.data)
         } catch (error) {
             console.error('Error fetching stats:', error);
         } finally {
@@ -169,40 +176,42 @@ export default function Home({ navigation }) {
                         </Text>
                         <TouchableOpacity
                             style={styles.newUserButton}
-                            onPress={() => navigation.navigate('Patients')}
+                            onPress={() => navigation.navigate('Patients', { screen: "Clients" })}
                         >
                             <Text allowFontScaling={false} style={styles.newUserButtonText}>Add Patients</Text>
                         </TouchableOpacity>
                     </Animatable.View>}
 
-                <TouchableOpacity onPress={() => navigation.navigate('Patients')} style={styles.statsRow}>
 
 
-                    <Animatable.View
-                        animation="zoomIn"
-                        duration={1000}
-                        style={[styles.statsBox, { backgroundColor: COLORS.secondary }]}
-                    >
+                <View style={styles.statsRow}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Patients', { screen: "Clients" })} style={[styles.statsBox, { backgroundColor: COLORS.secondary }]}/* style={styles.statsRow} */>
+                        <Animatable.View
+                            animation="zoomIn"
+                            duration={1000}
 
-                        <MaterialIcons name="people" size={24} color="#FFF" />
-                        <Text allowFontScaling={false} style={styles.statsLabel}>Patients</Text>
-                        <Text allowFontScaling={false} style={styles.statsValue}>{stats.clientCount}</Text>
+                        >
 
-                    </Animatable.View>
+                            <MaterialIcons name="people" size={24} color="#FFF" style={{ alignSelf: "center" }} />
+                            <Text allowFontScaling={false} style={styles.statsLabel}>Patients</Text>
+                            <Text allowFontScaling={false} style={styles.statsValue}>{stats.clientCount}</Text>
 
+                        </Animatable.View>
 
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('Calendar')} style={[styles.statsBox, { backgroundColor: COLORS.female }]} /* style={styles.statsRow} */>
+                        <Animatable.View
+                            animation="zoomIn"
+                            duration={1000}
+                            delay={200}
 
-                    <Animatable.View
-                        animation="zoomIn"
-                        duration={1000}
-                        delay={200}
-                        style={[styles.statsBox, { backgroundColor: COLORS.female }]}
-                    >
-                        <MaterialIcons name="medical-services" size={24} color="#FFF" />
-                        <Text allowFontScaling={false} style={styles.statsLabel}>Treatments</Text>
-                        <Text allowFontScaling={false} style={styles.statsValue}>{stats.treatmentCount}</Text>
-                    </Animatable.View>
-                </TouchableOpacity>
+                        >
+                            <MaterialIcons name="medical-services" size={24} color="#FFF" style={{ alignSelf: "center" }} />
+                            <Text allowFontScaling={false} style={styles.statsLabel}>Treatments</Text>
+                            <Text allowFontScaling={false} style={styles.statsValue}>{stats.treatmentCount}</Text>
+                        </Animatable.View>
+                    </TouchableOpacity>
+                </View>
                 {stats.nextTreatment && (
                     <Animatable.View
                         animation="slideInDown"
@@ -312,7 +321,18 @@ export default function Home({ navigation }) {
                         </View>
                     </View>
                 </Animatable.View>
+                <View style={{ marginBottom: 40, alignSelf: "center" }}>
 
+                    {user.package === "free" && <BannerAd
+                        //    ref={bannerRef}
+                        unitId={adUnitId2}
+                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                        requestOptions={{
+                            requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                            // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
+                        }}
+                    />}
+                </View>
 
             </ScrollView>
         </View>
@@ -324,6 +344,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
         padding: 16,
+        // paddingBottom: 100,
     },
     loader: {
         flex: 1,
@@ -480,6 +501,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 28,
         fontWeight: 'bold',
+        alignSelf: "center"
     },
     paymentsCard: {
         backgroundColor: COLORS.white,
@@ -490,6 +512,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 4,
+        marginBottom: 40,
     },
     paymentsHeader: {
         flexDirection: 'row',

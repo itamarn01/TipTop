@@ -5,7 +5,7 @@ import {
     ActivityIndicator,
     FlatList,
     RefreshControl,
-    Text
+    Text, Platform
 } from 'react-native';
 import { Calendar as RNCalendar } from 'react-native-calendars';
 import * as Animatable from 'react-native-animatable';
@@ -16,7 +16,28 @@ import { Api } from '../Api';
 import { useDispatch } from 'react-redux';
 import { setSelectedClient } from '../redux/slices/selectedClientSlice';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+import {
+    BannerAd,
+    BannerAdSize,
+    TestIds,
+    InterstitialAd,
+    AdEventType,
+    RewardedAd,
+    RewardedAdEventType,
+    RewardedInterstitialAd,
+    mobileAds,
+    AppOpenAd,
+    AdsConsent,
+    AdsConsentStatus,
+    useForeground,
+} from "react-native-google-mobile-ads";
 
+const iosAdmobBanner1 = "ca-app-pub-8754599705550429~7718527397";
+const androidAdmobBanner1 = "ca-app-pub-8754599705550429~4996995283";
+const productionID1 =
+    Platform.OS === "android" ? androidAdmobBanner1 : iosAdmobBanner1;
+
+const adUnitId1 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID1;
 export default function Calendar({ navigation }) {
     const [selected, setSelected] = useState('');
     const [treatments, setTreatments] = useState([]);
@@ -31,17 +52,18 @@ export default function Calendar({ navigation }) {
         uniqueClientsCount: 0,
         averagePrice: 0
     });
+    const isTrackingPermission = useSelector((state) => state.tracking.isTrackingPermission);
     const user = useSelector((state) => state.auth.user);
     const userId = user._id
     const dispatch = useDispatch();
-    console.log("userId:", userId)
+    // console.log("userId:", userId)
     const fetchMonthlyStats = async (month, year) => {
         try {
             const response = await axios.get(
                 `${Api}/treatments/user/${userId}/monthly-stats?month=${month}&year=${year}`
             );
             setMonthlyStats(response.data);
-            console.log("monthlyStats:", monthlyStats)
+            // console.log("monthlyStats:", monthlyStats)
         } catch (error) {
             console.error('Error fetching monthly stats:', error);
         }
@@ -59,7 +81,7 @@ export default function Calendar({ navigation }) {
                 `${Api}/treatments/user/${userId}?month=${month}&year=${year}`
             );
             setTreatments(response.data);
-            console.log("treatments fetch:", response.data)
+            // console.log("treatments fetch:", response.data)
             // Create marked dates object
             const marked = {};
             response.data.forEach(treatment => {
@@ -71,7 +93,7 @@ export default function Calendar({ navigation }) {
                 };
             });
             setMarkedDates(marked);
-            console.log(" calendar responseData:", response.data)
+            // console.log(" calendar responseData:", response.data)
             // Update filtered treatments if a date is selected
             if (selected) {
                 const filtered = response.data.filter(t =>
@@ -148,8 +170,8 @@ export default function Calendar({ navigation }) {
             <TouchableOpacity onPress={() => handleClientPress(item.clientId)}>
 
                 <View style={styles.treatmentHeader}>
-                    <Text allowFontScaling={false} style={styles.clientName}>
-                        {item.clientId?.name} {item.clientId?.lastName}
+                    <Text allowFontScaling={false} numberOfLines={1} style={styles.clientName}>
+                        {`${(item.clientId.name + ' ' + item.clientId.lastName).slice(0, 17)}${(item.clientId.name + ' ' + item.clientId.lastName).length > 17 ? '...' : ''}`}
                     </Text>
                     <Text allowFontScaling={false} style={styles.dateTime}>
                         {new Date(item.treatmentDate).toLocaleDateString([], {
@@ -181,6 +203,15 @@ export default function Calendar({ navigation }) {
 
     return (
         <View style={styles.container}>
+            {user.package === "free" && <BannerAd
+                //    ref={bannerRef}
+                unitId={adUnitId1}
+                size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                requestOptions={{
+                    requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                    // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
+                }}
+            />}
             <Animatable.View animation="fadeInDown" duration={1000}>
                 <RNCalendar
                     onDayPress={day => {

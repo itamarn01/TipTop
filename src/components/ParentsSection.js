@@ -318,10 +318,11 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
+        padding: 20,
         backgroundColor: 'white',
         borderRadius: 12,
-        margin: 16,
+        margin: 20,
+
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,

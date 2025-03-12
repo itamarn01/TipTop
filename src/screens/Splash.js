@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Button, StyleSheet, Animated } from 'react-native';
+import { View, Text, Button, StyleSheet, Animated, StatusBar } from 'react-native';
 import { Api } from '../Api';
 import { setAuth, clearAuth } from '../redux/slices/authSlice';
 import { Provider, useDispatch } from 'react-redux';
@@ -180,6 +180,7 @@ export default function Splash({ navigation }) {
 
 
         <View style={styles.container}>
+            <StatusBar backgroundColor="#2471A3" barStyle="dark-content" />
             <View>
 
             </View>
@@ -191,6 +192,7 @@ export default function Splash({ navigation }) {
             /*  onAnimationFinish={() => setAnimationEnded(true)} */
             />
             {/* <View style={styles.dotContainer}>{renderDots()}</View> */}
+
         </View>
     );
 }
