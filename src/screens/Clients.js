@@ -97,8 +97,8 @@ const NoSearchResultsComponent = ({ search }) => (
             style={styles.emptyStateAnimation}
             speed={0.8}
         />
-        <Text style={styles.emptyStateTitle}>No Results Found</Text>
-        <Text style={styles.emptyStateText}>
+        <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Results Found</Text>
+        <Text allowFontScaling={false} style={styles.emptyStateText}>
             We couldn't find any clients matching "{search}"
         </Text>
     </Animatable.View>
@@ -346,9 +346,15 @@ export default function Clients({ navigation }) {
         }
     };
 
+    const NewBadge = () => (
+        <View style={styles.newBadgeContainer}>
+            <Text allowFontScaling={false} style={styles.newBadgeText}>NEW</Text>
+        </View>
+    );
+
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#4A90E2" barStyle="dark-content" />
+            <StatusBar backgroundColor="#014495" barStyle="dark-content" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}
@@ -437,7 +443,7 @@ export default function Clients({ navigation }) {
                             }}
                         >
                             <MaterialIcons name="share" size={24} color="white" />
-                            <Text style={styles.copyButtonText}>Share Link</Text>
+                            <Text allowFontScaling={false} style={styles.copyButtonText}>Share Link</Text>
                         </TouchableOpacity>
                     </View>
                 ) : null} */}
@@ -479,9 +485,15 @@ export default function Clients({ navigation }) {
                                         />
                                     </View>
                                     <View style={styles.clientInfo}>
-                                        <Text allowFontScaling={false} style={styles.name}>{item.name} {item.lastName}</Text>
+                                        <Text
+                                            numberOfLines={1}
+                                            allowFontScaling={false}
+                                            style={styles.name}
+                                        >
+                                            {`${(item.name + ' ' + item.lastName).slice(0, 22)}${(item.name + ' ' + item.lastName).length > 22 ? '...' : ''}`}
+                                        </Text>
                                         <Text allowFontScaling={false} style={styles.clientDetails}>
-                                            {new Date(item.birthday).toLocaleDateString()}
+                                            {item.birthday ? new Date(item.birthday).toLocaleDateString() : ''}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>
@@ -532,57 +544,71 @@ export default function Clients({ navigation }) {
                                     <FlatList
                                         data={clients}
                                         keyExtractor={(item) => item._id.toString()}
-                                        renderItem={({ item, index }) => (
-                                            <Animatable.View
-                                                animation={fadeIn}
-                                                duration={500}
-                                                delay={index * 100}
-                                            >
-                                                <Swipeable
-                                                    renderRightActions={() => (
-                                                        <TouchableOpacity
-                                                            style={styles.deleteSwipe}
-                                                            onPress={() => {
-                                                                Alert.alert(
-                                                                    'Delete Client',
-                                                                    'Are you sure you want to delete this client?',
-                                                                    [
-                                                                        { text: 'Cancel', style: 'cancel' },
-                                                                        {
-                                                                            text: 'Delete',
-                                                                            onPress: () => handleDeleteClient(item._id),
-                                                                            style: 'destructive'
-                                                                        },
-                                                                    ]
-                                                                );
-                                                            }}
-                                                        >
-                                                            <MaterialIcons name="delete" size={24} color="white" />
-                                                        </TouchableOpacity>
-                                                    )}
+                                        renderItem={({ item, index }) => {
+                                            const isNew = item.createdAt &&
+                                                (new Date().getTime() - new Date(item.createdAt).getTime()) < (2 * 24 * 60 * 60 * 1000);
+
+                                            return (
+                                                <Animatable.View
+                                                    animation={fadeIn}
+                                                    duration={500}
+                                                    delay={index * 100}
                                                 >
-                                                    <TouchableOpacity
-                                                        onPress={() => handleClientPress(item)}
-                                                        style={styles.clientItem}
+                                                    <Swipeable
+                                                        renderRightActions={() => (
+                                                            <TouchableOpacity
+                                                                style={styles.deleteSwipe}
+                                                                onPress={() => {
+                                                                    Alert.alert(
+                                                                        'Delete Client',
+                                                                        'Are you sure you want to delete this client?',
+                                                                        [
+                                                                            { text: 'Cancel', style: 'cancel' },
+                                                                            {
+                                                                                text: 'Delete',
+                                                                                onPress: () => handleDeleteClient(item._id),
+                                                                                style: 'destructive'
+                                                                            },
+                                                                        ]
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <MaterialIcons name="delete" size={24} color="white" />
+                                                            </TouchableOpacity>
+                                                        )}
                                                     >
-                                                        <View style={styles.clientAvatar}>
-                                                            <MaterialIcons
-                                                                name={item.gender === 'male' ? 'person' : 'person-outline'}
-                                                                size={30}
-                                                                color={item.gender === 'male' ? '#014495' : '#FF69B4'}
-                                                            />
-                                                        </View>
-                                                        <View style={styles.clientInfo}>
-                                                            <Text allowFontScaling={false} style={styles.name}>{item.name} {item.lastName}</Text>
-                                                            <Text allowFontScaling={false} style={styles.clientDetails}>
-                                                                {new Date(item.birthday).toLocaleDateString()}
-                                                            </Text>
-                                                        </View>
-                                                        <MaterialIcons name="chevron-right" size={24} color="#666" />
-                                                    </TouchableOpacity>
-                                                </Swipeable>
-                                            </Animatable.View>
-                                        )}
+                                                        <TouchableOpacity
+                                                            onPress={() => handleClientPress(item)}
+                                                            style={[styles.clientItem, isNew && styles.newClientItem]}
+                                                        >
+                                                            <View style={styles.clientAvatar}>
+                                                                <MaterialIcons
+                                                                    name={item.gender === 'male' ? 'person' : 'person-outline'}
+                                                                    size={30}
+                                                                    color={item.gender === 'male' ? '#014495' : '#FF69B4'}
+                                                                />
+                                                            </View>
+                                                            <View style={styles.clientInfo}>
+                                                                <View style={styles.nameContainer}>
+                                                                    <Text
+                                                                        numberOfLines={1}
+                                                                        allowFontScaling={false}
+                                                                        style={styles.name}
+                                                                    >
+                                                                        {`${(item.name + ' ' + item.lastName).slice(0, 17)}${(item.name + ' ' + item.lastName).length > 17 ? '...' : ''}`}
+                                                                    </Text>
+                                                                    {isNew && <NewBadge />}
+                                                                </View>
+                                                                <Text allowFontScaling={false} style={styles.clientDetails}>
+                                                                    {item.birthday ? new Date(item.birthday).toLocaleDateString() : ''}
+                                                                </Text>
+                                                            </View>
+                                                            <MaterialIcons name="chevron-right" size={24} color="#666" />
+                                                        </TouchableOpacity>
+                                                    </Swipeable>
+                                                </Animatable.View>
+                                            );
+                                        }}
                                         onEndReached={handleEndReached}
                                         onEndReachedThreshold={0.5}
                                         refreshControl={
@@ -650,7 +676,7 @@ export default function Clients({ navigation }) {
                                             }}
                                         >
                                             <MaterialIcons name="close" size={24} color="#666" />
-                                            {/* <Text style={styles.cancelButtonText}>Cancel</Text> */}
+                                            {/* <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text> */}
                                         </TouchableOpacity>
                                         <Text allowFontScaling={false} style={styles.modalTitle}>Add New Patient</Text>
                                         <TouchableOpacity
@@ -670,7 +696,7 @@ export default function Clients({ navigation }) {
                                         </TouchableOpacity>
                                     </Animated.View>
                                     {/*  <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Add New Patient</Text>
+                            <Text allowFontScaling={false} style={styles.modalTitle}>Add New Patient</Text>
                             <TouchableOpacity
                                 onPress={() => setModalVisible(false)}
                                 style={styles.closeButton}
@@ -769,7 +795,7 @@ export default function Clients({ navigation }) {
                                         </View>
 
                                         {/* <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Client birthday</Text>
+                                <Text allowFontScaling={false} style={styles.inputLabel}>Client birthday</Text>
                                 <View style={styles.datePickerContainer}>
                                     <DateTimePicker
                                         value={newClient.birthday ? new Date(newClient.birthday) : new Date()}
@@ -929,6 +955,8 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         padding: 10,
+        borderRadius: 20,
+        backgroundColor: '#F0F4F8',
     },
     modalScroll: {
         maxHeight: windowHeight * 0.7,
@@ -1058,7 +1086,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingVertical: 20,
         // backgroundColor: "rgba(0,0,0,0.1)",
         // width: windowWidth
     },
@@ -1107,7 +1135,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 3,
+        // elevation: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
@@ -1170,5 +1198,25 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
         marginLeft: 10, // Space between icon and text
+    },
+    newClientItem: {
+        borderLeftWidth: 4,
+        borderLeftColor: '#4CAF50',
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    newBadgeContainer: {
+        backgroundColor: '#4CAF50',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    newBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
 });

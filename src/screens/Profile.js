@@ -17,6 +17,22 @@ import { Image as ImageCompressor } from "react-native-compressor";
 import * as Animatable from 'react-native-animatable';
 import { MaterialIcons } from '@expo/vector-icons';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import {
+    BannerAd,
+    BannerAdSize,
+    TestIds,
+    InterstitialAd,
+    AdEventType,
+    RewardedAd,
+    RewardedAdEventType,
+    RewardedInterstitialAd,
+    mobileAds,
+    AppOpenAd,
+    AdsConsent,
+    AdsConsentStatus,
+    useForeground,
+} from "react-native-google-mobile-ads";
+
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -27,12 +43,18 @@ const verticalScale = (size) => (windowHeight / GuideLineBaseHeight) * size;
 const moderateScale = (size, factor = 0.5) =>
     size + (horizontalScale(size) - size) * factor;
 
+const iosAdmobBanner1 = "ca-app-pub-8754599705550429~7718527397";
+const androidAdmobBanner1 = "ca-app-pub-8754599705550429~4996995283";
+const productionID1 =
+    Platform.OS === "android" ? androidAdmobBanner1 : iosAdmobBanner1;
 
+const adUnitId1 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID1;
 export default function Profile({ navigation }) {
     const [loading, setLoading] = useState(false)
     const [uploading, setUploading] = useState(false); // To show a loading indicator
     const [message, setMessage] = useState(''); // To display success/error messages
     const [user, setUser] = useState(useSelector((state) => state.auth.user))
+    const isTrackingPermission = useSelector((state) => state.tracking.isTrackingPermission);
     // const user = useSelector((state) => state.auth.user);
     const [image, setImage] = useState(user.profileImage); // For displaying selected image
     const [name, setName] = useState(user.name)
@@ -302,7 +324,15 @@ export default function Profile({ navigation }) {
             flex: 1, /* justifyContent: "center",  */alignItems: "center"
         }}>
 
-
+            {user.package === "free" && <BannerAd
+                //    ref={bannerRef}
+                unitId={adUnitId1}
+                size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                requestOptions={{
+                    requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                    // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
+                }}
+            />}
 
             <Animatable.View animation="fadeIn" duration={300} style={styles.imageContainer}>
                 {uploading && <ActivityIndicator size="large" color="#0000ff" style={styles.defaultImageIcon} />}

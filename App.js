@@ -107,7 +107,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <RootNavigator onReady={onLayoutRootView} />
-      <StatusBar backgroundColor='#4A90E2' barStyle="dark-content" />
+      <StatusBar /* backgroundColor='#4A90E2' */ backgroundColor={"#014495"} barStyle="dark-content" />
     </Provider>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, Button, Dimensions, Linking, InputAccessoryView, Platform, ActivityIndicator, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, Button, Dimensions, Linking, InputAccessoryView, Platform, ActivityIndicator, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, Modal, RefreshControl } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -62,7 +62,19 @@ const ClientForm = ({ route, navigation }) => {
     const [modalTitle, setModalTitle] = useState("");
     const [modalField, setModalField] = useState("");
     const [webViewUri, setWebViewUri] = useState(user.formLink);
+    const webViewRef = useRef(null);
 
+
+    const [refreshing, setRefreshing] = useState(false);
+    const [key, setKey] = useState(0);
+    const reloadWebView = () => {
+        setRefreshing(true);
+        // setTimeout(() => setWebViewUri(""), 500);
+        setTimeout(() => setWebViewUri(user.formLink), 500);
+        // setWebViewUri(user.formLink)
+        // setKey(prevKey => prevKey + 1); // Change the key to force a re-render
+        setTimeout(() => setRefreshing(false), 1000); // Simulate refresh delay
+    };
     const showDynamicModal = (title, field) => {
         setModalTitle(title); // Set the title
         setModalField(field); // Set the field
@@ -128,7 +140,7 @@ const ClientForm = ({ route, navigation }) => {
     }));
 
     const handlePageChange = (page) => {
-        console.log("page:", page)
+        // console.log("page:", page)
         setActiveTab(page);
         translateX.value = withTiming(page * (windowWidth / 2)); // Adjust width division as per number of tabs
 
@@ -136,6 +148,8 @@ const ClientForm = ({ route, navigation }) => {
         if (pagerRef.current) {
             pagerRef.current.setPage(page);
         }
+
+        if (page === 1) { setWebViewUri("https://google.com"); setTimeout(() => setWebViewUri(user.formLink), 200); /* setWebViewUri(user.formLink)  */ }
 
     };
 
@@ -308,15 +322,36 @@ const ClientForm = ({ route, navigation }) => {
                                 <View style={styles.inputIdContainer}>
                                     <Text allowFontScaling={false} style={styles.inputIdLabel}>{modalTitle === "clinicName" ? "Clinic Name" : modalTitle === "clinicAddress" ? "Clinic Address" : modalTitle === "welcomeMessage" ? "Welcome Message" : modalTitle === "thankYouMessage" ? "thank You Message" : modalTitle}</Text>
                                     {modalTitle === "experience" ? (
-                                        <Picker
-                                            selectedValue={modalField}
-                                            onValueChange={(itemValue) => setModalField(itemValue)}
-                                            style={{ height: 300, width: 150, /* backgroundColor: "rgba(0,0,0,0.1)", */ alignSelf: "center", borderRadius: 10 }}
-                                        >
-                                            {Array.from({ length: 101 }, (_, i) => i).map((year) => (
-                                                <Picker.Item key={year} label={year.toString()} value={year} />
-                                            ))}
-                                        </Picker>
+                                        Platform.OS === 'ios' ? (
+                                            <Picker
+                                                selectedValue={modalField}
+                                                onValueChange={(itemValue) => setModalField(itemValue)}
+                                                style={{ height: 300, width: 150, alignSelf: "center", borderRadius: 10 }}
+                                            >
+                                                {Array.from({ length: 101 }, (_, i) => i).map((year) => (
+                                                    <Picker.Item key={year} label={year.toString()} value={year} />
+                                                ))}
+                                            </Picker>
+                                        ) : (
+                                            <View style={styles.androidPickerContainer}>
+                                                <Picker
+                                                    selectedValue={modalField}
+                                                    onValueChange={(itemValue) => setModalField(itemValue)}
+                                                    style={{ width: '100%' }}
+                                                    dropdownIconColor="#333"
+                                                    mode="dropdown"
+                                                >
+                                                    {Array.from({ length: 101 }, (_, i) => i).map((year) => (
+                                                        <Picker.Item
+                                                            key={year}
+                                                            label={year.toString()}
+                                                            value={year}
+                                                            style={{ fontSize: 16 }}
+                                                        />
+                                                    ))}
+                                                </Picker>
+                                            </View>
+                                        )
                                     ) :
                                         <TextInput
                                             allowFontScaling={false}
@@ -348,7 +383,7 @@ const ClientForm = ({ route, navigation }) => {
             </Modal>
             <View style={{ flexDirection: "row", alignSelf: "center", alignItems: "center", width: "90%", paddingVertical: 15, /* backgroundColor: "#f0f0f0", */ borderRadius: 5 }}>
                 <Ionicons name="earth-outline" size={24} color="black" />
-                <Text style={{ marginLeft: 10, fontSize: 16, color: "#333", fontWeight: "500", /* textAlign: "center" */ }}>
+                <Text allowFontScaling={false} style={{ marginHorizontal: 10, fontSize: 16, color: "#333", fontWeight: "500", /* textAlign: "center" */ }}>
                     This form is public and available to anyone with the link
                 </Text>
             </View>
@@ -361,18 +396,21 @@ const ClientForm = ({ route, navigation }) => {
             }
             {
                 user.formLink ?
-                    <View>
-                        <ScrollView horizontal={true} style={{
-                            width: windowWidth * 0.9, /* height: 50, */ alignSelf: "center", backgroundColor: "rgba(0,0,0,0.1)", padding: 10, borderRadius: 5,
-                        }}>
-                            <Text
-                                numberOfLines={1}
-                                // style={{ flex: 1 }}
-                                selectable
-                            >
-                                {user.formLink}
-                            </Text>
-                        </ScrollView>
+                    <View >
+                        <View >
+
+                            <ScrollView horizontal={true} style={{
+                                width: windowWidth * 0.9, /* height: 50, */ alignSelf: "center", backgroundColor: "rgba(0,0,0,0.1)", padding: 10, borderRadius: 5,
+                            }}>
+                                <Text
+                                    numberOfLines={1}
+                                    // style={{ flex: 1 }}
+                                    selectable
+                                >
+                                    {user.formLink}
+                                </Text>
+                            </ScrollView>
+                        </View>
 
                         <View style={{ flexDirection: "row", justifyContent: "space-around", alignItems: "center", marginTop: 20, }}>
                             <Animatable.View animation="bounceIn" duration={1000}>
@@ -442,9 +480,10 @@ const ClientForm = ({ route, navigation }) => {
                         <View >
                             <PagerView
                                 ref={pagerRef}
-                                style={[styles.pagerView, { height: windowHeight }]}
+                                style={styles.pagerView}
                                 initialPage={0}
                                 onPageSelected={onPageSelected}
+                                scrollEnabled={false}
                             >
 
 
@@ -453,7 +492,8 @@ const ClientForm = ({ route, navigation }) => {
                                     {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss()}> */}
                                     <ScrollView showsVerticalScrollIndicator={true}
                                         keyboardShouldPersistTaps={"handled"}
-                                        style={{ marginBottom: 500 }}
+                                        contentContainerStyle={styles.scrollViewContent}
+                                    // style={{ marginBottom: 500, paddingBottom: 500 }}
                                     >
                                         <Animatable.View animation="bounceIn" duration={1000}>
                                             <TouchableOpacity
@@ -571,32 +611,32 @@ const ClientForm = ({ route, navigation }) => {
 
 
                                             {/* <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Phone</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Phone</Text>
                                                 <Ionicons name="call-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput placeholder="Phone" value={phone} onChangeText={setPhone} style={styles.input} inputAccessoryViewID={inputAccessoryViewID} />
                                             </View>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Specialization</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Specialization</Text>
                                                 <Ionicons name="briefcase-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput placeholder="Specialization" value={specialization} onChangeText={setSpecialization} style={styles.input} inputAccessoryViewID={inputAccessoryViewID} />
                                             </View>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Experience</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Experience</Text>
                                                 <Ionicons name="time-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput placeholder="Experience" value={experience} keyboardType="numeric" onChangeText={setExperience} style={styles.input} inputAccessoryViewID={inputAccessoryViewID} />
                                             </View>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Clinic Name</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Clinic Name</Text>
                                                 <Ionicons name="home-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput placeholder="Clinic Name" value={clinicName} onChangeText={setClinicAddress} style={styles.input} inputAccessoryViewID={inputAccessoryViewID} />
                                             </View>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Clinic Address</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Clinic Address</Text>
                                                 <Ionicons name="location-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput placeholder="Clinic Address" value={clinicAddress} onChangeText={setClinicAddress} style={styles.input} inputAccessoryViewID={inputAccessoryViewID} />
                                             </View>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Welcome Message</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Welcome Message</Text>
                                                 <Ionicons name="chatbubble-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput
                                                     placeholder="Welcome Message"
@@ -610,7 +650,7 @@ const ClientForm = ({ route, navigation }) => {
                                                 />
                                             </View>
                                             <View style={styles.inputGroup}>
-                                                <Text style={styles.inputLabel}>Thank You Message</Text>
+                                                <Text allowFontScaling={false} style={styles.inputLabel}>Thank You Message</Text>
                                                 <Ionicons name="chatbubbles-outline" size={20} color="#666" style={styles.inputIcon} />
                                                 <TextInput
                                                     placeholder="Thank You Message"
@@ -624,7 +664,7 @@ const ClientForm = ({ route, navigation }) => {
                                                 />
                                             </View> */}
                                             {/* <TouchableOpacity style={styles.submitButton} >
-                                                <Text style={styles.submitButtonText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.submitButtonText}>Save</Text>
                                             </TouchableOpacity> */}
                                         </KeyboardAvoidingView>
                                     </ScrollView>
@@ -632,15 +672,30 @@ const ClientForm = ({ route, navigation }) => {
                                     {/*  </KeyboardAvoidingView> */}
 
                                 </View>
-                                <View key="2" style={styles.page}>
-                                    <View style={{ height: "50%" }}>
 
-                                        <WebView source={{ uri: webViewUri }} pullToRefreshEnabled={true} style={{ width: windowWidth, height: windowHeight * 2, backgroundColor: 'transparent', marginTop: 20, alignSelf: "center", flex: 1 }} scalesPageToFit={true} contentMode="mobile" scrollEnabled={true} />
-                                    </View>
+                                <View key="2" style={styles.page}>
+                                    {/*  <View style={{ height: "60%" }}> */}
+
+
+                                    <WebView ref={webViewRef} source={{ uri: webViewUri }} pullToRefreshEnabled={true} style={{ width: windowWidth, height: windowHeight * 2, backgroundColor: 'transparent', marginTop: 20, alignSelf: "center", flex: 1 }} scalesPageToFit={true} contentMode="mobile" scrollEnabled={true}
+
+                                    />
+                                    {/* </View> */}
+
                                 </View>
                             </PagerView>
                         </View>
-                    </View> : <Button title="Generate Form Link" onPress={generateLink} style={{ height: 50, alignSelf: "center" }} />
+                    </View> : <Animatable.View animation="fadeIn" duration={500} style={styles.generateButtonContainer}>
+                        <TouchableOpacity
+                            style={styles.generateButton}
+                            onPress={generateLink}
+                        >
+                            <MaterialIcons name="add-link" size={24} color="white" />
+                            <Text allowFontScaling={false} style={styles.generateButtonText}>
+                                Generate Form Link
+                            </Text>
+                        </TouchableOpacity>
+                    </Animatable.View>
             }
 
             {/* </View> */}
@@ -975,8 +1030,57 @@ const styles = StyleSheet.create({
         color: '#333', // Adjust color as needed
         marginBottom: 10, // Adjust spacing as needed
     },
-
-
+    generateButtonContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    generateButton: {
+        backgroundColor: '#014495',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 15,
+        paddingHorizontal: 25,
+        borderRadius: 12,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    generateButtonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: '600',
+        marginLeft: 10,
+    },
+    pagerView: {
+        // flex: 1,
+        height: "75%"
+    },
+    page: {
+        flex: 1,
+        // backgroundColor: "green",
+        // height: "60%"
+    },
+    scrollViewContent: {
+        flexGrow: 1,  // This allows ScrollView content to be scrollable
+        paddingBottom: 20, // Add some bottom padding for better UX
+    },
+    androidPickerContainer: {
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        backgroundColor: '#f5f5f5',
+        marginTop: 10,
+        marginBottom: 10,
+    },
 
 });
 

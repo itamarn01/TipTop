@@ -49,6 +49,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import Clients from "../screens/Clients";
 import Treatments from "../screens/Treatments";
 import TreatmentForm from "../screens/TreatmentForm";
+// import ClientForm from "../screens/ClientForm";
 import ClientForm from "../screens/ClientForm";
 const Stack = createStackNavigator();
 
@@ -65,7 +66,7 @@ const ClientStack = () => (
             component={Treatments}
             options={{
                 headerShown: true,
-                headerStyle: { backgroundColor: '#1F609A' },
+                headerStyle: { backgroundColor: '#014495' },
                 headerTintColor: '#fff', // This changes the text color to white
                 headerTitleStyle: { fontWeight: 'bold', fontFamily: "Rubik-italic" }, // You can customize the font style if needed
                 headerLeft: () => null,
@@ -77,14 +78,15 @@ const ClientStack = () => (
             component={TreatmentForm}
             options={{
                 headerShown: true,
-                headerStyle: { backgroundColor: '#1F609A' },
+                headerStyle: { backgroundColor: '#014495' },
                 headerTintColor: '#fff',
             }}
         />
         <Stack.Screen name="ClientForm" component={ClientForm} options={{
             headerShown: true,
-            headerStyle: { backgroundColor: '#1F609A' },
+            headerStyle: { backgroundColor: '#014495' },
             headerTintColor: '#fff',
+            headerTitle: "Client Form"
         }}
         />
     </Stack.Navigator>

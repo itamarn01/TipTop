@@ -133,8 +133,8 @@ const DeleteConfirmationModal = ({
                             <View style={styles.deleteIconContainer}>
                                 <MaterialIcons name="delete-outline" size={40} color="#FF4444" />
                             </View>
-                            <Text style={styles.deleteModalTitle}>Delete Treatment</Text>
-                            <Text style={styles.deleteModalText}>
+                            <Text allowFontScaling={false} style={styles.deleteModalTitle}>Delete Treatment</Text>
+                            <Text allowFontScaling={false} style={styles.deleteModalText}>
                                 Are you sure you want to delete this treatment? This action cannot be undone.
                             </Text>
                         </View>
@@ -143,13 +143,13 @@ const DeleteConfirmationModal = ({
                                 style={styles.cancelButton}
                                 onPress={onClose}
                             >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.confirmDeleteButton}
                                 onPress={onDelete}
                             >
-                                <Text style={styles.confirmDeleteText}>Delete</Text>
+                                <Text allowFontScaling={false} style={styles.confirmDeleteText}>Delete</Text>
                             </TouchableOpacity>
                         </View>
                     </Animatable.View>
@@ -186,7 +186,7 @@ const ClientEditModal = ({ visible, onClose, onSave, editingStat, editValue, set
                         <View style={styles.editModalContainer}>
                             <View style={styles.editModalHeader}>
                                 <MaterialIcons name="edit" size={24} color="#014495" />
-                                <Text style={styles.editModalTitle}>
+                                <Text allowFontScaling={false} style={styles.editModalTitle}>
                                     Edit {getFieldDisplayName(editingStat)}
                                 </Text>
                                 <TouchableOpacity
@@ -213,13 +213,13 @@ const ClientEditModal = ({ visible, onClose, onSave, editingStat, editValue, set
                                     style={styles.editModalCancelButton}
                                     onPress={onClose}
                                 >
-                                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                                    <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.editModalSaveButton}
                                     onPress={onSave}
                                 >
-                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                    <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -266,7 +266,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                         ]}>
                             <View style={styles.editModalHeader}>
                                 <MaterialIcons name="edit" size={24} color="#014495" />
-                                <Text style={styles.editModalTitle}>
+                                <Text allowFontScaling={false} style={styles.editModalTitle}>
                                     Edit {editingStat?.field?.replace(/([A-Z])/g, ' $1').trim() || ''}
                                 </Text>
                                 <TouchableOpacity
@@ -299,7 +299,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                     style={styles.editModalCancelButton}
                                     onPress={onClose}
                                 >
-                                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                                    <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.editModalSaveButton}
@@ -309,7 +309,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                     {isSaving ? (
                                         <ActivityIndicator color="white" size="small" /> // Show ActivityIndicator while saving
                                     ) : (
-                                        <Text style={styles.editModalSaveText}>Save</Text>
+                                        <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -363,7 +363,7 @@ const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
                 >
                     <View style={styles.paymentModalHeader}>
                         <MaterialIcons name="payments" size={24} color="#014495" />
-                        <Text style={styles.paymentModalTitle}>Payment Status</Text>
+                        <Text allowFontScaling={false} style={styles.paymentModalTitle}>Payment Status</Text>
                         <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
                             <MaterialIcons name="close" size={24} color="#666" />
                         </TouchableOpacity>
@@ -379,7 +379,7 @@ const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
                                 onPress={() => onSelect(status)}
                             >
                                 <MaterialIcons name={icon} size={24} color={color} />
-                                <Text style={[
+                                <Text allowFontScaling={false} style={[
                                     styles.paymentOptionText,
                                     currentStatus === status && styles.paymentOptionTextActive
                                 ]}>
@@ -419,7 +419,7 @@ const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOther
                     >
                         <View style={styles.paymentModalHeader}>
                             <MaterialIcons name="payment" size={24} color="#014495" />
-                            <Text style={styles.paymentModalTitle}>Payment Method</Text>
+                            <Text allowFontScaling={false} style={styles.paymentModalTitle}>Payment Method</Text>
                             <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
                                 <MaterialIcons name="close" size={24} color="#666" />
                             </TouchableOpacity>
@@ -435,7 +435,7 @@ const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOther
                                     onPress={() => onSelect(method)}
                                 >
                                     <MaterialIcons name={icon} size={24} color="#014495" />
-                                    <Text style={[
+                                    <Text allowFontScaling={false} style={[
                                         styles.paymentOptionText,
                                         currentMethod === method && styles.paymentOptionTextActive
                                     ]}>
@@ -559,6 +559,8 @@ export default function Treatments({ navigation }) {
     const [loadingFiles, setLoadingFiles] = useState(false)
     const [uploadFileLoading, setUploadFileLoading] = useState(false)
     const [status, setStatus] = useState("")
+    const [showAndroidDatePicker, setShowAndroidDatePicker] = useState(false);
+    const [showAndroidTimePicker, setShowAndroidTimePicker] = useState(false);
     const pickImage = async () => {
         const permissionResult =
             await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -735,7 +737,7 @@ export default function Treatments({ navigation }) {
             .sort((a, b) => new Date(a.treatmentDate) - new Date(b.treatmentDate));
         const treatmentPriceArr = sortedTreatments.map(t => t.treatmentPrice);
 
-        console.log("paymentsAmountArr:", paymentsAmountArr, "treatmentPriceArr:", treatmentPriceArr)
+        // console.log("paymentsAmountArr:", paymentsAmountArr, "treatmentPriceArr:", treatmentPriceArr)
         let paymentSum = paymentsAmountArr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
         let result = []; // Array to store the payment statuses
 
@@ -780,7 +782,7 @@ export default function Treatments({ navigation }) {
     }, [clientPayments, treatments])
 
     const fetchPayments = async (clientId) => {
-        console.log("clientId for payments:", clientId);
+        // console.log("clientId for payments:", clientId);
         try {
             setLoadingPayments(true);
             const response = await axios.get(`${Api}/payments/client/${clientId}`);
@@ -823,9 +825,9 @@ export default function Treatments({ navigation }) {
 
     const openEditPriceModal = () => {
         setEditPriceModalVisible(true);
-        setTimeout(() => {
+        /* setTimeout(() => {
             priceInputRef.current?.focus(); // Focus on the price input after the modal opens
-        }, 100); // Delay to ensure the modal is fully rendered before focusing
+        }, 100);  */// Delay to ensure the modal is fully rendered before focusing
     };
     const handlePriceChange = (text, id) => {
         setPrice(text);
@@ -935,7 +937,7 @@ export default function Treatments({ navigation }) {
     }, []);
 
     const handlePageChange = (page) => {
-        console.log("page:", page)
+        // console.log("page:", page)
         setActiveTab(page);
         translateX.value = withTiming(page * (windowWidth / 4)); // Adjust width division as per number of tabs
 
@@ -1192,18 +1194,18 @@ export default function Treatments({ navigation }) {
                 <View style={{ justifyContent: "center", alignItems: "center" }}>
 
                     {item.gender === "זכר" ? <Fontisto name="male" size={40} color="#8BB6C7" /> : <Fontisto name="female" size={40} color="#ECABA8" />}
-                    <Text style={styles.parentText}>{item.parentName.length > 12 ? `${item.parentName.slice(0, 15)}..` : item.parentName}</Text>
+                    <Text allowFontScaling={false} style={styles.parentText}>{item.parentName.length > 12 ? `${item.parentName.slice(0, 15)}..` : item.parentName}</Text>
                 </View>
 
                 <View style={styles.iconContainer}>
                     <TouchableOpacity style={{ flexDirection: "row", alignItems: "center" }} onPress={() => Linking.openURL(`tel:${item.phone}`)}>
                         <FontAwesome name="phone" size={24} color="grey" />
-                        <Text style={{ color: "grey", marginHorizontal: horizontalScale(10) }}>{item.phone}</Text>
+                        <Text allowFontScaling={false} style={{ color: "grey", marginHorizontal: horizontalScale(10) }}>{item.phone}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity disabled={!item.email} style={{ flexDirection: "row", alignItems: "center" }} onPress={() => Linking.openURL(`mailto:${item.email}`)}>
                         <FontAwesome name="envelope" size={24} color="grey" />
-                        <Text style={{ color: "grey", marginHorizontal: horizontalScale(10) }}>{item.email ? item.email : "No email"}</Text>
+                        <Text allowFontScaling={false} style={{ color: "grey", marginHorizontal: horizontalScale(10) }}>{item.email ? item.email : "No email"}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -1371,7 +1373,7 @@ export default function Treatments({ navigation }) {
             >
                 <View style={styles.descriptionHeader}>
                     <MaterialIcons name="description" size={24} color="#014495" />
-                    <Text style={styles.descriptionTitle}>Description</Text>
+                    <Text allowFontScaling={false} style={styles.descriptionTitle}>Description</Text>
                     <TouchableOpacity
                         onPress={() => {
                             setDescModalVisible(true)
@@ -1384,7 +1386,7 @@ export default function Treatments({ navigation }) {
                         <MaterialIcons name="edit" size={20} color="#014495" />
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.descriptionText}>
+                <Text allowFontScaling={false} style={styles.descriptionText}>
                     {clientDetails.description || "No description available"}
                 </Text>
 
@@ -1401,7 +1403,7 @@ export default function Treatments({ navigation }) {
                     >
                         <View style={styles.descriptionModalContent}>
                             <View style={styles.descriptionModalHeader}>
-                                <Text style={styles.descriptionModalTitle}>Edit Description</Text>
+                                <Text allowFontScaling={false} style={styles.descriptionModalTitle}>Edit Descriptionn</Text>
                                 <TouchableOpacity
                                     onPress={() => setDescModalVisible(false)}
                                     style={styles.descriptionModalClose}
@@ -1414,7 +1416,7 @@ export default function Treatments({ navigation }) {
                                 ref={descriptionInputRef}
                                 style={styles.descriptionInput}
                                 multiline
-                                numberOfLines={8}
+                                numberOfLines={6}
                                 value={description}
                                 onChangeText={setDescription}
                                 placeholder="Enter description..."
@@ -1435,7 +1437,7 @@ export default function Treatments({ navigation }) {
                                 {isSaving ? (
                                     <ActivityIndicator color="white" size="small" />
                                 ) : (
-                                    <Text style={styles.saveDescriptionText}>Save Description</Text>
+                                    <Text allowFontScaling={false} style={styles.saveDescriptionText}>Save Description</Text>
                                 )}
                             </TouchableOpacity>
                         </View>
@@ -1504,7 +1506,7 @@ export default function Treatments({ navigation }) {
     if (error === '404') {
         return (
             <View style={styles.centered}>
-                <Text style={styles.errorText}>404 Page Not Found</Text>
+                <Text allowFontScaling={false} style={styles.errorText}>404 Page Not Found</Text>
             </View>
         );
     }
@@ -1512,7 +1514,7 @@ export default function Treatments({ navigation }) {
     if (error) {
         return (
             <View style={styles.centered}>
-                <Text style={styles.errorText}>{error}</Text>
+                <Text allowFontScaling={false} style={styles.errorText}>{error}</Text>
             </View>
         );
     }
@@ -1538,7 +1540,7 @@ export default function Treatments({ navigation }) {
                         ]}>
                             <View style={styles.editModalHeader}>
                                 <MaterialIcons name="edit" size={24} color="#014495" />
-                                <Text style={styles.editModalTitle}>
+                                <Text allowFontScaling={false} style={styles.editModalTitle}>
                                     Edit {editingStat?.field ? editingStat.field.replace(/([A-Z])/g, ' $1').trim() : ''}
                                 </Text>
                                 <TouchableOpacity
@@ -1550,7 +1552,7 @@ export default function Treatments({ navigation }) {
                             </View>
 
                             <View style={styles.editModalContent}>
-                                <Text style={styles.editModalLabel}>
+                                <Text allowFontScaling={false} style={styles.editModalLabel}>
                                     {editingStat?.field ? editingStat.field.replace(/([A-Z])/g, ' $1').trim() : ''} Value
                                 </Text>
                                 <TextInput
@@ -1574,7 +1576,7 @@ export default function Treatments({ navigation }) {
                                     style={styles.editModalCancelButton}
                                     onPress={() => setEditModalVisible(false)}
                                 >
-                                    <Text style={styles.editModalCancelText}>Cancel</Text>
+                                    <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.editModalSaveButton}
@@ -1584,7 +1586,7 @@ export default function Treatments({ navigation }) {
                                     {isSaving ? (
                                         <ActivityIndicator color="white" size="small" />
                                     ) : (
-                                        <Text style={styles.editModalSaveText}>Save</Text>
+                                        <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -1707,10 +1709,10 @@ export default function Treatments({ navigation }) {
                     <View style={styles.paymentHeader}>
                         <View style={styles.paymentDate}>
                             <MaterialIcons name="event" size={20} color="#014495" />
-                            <Text style={styles.paymentDateText2}>
+                            <Text allowFontScaling={false} style={styles.paymentDateText2}>
                                 {new Date(item.createdAt).toLocaleDateString()}
                             </Text>
-                            <Text style={styles.paymentTimeText}>
+                            <Text allowFontScaling={false} style={styles.paymentTimeText}>
                                 {new Date(item.createdAt).toLocaleTimeString([], {
                                     hour: '2-digit',
                                     minute: '2-digit',
@@ -1719,7 +1721,7 @@ export default function Treatments({ navigation }) {
                             </Text>
                         </View>
                         <View style={styles.headerRightSection}>
-                            <Text style={styles.paymentAmounts}>
+                            <Text allowFontScaling={false} style={styles.paymentAmounts}>
                                 ${parseFloat(item.amount || 0).toFixed(2)}
                             </Text>
                             {/* Remove the static delete button */}
@@ -1736,7 +1738,7 @@ export default function Treatments({ navigation }) {
                                 size={18}
                                 color="#014495"
                             />
-                            <Text style={styles.paymentMethodText}>
+                            <Text allowFontScaling={false} style={styles.paymentMethodText}>
                                 {item.paymentMethod?.charAt(0).toUpperCase() + item.paymentMethod?.slice(1)}
                             </Text>
                         </View>
@@ -1753,13 +1755,13 @@ export default function Treatments({ navigation }) {
                 >
                     <View style={styles.summaryCard}>
                         <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
-                        <Text style={styles.summaryAmount}>${totalPaid.toFixed(2)}</Text>
-                        <Text style={styles.summaryLabel}>Total Paid</Text>
+                        <Text allowFontScaling={false} style={styles.summaryAmount}>${totalPaid.toFixed(2)}</Text>
+                        <Text allowFontScaling={false} style={styles.summaryLabel}>Total Paid</Text>
                     </View>
                     <View style={styles.summaryCard}>
                         <MaterialIcons name="schedule" size={24} color="#FF9800" />
-                        <Text style={styles.summaryAmount}>${totalPending.toFixed(2)}</Text>
-                        <Text style={styles.summaryLabel}>Pending</Text>
+                        <Text allowFontScaling={false} style={styles.summaryAmount}>${totalPending.toFixed(2)}</Text>
+                        <Text allowFontScaling={false} style={styles.summaryLabel}>Pending</Text>
                     </View>
                 </Animatable.View>
 
@@ -1774,8 +1776,8 @@ export default function Treatments({ navigation }) {
                     ListEmptyComponent={() => (
                         <View style={styles.emptyState}>
                             <MaterialIcons name="account-balance-wallet" size={60} color="#014495" />
-                            <Text style={styles.emptyStateTitle}>No Payments Yet</Text>
-                            {/* <Text style={styles.emptyStateText}>
+                            <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Payments Yet</Text>
+                            {/* <Text allowFontScaling={false}  style={styles.emptyStateText}>
                                 Payments will appear here once treatments are added
                             </Text> */}
                         </View>
@@ -1797,7 +1799,7 @@ export default function Treatments({ navigation }) {
                         end={{ x: 1, y: 0 }}
                     >
                         <MaterialIcons name="add" size={24} color="white" />
-                        <Text style={styles.addButtonText}>Add Payment</Text>
+                        <Text allowFontScaling={false} style={styles.addButtonText}>Add Payment</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <Modal
@@ -1817,7 +1819,7 @@ export default function Treatments({ navigation }) {
                             {paymentStage === 1 && (
                                 <>
                                     <View style={styles.modalHeader}>
-                                        <Text style={styles.modalTitle}>Enter Amount</Text>
+                                        <Text allowFontScaling={false} style={styles.modalTitle}>Enter Amount</Text>
                                         <TouchableOpacity
                                             onPress={() => setPaymentModalVisible(false)}
                                             style={styles.modalCloseButton}
@@ -1825,7 +1827,7 @@ export default function Treatments({ navigation }) {
                                             <MaterialIcons name="close" size={24} color="#666" />
                                         </TouchableOpacity>
                                     </View>
-                                    {/*  <Text style={styles.modalPaymentHeader}>Enter Amount</Text> */}
+                                    {/*  <Text allowFontScaling={false}  style={styles.modalPaymentHeader}>Enter Amount</Text> */}
                                     <TextInput
                                         ref={amountInputRef}
                                         style={styles.inputPayment}
@@ -1839,7 +1841,7 @@ export default function Treatments({ navigation }) {
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setPaymentModalVisible(false)}
                                         >
-                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveButton}
@@ -1847,7 +1849,7 @@ export default function Treatments({ navigation }) {
                                             disabled={!paymentAmount}
                                         >
 
-                                            <Text style={styles.saveButtonText}>Next</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonText}>Next</Text>
 
                                         </TouchableOpacity>
                                     </View>
@@ -1857,7 +1859,8 @@ export default function Treatments({ navigation }) {
                             {paymentStage === 2 && (
                                 <>
                                     <View style={styles.modalHeader}>
-                                        <Text style={styles.modalTitle}>Select Payment Method</Text>
+                                        <Text allowFontScaling={false}
+                                            style={styles.modalTitle}>Select Payment Method</Text>
                                         <TouchableOpacity
                                             onPress={() => setPaymentModalVisible(false)}
                                             style={styles.modalCloseButton}
@@ -1865,7 +1868,7 @@ export default function Treatments({ navigation }) {
                                             <MaterialIcons name="close" size={24} color="#666" />
                                         </TouchableOpacity>
                                     </View>
-                                    {/*  <Text style={styles.modalPaymentHeader}>Select Payment Method</Text> */}
+                                    {/*  <Text allowFontScaling={false}  style={styles.modalPaymentHeader}>Select Payment Method</Text> */}
                                     <Picker
                                         selectedValue={paymentMethod}
                                         onValueChange={(itemValue) => setPaymentMethod(itemValue)}
@@ -1879,7 +1882,7 @@ export default function Treatments({ navigation }) {
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setPaymentModalVisible(false)}
                                         >
-                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveButton}
@@ -1887,7 +1890,7 @@ export default function Treatments({ navigation }) {
                                             disabled={!paymentAmount}
                                         >
 
-                                            <Text style={styles.saveButtonText}>Next</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonText}>Next</Text>
 
                                         </TouchableOpacity>
                                     </View>
@@ -1897,7 +1900,7 @@ export default function Treatments({ navigation }) {
                             {paymentStage === 3 && (
                                 <>
                                     <View style={styles.modalHeader}>
-                                        <Text style={styles.modalTitle}>Confirm Payment</Text>
+                                        <Text allowFontScaling={false} style={styles.modalTitle}>Confirm Payment</Text>
                                         <TouchableOpacity
                                             onPress={() => setPaymentModalVisible(false)}
                                             style={styles.modalCloseButton}
@@ -1905,15 +1908,15 @@ export default function Treatments({ navigation }) {
                                             <MaterialIcons name="close" size={24} color="#666" />
                                         </TouchableOpacity>
                                     </View>
-                                    {/* <Text style={styles.modalPaymentHeader}>Confirm Payment</Text> */}
-                                    <Text style={styles.paymentText}>Amount: ${paymentAmount}</Text>
-                                    <Text style={styles.paymentText}>Method: {paymentMethod}</Text>
+                                    {/* <Text allowFontScaling={false}  style={styles.modalPaymentHeader}>Confirm Payment</Text> */}
+                                    <Text allowFontScaling={false} style={styles.paymentText}>Amount: ${paymentAmount}</Text>
+                                    <Text allowFontScaling={false} style={styles.paymentText}>Method: {paymentMethod}</Text>
                                     <View style={styles.modalFooter}>
                                         <TouchableOpacity
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setPaymentModalVisible(false)}
                                         >
-                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveButton}
@@ -1921,7 +1924,7 @@ export default function Treatments({ navigation }) {
                                             disabled={!paymentAmount}
                                         >
 
-                                            <Text style={styles.saveButtonText}>Confirm</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonText}>Confirm</Text>
 
                                         </TouchableOpacity>
                                     </View>
@@ -2018,7 +2021,7 @@ export default function Treatments({ navigation }) {
                 >
                     <MaterialIcons name="arrow-back" size={24} color="#014495" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{clientDetails.name} {clientDetails.lastName}</Text>
+                <Text allowFontScaling={false} style={styles.headerTitle}>{clientDetails.name} {clientDetails.lastName}</Text>
                 <View style={{ width: 40 }} />
             </Animatable.View>
 
@@ -2086,9 +2089,9 @@ export default function Treatments({ navigation }) {
                                         /* idInputRef.current?.focus(); */
                                     }}
                                 >
-                                    <Text style={styles.idNumberLabel}>ID Number:</Text>
+                                    <Text allowFontScaling={false} style={styles.idNumberLabel}>ID Number:</Text>
                                     <View style={styles.idNumberValueContainer}>
-                                        <Text style={[
+                                        <Text allowFontScaling={false} style={[
                                             styles.idNumberValue,
                                             !clientDetails.idNumber && styles.idNumberPlaceholder
                                         ]}>
@@ -2125,7 +2128,7 @@ export default function Treatments({ navigation }) {
                                                     >
                                                         <MaterialIcons name="close" size={24} color="#666" />
                                                     </TouchableOpacity>
-                                                    <Text style={styles.modalIdTitle}>Edit Name</Text>
+                                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>Edit Name</Text>
                                                     <TouchableOpacity
                                                         style={[
                                                             styles.saveIdButton,
@@ -2137,14 +2140,14 @@ export default function Treatments({ navigation }) {
                                                         {isFullNameSaving ? (
                                                             <ActivityIndicator color="white" size="small" />
                                                         ) : (
-                                                            <Text style={styles.saveButtonIdText}>Save</Text>
+                                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>Save</Text>
                                                         )}
                                                     </TouchableOpacity>
                                                 </View>
 
                                                 <View style={styles.modalIdBody}>
                                                     <View style={styles.inputIdContainer}>
-                                                        <Text style={styles.inputIdLabel}>First Name</Text>
+                                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>First Name</Text>
                                                         <TextInput
                                                             ref={firstNameInputRef}
                                                             style={[
@@ -2167,7 +2170,7 @@ export default function Treatments({ navigation }) {
                                                     </View>
 
                                                     <View style={styles.inputIdContainer}>
-                                                        <Text style={styles.inputIdLabel}>Last Name</Text>
+                                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>Last Name</Text>
                                                         <TextInput
                                                             style={[
                                                                 styles.inputId,
@@ -2200,7 +2203,7 @@ export default function Treatments({ navigation }) {
                                 onRequestClose={() => setIdModalVisible(false)}
                             >
                                 <KeyboardAvoidingView
-                                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                                    behavior={Platform.OS === "ios" ? "padding" : undefined}
                                     style={{ flex: 1 }}
                                 >
                                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -2217,7 +2220,7 @@ export default function Treatments({ navigation }) {
                                                     >
                                                         <MaterialIcons name="close" size={24} color="#666" />
                                                     </TouchableOpacity>
-                                                    <Text style={styles.modalIdTitle}>Edit ID Number</Text>
+                                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>Edit ID Number</Text>
                                                     <TouchableOpacity
                                                         style={[
                                                             styles.saveIdButton,
@@ -2229,14 +2232,14 @@ export default function Treatments({ navigation }) {
                                                         {isIdSaving ? (
                                                             <ActivityIndicator color="white" size="small" />
                                                         ) : (
-                                                            <Text style={styles.saveButtonIdText}>Save</Text>
+                                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>Save</Text>
                                                         )}
                                                     </TouchableOpacity>
                                                 </View>
 
                                                 <View style={styles.modalIdBody}>
                                                     <View style={styles.inputIdContainer}>
-                                                        <Text style={styles.inputIdLabel}>ID Number</Text>
+                                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>ID Number</Text>
                                                         <TextInput
                                                             ref={idInputRef}
                                                             style={styles.inputId}
@@ -2316,7 +2319,7 @@ export default function Treatments({ navigation }) {
                                             >
                                                 {stat.value}
                                             </Text>
-                                            <Text numberOfLines={1} style={styles.statLabel}>{stat.label}</Text>
+                                            <Text allowFontScaling={false} numberOfLines={1} style={styles.statLabel}>{stat.label}</Text>
                                             {stat.isEditable && (
                                                 <View style={styles.editIndicator}>
                                                     <MaterialIcons name="edit" size={16} color="#014495" />
@@ -2329,6 +2332,15 @@ export default function Treatments({ navigation }) {
                         </Animatable.View>
                         <ClientDescription clientDetails={clientDetails} />
                         <ParentsSection clientDetails={clientDetails} refreshClient={fetchClientData} />
+                        {user.package === "free" && <BannerAd
+                            //    ref={bannerRef}
+                            unitId={adUnitId1}
+                            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                            requestOptions={{
+                                requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                                // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
+                            }}
+                        />}
                     </ScrollView>
                 </View>
 
@@ -2339,19 +2351,21 @@ export default function Treatments({ navigation }) {
                             renderSkeletonLoading()
                         ) : (
                             <>
-                                <Text style={styles.treatmentsCount}>
-                                    <Text style={styles.currentTreatments}>{treatments.length}</Text>
-                                    <Text style={styles.treatmentsSeparator}>/</Text>
-                                    <Text style={styles.totalTreatments}>{clientDetails.numberOfMeetings}</Text>
-                                    <Text style={styles.treatmentsLabel}> treatments</Text>
+                                <Text allowFontScaling={false} style={styles.treatmentsCount}>
+                                    <Text allowFontScaling={false} style={styles.currentTreatments}>{treatments.length}</Text>
+                                    <Text allowFontScaling={false} style={styles.treatmentsSeparator}>/</Text>
+                                    <Text allowFontScaling={false} style={styles.totalTreatments}>{clientDetails.numberOfMeetings}</Text>
+                                    <Text allowFontScaling={false} style={styles.treatmentsLabel}> treatments</Text>
                                 </Text>
                                 <FlatList
+                                    keyboardShouldPersistTaps="handled"
                                     data={treatments}
                                     renderItem={({ item, index }) => (
                                         <>
                                             <Animatable.Text
                                                 animation="fadeIn"
                                                 style={styles.relativeTimeText}
+                                                allowFontScaling={false}
                                             >
                                                 {getRelativeTime(new Date(item.treatmentDate))}
                                             </Animatable.Text>
@@ -2366,13 +2380,13 @@ export default function Treatments({ navigation }) {
                                                         <View style={styles.treatmentDateTime}>
                                                             <View style={styles.treatmentDate}>
                                                                 <MaterialIcons name="event" size={20} color="#014495" />
-                                                                <Text style={styles.dateText}>
+                                                                <Text allowFontScaling={false} style={styles.dateText}>
                                                                     {new Date(item.treatmentDate).toLocaleDateString()}
                                                                 </Text>
                                                             </View>
                                                             <View style={styles.treatmentTime}>
                                                                 <MaterialIcons name="access-time" size={20} color="#014495" />
-                                                                <Text style={styles.timeText}>
+                                                                <Text allowFontScaling={false} style={styles.timeText}>
                                                                     {formatTime(item.treatmentDate)}
                                                                 </Text>
                                                             </View>
@@ -2381,7 +2395,7 @@ export default function Treatments({ navigation }) {
                                                     {/*  <TouchableOpacity onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
                                                     <View style={styles.treatmentPrice}>
                                                         <MaterialIcons name="attach-money" size={20} color="#014495" />
-                                                        <Text style={styles.priceText}>
+                                                        <Text allowFontScaling={false}  style={styles.priceText}>
                                                             {item.treatmentPrice}
                                                         </Text>
                                                     </View>
@@ -2391,6 +2405,11 @@ export default function Treatments({ navigation }) {
                                                         transparent={true}
                                                         visible={editPriceModalVisible}
                                                         onRequestClose={() => setEditPriceModalVisible(false)}
+                                                        onShow={() => {
+                                                            setTimeout(() => {
+                                                                priceInputRef.current?.focus();
+                                                            }, 200);
+                                                        }}
                                                     >
                                                         <TouchableWithoutFeedback onPress={() => setEditPriceModalVisible(false)}>
                                                             <KeyboardAvoidingView
@@ -2401,7 +2420,7 @@ export default function Treatments({ navigation }) {
                                                                     <View style={styles.editModalContainer}>
                                                                         <View style={styles.editModalHeader}>
                                                                             <MaterialIcons name="edit" size={24} color="#014495" />
-                                                                            <Text style={styles.editModalTitle}>
+                                                                            <Text allowFontScaling={false} style={styles.editModalTitle}>
                                                                                 Edit Price
                                                                             </Text>
                                                                             <TouchableOpacity
@@ -2411,7 +2430,7 @@ export default function Treatments({ navigation }) {
                                                                                 <MaterialIcons name="close" size={24} color="#666" />
                                                                             </TouchableOpacity>
                                                                         </View>
-                                                                        {/* <Text style={styles.editModalTitle}>Edit Price</Text> */}
+                                                                        {/* <Text allowFontScaling={false}  style={styles.editModalTitle}>Edit Price</Text> */}
                                                                         <View style={styles.editModalContent}>
                                                                             <TextInput
                                                                                 ref={priceInputRef}
@@ -2427,14 +2446,14 @@ export default function Treatments({ navigation }) {
                                                                                 style={styles.editModalCancelButton}
                                                                                 onPress={() => setEditPriceModalVisible(false)}
                                                                             >
-                                                                                <Text style={styles.editModalCancelText}>Cancel</Text>
+                                                                                <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
                                                                             </TouchableOpacity>
                                                                             <TouchableOpacity
                                                                                 style={styles.editModalSaveButton}
                                                                                 onPress={() => handleSavePrice(item._id)}
                                                                             >
                                                                                 {isSavingPrice ? <ActivityIndicator /> :
-                                                                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                                                                    <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
                                                                                 }
 
                                                                             </TouchableOpacity>
@@ -2463,7 +2482,7 @@ export default function Treatments({ navigation }) {
                                                                     <View style={styles.editModalContainer}>
                                                                         <View style={styles.editModalHeader}>
                                                                             <MaterialIcons name="edit" size={24} color="#014495" />
-                                                                            <Text style={styles.editModalTitle}>
+                                                                            <Text allowFontScalin={false} style={styles.editModalTitle}>
                                                                                 Edit Status
                                                                             </Text>
                                                                             <TouchableOpacity
@@ -2473,30 +2492,30 @@ export default function Treatments({ navigation }) {
                                                                                 <MaterialIcons name="close" size={24} color="#666" />
                                                                             </TouchableOpacity>
                                                                         </View>
-                                                                        {/* <Text style={styles.editModalTitle}>Edit Price</Text> */}
+                                                                        {/* <Text allowFontScaling={false}  style={styles.editModalTitle}>Edit Price</Text> */}
                                                                         <View style={styles.editModalContent}>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("PENDING"); updateTreatmentStatus("PENDING") }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="schedule" size={30} color="#FFA500" />
-                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>Pending</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>Pending</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("COMPLETED"); updateTreatmentStatus("COMPLETED") }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="check-circle" size={30} color="#4CAF50" />
-                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>Completed</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>Completed</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("CANCELED"); updateTreatmentStatus("CANCELED"); }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="cancel" size={30} color="#FF4444" />
-                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>Canceled</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>Canceled</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("NO_SHOW"); updateTreatmentStatus("NO_SHOW"); }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="remove-circle" size={30} color="#FFA500" />
-                                                                                    <Text style={{ marginLeft: 10, fontSize: 18 }}>No Show</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>No Show</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                         </View>
@@ -2505,14 +2524,14 @@ export default function Treatments({ navigation }) {
                                                                             style={styles.editModalCancelButton}
                                                                             onPress={() => setEditStatusModalVisible(false)}
                                                                         >
-                                                                            <Text style={styles.editModalCancelText}>Cancel</Text>
+                                                                            <Text allowFontScaling={false}  style={styles.editModalCancelText}>Cancel</Text>
                                                                         </TouchableOpacity>
                                                                         <TouchableOpacity
                                                                             style={styles.editModalSaveButton}
                                                                             onPress={() => handleSavePrice(item._id)}
                                                                         >
                                                                             {isSavingPrice ? <ActivityIndicator /> :
-                                                                                <Text style={styles.editModalSaveText}>Save</Text>
+                                                                                <Text allowFontScaling={false}  style={styles.editModalSaveText}>Save</Text>
                                                                             }
 
                                                                         </TouchableOpacity>
@@ -2538,7 +2557,7 @@ export default function Treatments({ navigation }) {
                                                                 <View style={styles.modalContainer}>
                                                                     <View style={styles.editModalHeader}>
                                                                         <MaterialIcons name="edit" size={24} color="#014495" />
-                                                                        <Text style={styles.editModalTitle}>
+                                                                        <Text allowFontScaling={false} style={styles.editModalTitle}>
                                                                             Update Date and Time
                                                                         </Text>
                                                                         <TouchableOpacity
@@ -2551,26 +2570,78 @@ export default function Treatments({ navigation }) {
                                                                     <ScrollView style={styles.modalContent}>
                                                                         <View style={styles.dateTimeContainer}>
                                                                             <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
-                                                                                <Text style={styles.pickerTitle}>Select Date</Text>
-                                                                                <DateTimePicker
-                                                                                    value={selectedDate}
-                                                                                    mode="date"
-                                                                                    display="inline"
-                                                                                    onChange={handleDateChange}
-                                                                                />
+                                                                                <Text allowFontScaling={false} style={styles.pickerTitle}>Select Date</Text>
+                                                                                {Platform.OS === 'ios' ? (
+                                                                                    <DateTimePicker
+                                                                                        value={selectedDate}
+                                                                                        mode="date"
+                                                                                        display="inline"
+                                                                                        onChange={handleDateChange}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <TouchableOpacity
+                                                                                            onPress={() => setShowAndroidDatePicker(true)}
+                                                                                            style={styles.androidPickerButton}
+                                                                                        >
+                                                                                            <Text allowFontScaling={false} style={styles.androidPickerText}>
+                                                                                                {selectedDate.toLocaleDateString()}
+                                                                                            </Text>
+                                                                                        </TouchableOpacity>
+                                                                                        {showAndroidDatePicker && (
+                                                                                            <DateTimePicker
+                                                                                                value={selectedDate}
+                                                                                                mode="date"
+                                                                                                display="default"
+                                                                                                onChange={(event, date) => {
+                                                                                                    setShowAndroidDatePicker(false);
+                                                                                                    if (event.type !== 'dismissed' && date) {
+                                                                                                        handleDateChange(event, date);
+                                                                                                    }
+                                                                                                }}
+                                                                                            />
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
                                                                             </View>
 
                                                                             <View style={[styles.datePickerButton, { flex: 1 }]}>
-                                                                                <Text style={styles.pickerTitle}>Select Time</Text>
-                                                                                <DateTimePicker
-                                                                                    value={selectedDate}
-                                                                                    mode="time"
-                                                                                    display="calendar"
-                                                                                    onChange={handleDateChange}
-                                                                                />
+                                                                                <Text allowFontScaling={false} style={styles.pickerTitle}>Select Time</Text>
+                                                                                {Platform.OS === 'ios' ? (
+                                                                                    <DateTimePicker
+                                                                                        value={selectedDate}
+                                                                                        mode="time"
+                                                                                        display="spinner"
+                                                                                        onChange={handleDateChange}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <TouchableOpacity
+                                                                                            onPress={() => setShowAndroidTimePicker(true)}
+                                                                                            style={styles.androidPickerButton}
+                                                                                        >
+                                                                                            <Text allowFontScaling={false} style={styles.androidPickerText}>
+                                                                                                {selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                            </Text>
+                                                                                        </TouchableOpacity>
+                                                                                        {showAndroidTimePicker && (
+                                                                                            <DateTimePicker
+                                                                                                value={selectedDate}
+                                                                                                mode="time"
+                                                                                                display="default"
+                                                                                                onChange={(event, time) => {
+                                                                                                    setShowAndroidTimePicker(false);
+                                                                                                    if (event.type !== 'dismissed' && time) {
+                                                                                                        handleDateChange(event, time);
+                                                                                                    }
+                                                                                                }}
+                                                                                            />
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
                                                                             </View>
                                                                         </View>
-                                                                        {/* <Text style={styles.modalDateTimeHeader}>Update Date and Time</Text> */}
+                                                                        {/* <Text allowFontScaling={false}  style={styles.modalDateTimeHeader}>Update Date and Time</Text> */}
                                                                         {/* <DateTimePicker
                                                                         value={selectedDate}
                                                                         mode="datetime"
@@ -2584,7 +2655,7 @@ export default function Treatments({ navigation }) {
                                                                                 style={styles.editModalCancelButton}
                                                                                 onPress={() => setDateTimeModalVisible(false)}
                                                                             >
-                                                                                <Text style={styles.editModalCancelText}>Cancel</Text>
+                                                                                <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
                                                                             </TouchableOpacity>
                                                                             <TouchableOpacity
                                                                                 style={styles.editModalSaveButton}
@@ -2593,7 +2664,7 @@ export default function Treatments({ navigation }) {
                                                                                 {isSaving ? (
                                                                                     <ActivityIndicator size="small" color="#014495" />
                                                                                 ) : (
-                                                                                    <Text style={styles.editModalSaveText}>Save</Text>
+                                                                                    <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
 
                                                                                 )}
 
@@ -2615,7 +2686,7 @@ export default function Treatments({ navigation }) {
                                                         </TouchableWithoutFeedback>
                                                     </Modal>
                                                     <View style={styles.headerActions}>
-                                                        <Text style={styles.sessionNumber}>Session #{treatments.length - index}</Text>
+                                                        <Text allowFontScaling={false} style={styles.sessionNumber}>Session #{treatments.length - index}</Text>
                                                         <TouchableOpacity
                                                             style={styles.deleteButton}
                                                             onPress={() => {
@@ -2634,12 +2705,12 @@ export default function Treatments({ navigation }) {
                                                 />
                                                 <View style={styles.treatmentContent}>
                                                     <TouchableOpacity
-                                                        disabled={item.status !== "COMPLETED"}
+                                                        disabled={item.status === "CANCELED" || item.status === "NO_SHOW"}
                                                         style={styles.editableField}
                                                         onPress={() => handleEditField(item._id, 'treatmentSummary')}
                                                     >
-                                                        <Text style={styles.fieldLabel}>Treatment Summary</Text>
-                                                        <Text style={[
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Treatment Summary</Text>
+                                                        <Text allowFontScaling={false} style={[
                                                             styles.fieldValue,
                                                             { textAlign: /^[\u0590-\u05FF]/.test(item.treatmentSummary) ? 'right' : 'left' }
                                                         ]}>
@@ -2648,12 +2719,12 @@ export default function Treatments({ navigation }) {
                                                     </TouchableOpacity>
 
                                                     <TouchableOpacity
-                                                        disabled={item.status !== "COMPLETED"}
+                                                        disabled={item.status === "CANCELED" || item.status === "NO_SHOW"}
                                                         style={styles.editableField}
                                                         onPress={() => handleEditField(item._id, 'whatNext')}
                                                     >
-                                                        <Text style={styles.fieldLabel}>Next Steps</Text>
-                                                        <Text style={[
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Next Steps</Text>
+                                                        <Text allowFontScaling={false} style={[
                                                             styles.fieldValue,
                                                             { textAlign: /^[\u0590-\u05FF]/.test(item.whatNext) ? 'right' : 'left' }
                                                         ]}>
@@ -2662,12 +2733,12 @@ export default function Treatments({ navigation }) {
                                                     </TouchableOpacity>
 
                                                     <TouchableOpacity
-                                                        disabled={item.status !== "COMPLETED"}
+                                                        disabled={item.status === "CANCELED" || item.status === "NO_SHOW"}
                                                         style={styles.editableField}
                                                         onPress={() => handleEditField(item._id, 'homework')}
                                                     >
                                                         <Text allowFontScaling={false} style={styles.fieldLabel}>Homework</Text>
-                                                        <Text style={[
+                                                        <Text allowFontScaling={false} style={[
                                                             styles.fieldValue,
                                                             { textAlign: /^[\u0590-\u05FF]/.test(item.homework) ? 'right' : 'left' }
                                                         ]}>
@@ -2687,7 +2758,7 @@ export default function Treatments({ navigation }) {
                                                                 size={16}
                                                                 color={PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800'}
                                                             />
-                                                            <Text style={[styles.statusText, { color: PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800' }]}>
+                                                            <Text allowFontScaling={false} style={[styles.statusText, { color: PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800' }]}>
                                                                 {treatmentPaid[index]}
                                                             </Text>
                                                             {/* <Text>{treatmentPaid[index]}</Text> */}
@@ -2695,10 +2766,10 @@ export default function Treatments({ navigation }) {
 
 
 
-                                                        <TouchableOpacity disabled={item.status !== "COMPLETED"} onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
+                                                        <TouchableOpacity /* disabled={item.status !== "COMPLETED"} */ onPress={() => { item.treatmentPrice ? setPrice(item.treatmentPrice) : setPrice(clientDetails.clientPrice); setSelectedTreatmentId(item._id); openEditPriceModal() }}>
                                                             <View style={styles.treatmentPrice}>
                                                                 {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
-                                                                <Text style={styles.priceText}>
+                                                                <Text allowFontScaling={false} style={styles.priceText}>
                                                                     {item.treatmentPrice === 0 ? 'Add price ' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
                                                                 </Text>
                                                             </View>
@@ -2717,7 +2788,7 @@ export default function Treatments({ navigation }) {
                                                                 size={16}
                                                                 color={TREATMENT_STATUSES[item.status]?.color || '#FF9800'}
                                                             />
-                                                            <Text style={[styles.statusText, { color: TREATMENT_STATUSES[item.status]?.color || '#FF9800' }]}>
+                                                            <Text allowFontScaling={false} style={[styles.statusText, { color: TREATMENT_STATUSES[item.status]?.color || '#FF9800' }]}>
                                                                 {item.status}
                                                             </Text>
                                                             {/* <Text>{treatmentPaid[index]}</Text> */}
@@ -2728,7 +2799,7 @@ export default function Treatments({ navigation }) {
                                                         <TouchableOpacity onPress={() => { setSelectedTreatmentId(item._id); setEditStatusModalVisible(true) }}>
                                                             <View style={styles.treatmentPrice}>
                                                                 {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
-                                                                <Text style={styles.priceText}>
+                                                                <Text allowFontScaling={false} style={styles.priceText}>
                                                                     Change Status
                                                                 </Text>
                                                             </View>
@@ -2745,8 +2816,8 @@ export default function Treatments({ navigation }) {
                                     ListEmptyComponent={() => (
                                         <View style={styles.emptyState}>
                                             <MaterialIcons name="medical-services" size={60} color="#014495" />
-                                            <Text style={styles.emptyStateTitle}>No Treatments Yet</Text>
-                                            <Text style={styles.emptyStateText}>
+                                            <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Treatments Yet</Text>
+                                            <Text allowFontScaling={false} style={styles.emptyStateText}>
                                                 Add your first treatment to start tracking progress
                                             </Text>
                                         </View>
@@ -2764,7 +2835,7 @@ export default function Treatments({ navigation }) {
                                         end={{ x: 1, y: 0 }}
                                     >
                                         <MaterialIcons name="add" size={24} color="white" />
-                                        <Text style={styles.addButtonText}>Add Treatment</Text>
+                                        <Text allowFontScaling={false} style={styles.addButtonText}>Add Treatment</Text>
                                     </LinearGradient>
                                 </TouchableOpacity>
                             </>
@@ -2781,8 +2852,8 @@ export default function Treatments({ navigation }) {
                     {files.length === 0 && (
                         <View style={styles.emptyFilesState}>
                             <MaterialCommunityIcons name="file-document-edit" size={60} color="#014495" />
-                            <Text style={styles.emptyFilesStateTitle}>No Files Yet</Text>
-                            <Text style={styles.emptyFilesStateText}>
+                            <Text allowFontScaling={false} style={styles.emptyFilesStateTitle}>No Files Yet</Text>
+                            <Text allowFontScaling={false} style={styles.emptyFilesStateText}>
                                 You haven't uploaded any files yet. Start by taking a photo or choosing from your library.
                             </Text>
                         </View>
@@ -2799,7 +2870,7 @@ export default function Treatments({ navigation }) {
                             end={{ x: 1, y: 0 }}
                         >
                             <MaterialIcons name="add" size={24} color="white" />
-                            <Text style={styles.addButtonText}>Add File</Text>
+                            <Text allowFontScaling={false}  style={styles.addButtonText}>Add File</Text>
                         </LinearGradient>
                     </TouchableOpacity> */}
 
@@ -2816,7 +2887,7 @@ export default function Treatments({ navigation }) {
                                 style={styles.modalFilePickerContainer}
                             >
                                 <View style={styles.modalFilePickerHeader}>
-                                    <Text style={styles.modalFilePickerTitle}>Select an Option</Text>
+                                    <Text allowFontScaling={false} style={styles.modalFilePickerTitle}>Select an Option</Text>
                                     <TouchableOpacity onPress={() => setModalFilePickerVisible(false)} style={styles.modalFilePickerCloseButton}>
                                         <MaterialIcons name="close" size={24} color="#666" />
                                     </TouchableOpacity>
@@ -2824,15 +2895,15 @@ export default function Treatments({ navigation }) {
                                 <ScrollView style={styles.modalContent}>
                                     <TouchableOpacity style={styles.optionFilePickerButton} onPress={takePhoto}>
                                         <MaterialIcons name="camera-alt" size={24} color="#014495" />
-                                        <Text style={styles.optionFilePickerText}>Take Photo</Text>
+                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>Take Photo</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.optionFilePickerButton} onPress={pickImage}>
                                         <MaterialIcons name="photo-library" size={24} color="#014495" />
-                                        <Text style={styles.optionFilePickerText}>Choose from Library</Text>
+                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>Choose from Library</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.optionFilePickerButton} onPress={pickFile}>
                                         <MaterialIcons name="folder" size={24} color="#014495" />
-                                        <Text style={styles.optionFilePickerText}>Choose from Files</Text>
+                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>Choose from Files</Text>
                                     </TouchableOpacity>
                                 </ScrollView>
                             </Animatable.View>
@@ -2912,9 +2983,9 @@ export default function Treatments({ navigation }) {
                                         >
                                             <Image source={{ uri: item.url }} style={{ width: 100, height: 100, marginRight: 10, borderRadius: 8 }} />
                                             <View style={{ flex: 1 }}>
-                                                {item.url && <Text style={{ fontWeight: 'bold' }}>{item.url.split('/').pop()}</Text>}
-                                                <Text style={{ color: '#666' }}>{formatBytes(item.bytes)}</Text>
-                                                <Text style={{ color: '#999' }}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                                                {item.url && <Text allowFontScaling={false} style={{ fontWeight: 'bold' }}>{item.url.split('/').pop()}</Text>}
+                                                <Text allowFontScaling={false} style={{ color: '#666' }}>{formatBytes(item.bytes)}</Text>
+                                                <Text allowFontScaling={false} style={{ color: '#999' }}>{new Date(item.created_at).toLocaleDateString()}</Text>
                                             </View>
                                             <TouchableOpacity onPress={() => {
                                                 Alert.alert(
@@ -2958,13 +3029,13 @@ export default function Treatments({ navigation }) {
                                         <TouchableOpacity style={{ flexDirection: "row", width: windowWidth / 4 }} onPress={() => setModalFileVisible(false)}>
                                             <AntDesign name="left" size={24} color="white" />
 
-                                            <Text style={{ color: "white", fontSize: 18 }}>Back</Text>
+                                            <Text allowFontScaling={false} style={{ color: "white", fontSize: 18 }}>Back</Text>
 
                                         </TouchableOpacity>
                                         {selectedFile ? (
-                                            <Text style={{ fontWeight: 'bold', color: "white" }}>{selectedFile.url.split('/').pop()}</Text>
+                                            <Text allowFontScaling={false} style={{ fontWeight: 'bold', color: "white" }}>{selectedFile.url.split('/').pop()}</Text>
                                         ) : (
-                                            <Text style={{ color: 'white' }}>File doesn't exist</Text>
+                                            <Text allowFontScaling={false} style={{ color: 'white' }}>File doesn't exist</Text>
                                         )}
                                         <View style={{ width: windowWidth / 4 }}></View>
                                     </View>
@@ -2988,7 +3059,7 @@ export default function Treatments({ navigation }) {
                             end={{ x: 1, y: 0 }}
                         >
                             <MaterialIcons name="add" size={24} color="white" />
-                            <Text style={styles.addButtonText}>Add File</Text>
+                            <Text allowFontScaling={false} style={styles.addButtonText}>Add File</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
@@ -3050,7 +3121,7 @@ export default function Treatments({ navigation }) {
                                 >
                                     <View style={styles.editModalHeader}>
                                         <MaterialIcons name="cake" size={24} color="#014495" />
-                                        <Text style={styles.editModalTitle}>Edit Birthday</Text>
+                                        <Text allowFontScaling={false} style={styles.editModalTitle}>Edit Birthday</Text>
                                         <TouchableOpacity
                                             onPress={() => setShowAgeDatePicker(false)}
                                             style={styles.editModalCloseButton}
@@ -3074,17 +3145,30 @@ export default function Treatments({ navigation }) {
                                                 maximumDate={new Date()}
                                             />
                                         ) : (
-                                            <DateTimePicker
-                                                value={tempBirthday}
-                                                mode="date"
-                                                display="default"
-                                                onChange={(event, selectedDate) => {
-                                                    if (event.type === 'set' && selectedDate) {
-                                                        setTempBirthday(selectedDate);
-                                                    }
-                                                }}
-                                                maximumDate={new Date()}
-                                            />
+                                            <>
+                                                <TouchableOpacity
+                                                    onPress={() => setShowAndroidDatePicker(true)}
+                                                    style={styles.androidPickerAgeButton}
+                                                >
+                                                    <Text allowFontScaling={false} style={styles.androidPickerAgeText}>
+                                                        {tempBirthday.toLocaleDateString()}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                                {showAndroidDatePicker && (
+                                                    <DateTimePicker
+                                                        value={tempBirthday}
+                                                        mode="date"
+                                                        display="default"
+                                                        onChange={(event, selectedDate) => {
+                                                            setShowAndroidDatePicker(false);
+                                                            if (event.type === 'set' && selectedDate) {
+                                                                setTempBirthday(selectedDate);
+                                                            }
+                                                        }}
+                                                        maximumDate={new Date()}
+                                                    />
+                                                )}
+                                            </>
                                         )}
                                     </View>
 
@@ -3093,7 +3177,7 @@ export default function Treatments({ navigation }) {
                                             style={styles.editModalCancelButton}
                                             onPress={() => setShowAgeDatePicker(false)}
                                         >
-                                            <Text style={styles.editModalCancelText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.editModalSaveButton, isSavingAge && styles.modalSaveButtonDisabled]}
@@ -3103,7 +3187,7 @@ export default function Treatments({ navigation }) {
                                             {isSavingAge ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text style={styles.editModalSaveText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -3173,7 +3257,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                             style={styles.modalContainer}
                         >
                             <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Add Treatment</Text>
+                                <Text allowFontScaling={false} style={styles.modalTitle}>Add Treatment</Text>
                                 <TouchableOpacity
                                     onPress={() => { setTreatmentStage(0); onClose(); }}
                                     style={styles.modalCloseButton}
@@ -3198,7 +3282,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setTreatmentStage(1)}
                                         >
-                                            <Text style={styles.cancelButtonText}>Skip</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Skip</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
@@ -3222,7 +3306,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             {isSaving ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text style={styles.saveButtonText}>Next</Text>
+                                                <Text allowFontScaling={false} style={styles.saveButtonText}>Next</Text>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -3235,47 +3319,103 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
 
                                         <View style={styles.dateTimeContainer}>
                                             <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
-                                                <Text style={styles.pickerTitle}>Select Date</Text>
-                                                <DateTimePicker
-                                                    value={treatment.treatmentDate}
-                                                    mode="date"
-                                                    display="inline"
-                                                    onChange={(event, selectedDate) => {
-                                                        setShowDatePicker(false);
-                                                        if (selectedDate) {
-                                                            setTreatment({
-                                                                ...treatment,
-                                                                treatmentDate: selectedDate
-                                                            });
-                                                        }
-                                                    }}
-                                                />
+                                                <Text allowFontScaling={false} style={styles.pickerTitle}>Select Date</Text>
+                                                {Platform.OS === 'ios' ? (
+                                                    <DateTimePicker
+                                                        value={treatment.treatmentDate}
+                                                        mode="date"
+                                                        display="inline"
+                                                        onChange={(event, selectedDate) => {
+                                                            if (selectedDate) {
+                                                                setTreatment({
+                                                                    ...treatment,
+                                                                    treatmentDate: selectedDate
+                                                                });
+                                                            }
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <TouchableOpacity
+                                                            onPress={() => setShowDatePicker(true)}
+                                                            style={styles.androidPickerButton}
+                                                        >
+                                                            <Text allowFontScaling={false} style={styles.androidPickerText}>
+                                                                {treatment.treatmentDate.toLocaleDateString()}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                        {showDatePicker && (
+                                                            <DateTimePicker
+                                                                value={treatment.treatmentDate}
+                                                                mode="date"
+                                                                display="default"
+                                                                onChange={(event, selectedDate) => {
+                                                                    setShowDatePicker(false);
+                                                                    if (event.type !== 'dismissed' && selectedDate) {
+                                                                        setTreatment({
+                                                                            ...treatment,
+                                                                            treatmentDate: selectedDate
+                                                                        });
+                                                                    }
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </>
+                                                )}
                                             </View>
 
                                             <View style={[styles.datePickerButton, { flex: 1 }]}>
-                                                <Text style={styles.pickerTitle}>Select Time</Text>
-                                                <DateTimePicker
-                                                    value={treatment.treatmentTime}
-                                                    mode="time"
-                                                    display="calendar"
-                                                    onChange={(event, selectedTime) => {
-                                                        setShowTimePicker(false);
-                                                        if (selectedTime) {
-                                                            setTreatment({
-                                                                ...treatment,
-                                                                treatmentTime: selectedTime
-                                                            });
-                                                        }
-                                                    }}
-                                                />
+                                                <Text allowFontScaling={false} style={styles.pickerTitle}>Select Time</Text>
+                                                {Platform.OS === 'ios' ? (
+                                                    <DateTimePicker
+                                                        value={treatment.treatmentTime}
+                                                        mode="time"
+                                                        display="clock"
+                                                        onChange={(event, selectedTime) => {
+                                                            if (selectedTime) {
+                                                                setTreatment({
+                                                                    ...treatment,
+                                                                    treatmentTime: selectedTime
+                                                                });
+                                                            }
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <TouchableOpacity
+                                                            onPress={() => setShowTimePicker(true)}
+                                                            style={styles.androidPickerButton}
+                                                        >
+                                                            <Text allowFontScaling={false} style={styles.androidPickerText}>
+                                                                {treatment.treatmentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                        {showTimePicker && (
+                                                            <DateTimePicker
+                                                                value={treatment.treatmentTime}
+                                                                mode="time"
+                                                                display="default"
+                                                                onChange={(event, selectedTime) => {
+                                                                    setShowTimePicker(false);
+                                                                    if (event.type !== 'dismissed' && selectedTime) {
+                                                                        setTreatment({
+                                                                            ...treatment,
+                                                                            treatmentTime: selectedTime
+                                                                        });
+                                                                    }
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </>
+                                                )}
                                             </View>
                                         </View>
 
 
                                         {treatments.length < clientDetails.numberOfMeetings - 1 && <View style={styles.repeatContainer}>
-                                            <Text style={styles.repeatLabel}>
+                                            <Text allowFontScaling={false} style={styles.repeatLabel}>
                                                 <MaterialIcons name="repeat" size={20} color="#014495" />
-                                                <Text style={styles.repeatLabelText}> Repeat</Text>
+                                                <Text allowFontScaling={false} style={styles.repeatLabelText}> Repeat</Text>
                                             </Text>
 
                                             <View style={styles.repeatOptions}>
@@ -3307,7 +3447,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                                                 size={20}
                                                                 color={repeat === option.value ? 'white' : '#014495'}
                                                             />
-                                                            <Text style={[
+                                                            <Text allowFontScaling={false} style={[
                                                                 styles.repeatOptionText,
                                                                 repeat === option.value && styles.repeatOptionTextActive
                                                             ]}>
@@ -3326,7 +3466,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => { setTreatmentStage(0); onClose(); }}
                                         >
-                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
@@ -3336,7 +3476,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             {isSaving ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text style={styles.saveButtonText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.saveButtonText}>Save</Text>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -3372,7 +3512,7 @@ const TabBar = ({ activeTab, handlePageChange, animatedIndicatorStyle }) => (
                         size={24}
                         color={activeTab === index ? '#014495' : '#666'}
                     />
-                    <Text style={[
+                    <Text allowFontScaling={false} style={[
                         styles.tabText,
                         activeTab === index && styles.activeTabText
                     ]}>
@@ -3428,8 +3568,8 @@ const ClientProfile = ({ clientDetails }) => (
                     style={styles.statItem}
                 >
                     <MaterialIcons name={stat.icon} size={24} color="#014495" />
-                    <Text style={styles.statValue}>{stat.value}</Text>
-                    <Text style={styles.statLabel}>{stat.label}</Text>
+                    <Text allowFontScaling={false} style={styles.statValue}>{stat.value}</Text>
+                    <Text allowFontScaling={false} style={styles.statLabel}>{stat.label}</Text>
                 </Animatable.View>
             ))}
         </View>
@@ -3564,7 +3704,7 @@ const styles = StyleSheet.create({
     },
     descriptionContainer: {
         backgroundColor: 'white',
-        margin: 15,
+        marginHorizontal: 20,
         padding: 20,
         borderRadius: 15,
         elevation: 2,
@@ -3592,6 +3732,7 @@ const styles = StyleSheet.create({
     treatmentsContainer: {
         flex: 1,
         backgroundColor: '#F5F6FA',
+
     },
     treatmentsList: {
         padding: 15,
@@ -3601,7 +3742,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 15,
         marginBottom: 15,
-        elevation: 2,
+        // elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -3660,6 +3801,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 6,
         borderRadius: 20,
+        width: "auto"
     },
     statusText: {
         marginLeft: 4,
@@ -3691,6 +3833,7 @@ const styles = StyleSheet.create({
     paymentsContainer: {
         flex: 1,
         backgroundColor: '#F5F6FA',
+        // backgroundColor: 'yellow',
     },
     paymentsSummary: {
         flexDirection: 'row',
@@ -3709,7 +3852,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
         borderRadius: 10,
-        elevation: 2,
+        // elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -3807,7 +3950,7 @@ const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: Platform.OS === "ios" ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -3815,6 +3958,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
+        paddingBottom: 20,
+        // flexGrow: 1
     },
 
     modalContainer: {
@@ -3881,6 +4026,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         paddingTop: 20,
         maxHeight: '90%',
+        // justifyContent: "flex-end"
     },
     dateTimeContainer: {
         flexDirection: 'column',
@@ -3990,6 +4136,7 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     pagerView: { flex: 1 },
+    page: { flex: 1 },
     editModalInputError: {
         borderColor: '#FF4444',
     },
@@ -4121,6 +4268,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
+        // paddingVertical: 40
     },
     descriptionModalContent: {
         backgroundColor: 'white',
@@ -4128,6 +4276,8 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         padding: 20,
         maxHeight: '80%',
+        justifyContent: "flex-end",
+        paddingVertical: 40
     },
     descriptionModalHeader: {
         flexDirection: 'row',
@@ -4153,6 +4303,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         backgroundColor: '#F8F9FF',
         minHeight: 150,
+        maxHeight: 250,
         marginBottom: 20,
     },
     saveDescriptionButton: {
@@ -4874,8 +5025,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
-        padding: 12,
-        marginHorizontal: 16,
+        padding: 20,
+        // marginHorizontal: 16,
         marginTop: 10,
         borderRadius: 10,
         shadowColor: '#000',
@@ -5010,7 +5161,31 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         opacity: 0.8
     },
+    androidPickerButton: {
+        backgroundColor: '#f5f5f5',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    androidPickerText: {
+        fontSize: 16,
+        color: '#333',
+    },
 
+    androidPickerAgeButton: {
+        padding: 12,
+        margin: 12,
+        backgroundColor: '#F8F9FF',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+    },
+    androidPickerAgeText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+    },
 
 
 

@@ -13,6 +13,7 @@ import {
     InputAccessoryView,
     Keyboard,
     TouchableWithoutFeedback,
+    StatusBar
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,7 +64,9 @@ export default function SignIn({ navigation }) {
     const slideAnim = useRef(new Animated.Value(50)).current;
     useEffect(() => {
         GoogleSignin.configure({
-            webClientId: "826801571021-4qgv31c0n29lqfkksp1j2ufadshn0et0.apps.googleusercontent.com"
+            webClientId: "826801571021-4qgv31c0n29lqfkksp1j2ufadshn0et0.apps.googleusercontent.com",
+            offlineAccess: true, // Add this
+            forceCodeForRefreshToken: true, // Add this
         });
     }, [])
 
@@ -314,6 +317,7 @@ export default function SignIn({ navigation }) {
                     <Text allowFontScaling={false} style={styles.accessoryButtonText}>Close</Text>
                 </TouchableOpacity>
             </InputAccessoryView>}
+            <StatusBar /* backgroundColor='#4A90E2' */ backgroundColor={"#4A90E2"} barStyle="dark-content" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.container}
@@ -414,17 +418,23 @@ export default function SignIn({ navigation }) {
                             <TouchableOpacity onPress={() => {
                                 signInWithGoogle()
 
-                            }} style={{ height: 80, /* backgroundColor: "yellow" */ }}>
+                            }} disabled={Platform.OS === "ios" ? true : false} >
+                                <View style={{
+                                    width: "100%", height: Platform.OS === "android" ? 60 : "auto", alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
 
-                                <GoogleSigninButton
-                                    size={GoogleSigninButton.Size.Wide}
-                                    color={GoogleSigninButton.Color.Light}
-                                    onPress={() => {
-                                        signInWithGoogle()
+                                    <GoogleSigninButton
+                                        size={GoogleSigninButton.Size.Wide}
+                                        color={GoogleSigninButton.Color.Light}
+                                        // disabled={false}
+                                        onPress={() => {
+                                            signInWithGoogle()
 
-                                    }}
-                                    style={{ width: "100%", height: 80 }}
-                                />
+                                        }}
+                                        style={{ width: "100%", height: 60, padding: 20 }}
+                                    />
+                                </View>
                             </TouchableOpacity>
 
                             <View style={{ height: 20 }}></View>
@@ -450,7 +460,7 @@ export default function SignIn({ navigation }) {
                             cornerRadius={10}
                             style={styles.appleButton}
                             onPress={handleAppleLogin}
-                        /> */}
+                         /> */}
 
                             <View style={styles.signupContainer}>
                                 <Text allowFontScaling={false} style={styles.signupText}>Don't have an account? </Text>
