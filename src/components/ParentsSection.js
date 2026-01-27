@@ -18,6 +18,7 @@ import * as Animatable from 'react-native-animatable';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { Api } from '../Api';
+import i18n from '../i18n';
 
 export default function ParentsSection({ clientDetails, refreshClient }) {
     const [modalVisible, setModalVisible] = useState(false);
@@ -40,7 +41,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
             refreshClient();
             resetForm();
         } catch (error) {
-            Alert.alert('Error', 'Failed to add parent');
+            Alert.alert(i18n.t('error'), i18n.t('failedToAddParent'));
         } finally {
             setIsSaving(false);
         }
@@ -57,7 +58,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
             refreshClient();
             resetForm();
         } catch (error) {
-            Alert.alert('Error', 'Failed to update parent');
+            Alert.alert(i18n.t('error'), i18n.t('failedToUpdateParent'));
         } finally {
             setIsSaving(false);
         }
@@ -65,12 +66,12 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
 
     const handleDeleteParent = async (parentId) => {
         Alert.alert(
-            'Delete Parent',
-            'Are you sure you want to delete this parent?',
+            i18n.t('deleteParent'),
+            i18n.t('deleteParentConfirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: i18n.t('cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: i18n.t('delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -79,7 +80,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                             );
                             refreshClient();
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to delete parent');
+                            Alert.alert(i18n.t('error'), i18n.t('failedToDeleteParent'));
                         }
                     },
                 },
@@ -108,7 +109,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
     return (
         <Animatable.View animation="fadeIn" duration={1000} style={styles.container}>
             <View style={styles.header}>
-                <Text allowFontScaling={false} style={styles.title}>Parents</Text>
+                <Text allowFontScaling={false} style={styles.title}>{i18n.t('parentsTitle')}</Text>
                 <TouchableOpacity
                     style={styles.addButton}
                     onPress={() => {
@@ -201,13 +202,13 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                 style={styles.modalContent}
                             >
                                 <Text allowFontScaling={false} style={styles.modalTitle}>
-                                    {editingParent ? 'Edit Parent' : 'Add Parent'}
+                                    {editingParent ? i18n.t('editParent') : i18n.t('addParent')}
                                 </Text>
 
                                 <TextInput
                                     ref={parentNameInputRef}
                                     style={styles.input}
-                                    placeholder="Parent Name"
+                                    placeholder={i18n.t('parentNameLabel')}
                                     value={parentData.parentName}
                                     onChangeText={(text) => setParentData({ ...parentData, parentName: text })}
                                     returnKeyType="next"
@@ -230,7 +231,8 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                             styles.genderText,
                                             parentData.gender === 'male' && styles.selectedGenderText
                                         ]}>
-                                            Male
+
+                                            {i18n.t('male')}
                                         </Text>
                                     </TouchableOpacity>
 
@@ -250,14 +252,15 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                             styles.genderText,
                                             parentData.gender === 'female' && styles.selectedGenderText
                                         ]}>
-                                            Female
+
+                                            {i18n.t('female')}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
 
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Phone Number"
+                                    placeholder={i18n.t('phoneNumberLabel')}
                                     value={parentData.phone}
                                     onChangeText={(text) => setParentData({ ...parentData, phone: text })}
                                     keyboardType="phone-pad"
@@ -266,7 +269,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
 
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Email"
+                                    placeholder={i18n.t('emailLabel')}
                                     value={parentData.email}
                                     onChangeText={(text) => setParentData({ ...parentData, email: text })}
                                     keyboardType="email-address"
@@ -282,7 +285,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                             resetForm();
                                         }}
                                     >
-                                        <Text allowFontScaling={false} style={styles.buttonText}>Cancel</Text>
+                                        <Text allowFontScaling={false} style={styles.buttonText}>{i18n.t('cancel')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.saveButton, isSaving && styles.savingButton]}
@@ -303,7 +306,7 @@ export default function ParentsSection({ clientDetails, refreshClient }) {
                                         {isSaving ? (
                                             <ActivityIndicator size="small" color="white" />
                                         ) : (
-                                            <Text allowFontScaling={false} style={styles.buttonText}>Save</Text>
+                                            <Text allowFontScaling={false} style={styles.buttonText}>{i18n.t('save')}</Text>
                                         )}
                                     </TouchableOpacity>
                                 </View>

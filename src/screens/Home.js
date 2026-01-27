@@ -41,6 +41,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 import { setSelectedClient } from '../redux/slices/selectedClientSlice';
+import i18n from "../i18n";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -143,7 +144,10 @@ export default function Home({ navigation }) {
                 }}
             />}
 
-            <ScrollView style={styles.container}>
+            <ScrollView 
+                style={styles.scrollView} 
+                contentContainerStyle={styles.container}
+            >
                 <Animatable.View
                     animation="fadeIn"
                     duration={1500}
@@ -152,17 +156,17 @@ export default function Home({ navigation }) {
                     <Text allowFontScaling={false} style={styles.greetingText}>
                         {(() => {
                             const hour = new Date().getHours();
-                            if (hour > 4 && hour < 12) return 'Good Morning';
-                            if (hour > 12 && hour < 17) return 'Good Afternoon';
-                            if (hour > 17 && hour < 21) return 'Good Evening';
-                            return 'Good Night';
+                            if (hour >= 5 && hour < 12) return i18n.t('goodMorning');
+                            if (hour >= 12 && hour < 17) return i18n.t('goodAfternoon');
+                            if (hour >= 17 && hour < 21) return i18n.t('goodEvening');
+                            return i18n.t('goodNight');
                         })()}
                     </Text>
                     <Text allowFontScaling={false} style={styles.userName}>
                         {user.name || 'User'}
                     </Text>
                     <Text allowFontScaling={false} style={styles.welcomeMessage}>
-                        {stats.clientCount > 0 ? "Welcome back to your therapy dashboard" : "Welcome to your therapy dashboard"}
+                        {i18n.t('welcome')}
                     </Text>
                 </Animatable.View>
                 {stats.clientCount === 0 &&
@@ -172,13 +176,13 @@ export default function Home({ navigation }) {
                         style={styles.newUserContainer}
                     >
                         <Text allowFontScaling={false} style={styles.newUserText}>
-                            Hey there! Welcome to TipTop! To kick things off, just add some patients and schedule their treatments. Let's get started!
+                            {i18n.t('newUserWelcome')}
                         </Text>
                         <TouchableOpacity
                             style={styles.newUserButton}
                             onPress={() => navigation.navigate('Patients', { screen: "Clients" })}
                         >
-                            <Text allowFontScaling={false} style={styles.newUserButtonText}>Add Patients</Text>
+                            <Text allowFontScaling={false} style={styles.newUserButtonText}>{i18n.t('addPatients')}</Text>
                         </TouchableOpacity>
                     </Animatable.View>}
 
@@ -193,7 +197,7 @@ export default function Home({ navigation }) {
                         >
 
                             <MaterialIcons name="people" size={24} color="#FFF" style={{ alignSelf: "center" }} />
-                            <Text allowFontScaling={false} style={styles.statsLabel}>Patients</Text>
+                            <Text allowFontScaling={false} style={styles.statsLabel}>{i18n.t('patients')}</Text>
                             <Text allowFontScaling={false} style={styles.statsValue}>{stats.clientCount}</Text>
 
                         </Animatable.View>
@@ -207,7 +211,7 @@ export default function Home({ navigation }) {
 
                         >
                             <MaterialIcons name="medical-services" size={24} color="#FFF" style={{ alignSelf: "center" }} />
-                            <Text allowFontScaling={false} style={styles.statsLabel}>Treatments</Text>
+                            <Text allowFontScaling={false} style={styles.statsLabel}>{i18n.t('treatments')}</Text>
                             <Text allowFontScaling={false} style={styles.statsValue}>{stats.treatmentCount}</Text>
                         </Animatable.View>
                     </TouchableOpacity>
@@ -234,7 +238,7 @@ export default function Home({ navigation }) {
                                 >
                                     <View style={styles.titleContainer}>
                                         <MaterialIcons name="event" size={24} color="#FFF" />
-                                        <Text allowFontScaling={false} style={styles.nextTreatmentTitle}>Next Treatment</Text>
+                                        <Text allowFontScaling={false} style={styles.nextTreatmentTitle}>{i18n.t('nextTreatment')}</Text>
                                     </View>
 
                                     <View style={styles.treatmentDetails}>
@@ -277,9 +281,9 @@ export default function Home({ navigation }) {
                                             style={styles.emptyTreatmentContainer}
                                         >
                                             <MaterialIcons name="event-busy" size={40} color="rgba(255, 255, 255, 0.8)" />
-                                            <Text allowFontScaling={false} style={styles.emptyTreatmentTitle}>No Upcoming Treatments</Text>
+                                            <Text allowFontScaling={false} style={styles.emptyTreatmentTitle}>{i18n.t('noUpcomingTreatments')}</Text>
                                             <Text allowFontScaling={false} style={styles.emptyTreatmentText}>
-                                                You don't have any treatments scheduled yet
+                                                {i18n.t('noTreatmentsScheduled')}
                                             </Text>
                                         </Animatable.View>
                                     )}
@@ -300,23 +304,23 @@ export default function Home({ navigation }) {
                 >
                     <View style={styles.paymentsHeader}>
                         <MaterialIcons name="account-balance-wallet" size={24} color="#014495" />
-                        <Text allowFontScaling={false} style={styles.paymentsTitle}>Payments Overview</Text>
+                        <Text allowFontScaling={false} style={styles.paymentsTitle}>{i18n.t('paymentsOverview')}</Text>
                     </View>
 
                     <View style={styles.paymentsGrid}>
                         <View style={[styles.paymentBox, styles.successPaymentBox]}>
                             <MaterialIcons name="check-circle" size={24} color={COLORS.success} />
-                            <Text allowFontScaling={false} style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Paid</Text>
+                            <Text allowFontScaling={false} style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>{i18n.t('paid')}</Text>
                             <Text allowFontScaling={false} style={[styles.paymentAmount, { color: COLORS.success }]}>
-                                ${stats.payments.find(p => p._id === 'paid')?.totalAmount || 0}
+                                {i18n.t('currencySymbol')}{stats.payments.find(p => p._id === 'paid')?.totalAmount || 0}
                             </Text>
                         </View>
 
                         <View style={[styles.paymentBox, styles.warningPaymentBox]}>
                             <MaterialIcons name="schedule" size={24} color={COLORS.warning} />
-                            <Text allowFontScaling={false} style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>Pending</Text>
+                            <Text allowFontScaling={false} style={[styles.paymentLabel, { color: COLORS.text.secondary }]}>{i18n.t('pending')}</Text>
                             <Text allowFontScaling={false} style={[styles.paymentAmount, { color: COLORS.warning }]}>
-                                ${stats.totalPending/*  ${stats.payments.find(p => p._id === 'pending')?.totalAmount || 0} */}
+                                {i18n.t('currencySymbol')}{stats.totalPending/*  ${stats.payments.find(p => p._id === 'pending')?.totalAmount || 0} */}
                             </Text>
                         </View>
                     </View>
@@ -340,11 +344,13 @@ export default function Home({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
+    scrollView: {
         flex: 1,
         backgroundColor: COLORS.background,
+    },
+    container: {
         padding: 16,
-        // paddingBottom: 100,
+        paddingBottom: 40,
     },
     loader: {
         flex: 1,
@@ -436,7 +442,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#FFF',
-        marginLeft: 8, // Add space between icon and text
+        marginStart: 8, // Add space between icon and text
     },
     titleContainer: {
         flexDirection: 'row',
@@ -455,7 +461,7 @@ const styles = StyleSheet.create({
     dateTimeText: {
         color: '#FFF',
         fontSize: 16,
-        marginLeft: 8,
+        marginStart: 8,
     },
     clientInfo: {
         flexDirection: 'row',
@@ -468,7 +474,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 18,
         fontWeight: '500',
-        marginLeft: 8,
+        marginStart: 8,
     },
     statsRow: {
         flexDirection: 'row',
@@ -523,7 +529,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: COLORS.primary,
-        marginLeft: 8,
+        marginStart: 8,
     },
     paymentsGrid: {
         flexDirection: 'row',

@@ -51,16 +51,24 @@ import Treatments from "../screens/Treatments";
 import TreatmentForm from "../screens/TreatmentForm";
 // import ClientForm from "../screens/ClientForm";
 import ClientForm from "../screens/ClientForm";
+import i18n from "../i18n";
 const Stack = createStackNavigator();
 
 const ClientStack = () => (
     <Stack.Navigator>
-        <Stack.Screen name="Clients" component={Clients} options={{
-            headerShown: false,
-            headerStyle: { backgroundColor: '#1F609A' },
-            headerTintColor: '#fff',
-        }}
-        />
+        <Stack.Screen
+  name="Clients"
+  component={Clients}
+  options={{
+    headerShown: true,
+    headerStyle: { backgroundColor: '#014495' },
+    headerTintColor: '#fff',
+    headerTitle: i18n.t('tabClients'),
+    gestureEnabled: false,
+    headerLeft: () => null,
+  }}
+/>
+
         <Stack.Screen
             name="Treatments"
             component={Treatments}
@@ -86,7 +94,7 @@ const ClientStack = () => (
             headerShown: true,
             headerStyle: { backgroundColor: '#014495' },
             headerTintColor: '#fff',
-            headerTitle: "Client Form"
+            headerTitle: i18n.t('clientFormTitle'),
         }}
         />
     </Stack.Navigator>

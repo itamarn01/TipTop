@@ -54,6 +54,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 import LottieView from 'lottie-react-native';
+import i18n from "../i18n";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -97,9 +98,9 @@ const NoSearchResultsComponent = ({ search }) => (
             style={styles.emptyStateAnimation}
             speed={0.8}
         />
-        <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Results Found</Text>
+        <Text allowFontScaling={false} style={styles.emptyStateTitle}>{i18n.t('noResultsFound')}</Text>
         <Text allowFontScaling={false} style={styles.emptyStateText}>
-            We couldn't find any clients matching "{search}"
+            {i18n.t('noResultsText', { search })}
         </Text>
     </Animatable.View>
 );
@@ -218,7 +219,7 @@ export default function Clients({ navigation }) {
             fetchClients();
         } catch (error) {
             console.error('Error deleting client:', error);
-            Alert.alert('Error', 'Could not delete client');
+            Alert.alert(i18n.t('error'), i18n.t('couldNotDelete'));
         }
     };
 
@@ -236,8 +237,8 @@ export default function Clients({ navigation }) {
 
     const validateInputs = () => {
         const newErrors = {};
-        if (!newClient.name) newErrors.name = 'Name is required';
-        if (!newClient.lastName) newErrors.lastName = 'Last Name is required';
+        if (!newClient.name) newErrors.name = i18n.t('nameRequired');
+        if (!newClient.lastName) newErrors.lastName = i18n.t('lastNameRequired');
         /* if (!newClient.phone) newErrors.phone = 'Phone number is required';
         if (!newClient.email) newErrors.email = 'Email is required';*/
         // if (!newClient.birthday) newErrors.birthday = 'Birthday is required';
@@ -254,7 +255,7 @@ export default function Clients({ navigation }) {
             setNewClient({ name: '', lastName: '', birthday: '', gender: "male", adminId: user._id });
         } catch (error) {
             console.error('Error adding client:', error);
-            Alert.alert('Error', 'Could not add client');
+            Alert.alert(i18n.t('error'), i18n.t('couldNotAdd'));
         }
     };
 
@@ -311,21 +312,21 @@ export default function Clients({ navigation }) {
             style={styles.emptyStateContainer}
             duration={1000}
         >
-            <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Patients Yet</Text>
+            <Text allowFontScaling={false} style={styles.emptyStateTitle}>{i18n.t('noPatients')}</Text>
             <TouchableOpacity
                 style={styles.emptyStateButton}
                 onPress={onAddClient}
             >
                 <MaterialIcons name="person-add" size={24} color="white" />
-                <Text allowFontScaling={false} style={styles.emptyStateButtonText}>Add New Patient</Text>
+                <Text allowFontScaling={false} style={styles.emptyStateButtonText}>{i18n.t('addNewPatient')}</Text>
             </TouchableOpacity>
-            <Text allowFontScaling={false} style={styles.orText}>or</Text>
+            <Text allowFontScaling={false} style={styles.orText}>{i18n.t('or')}</Text>
             <TouchableOpacity
                 style={styles.generateLinkButton}
                 onPress={() => navigation.navigate("ClientForm")}
             >
                 <MaterialIcons name="link" size={24} color="white" />
-                <Text allowFontScaling={false} style={styles.generateLinkText}>Send Patient Link For Details</Text>
+                <Text allowFontScaling={false} style={styles.generateLinkText}>{i18n.t('sendPatientLink')}</Text>
             </TouchableOpacity>
         </Animatable.View>
     );
@@ -339,25 +340,32 @@ export default function Clients({ navigation }) {
         try {
             const response = await axios.post(`${Api}/clients/generate-form-link`, { adminId: user._id, api: Api.slice(0, -4) });
             setLink(response.data.link);
-            Alert.alert("Success", "Form link generated successfully.");
+            Alert.alert(i18n.t('success'), i18n.t('linkGenerated'));
         } catch (error) {
             console.error("Error generating form link:", error);
-            Alert.alert("Error", "Could not generate form link.");
+            Alert.alert(i18n.t('error'), i18n.t('couldNotGenerateLink'));
         }
     };
 
     const NewBadge = () => (
         <View style={styles.newBadgeContainer}>
-            <Text allowFontScaling={false} style={styles.newBadgeText}>NEW</Text>
+            <Text allowFontScaling={false} style={styles.newBadgeText}>{i18n.t('newBadge')}</Text>
         </View>
     );
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#014495" barStyle="dark-content" />
+            {/* <StatusBar backgroundColor="#014495" barStyle="dark-content" /> */}
+            {user.package === "free" && <BannerAd
+                    unitId={adUnitId1}
+                    size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                    requestOptions={{
+                        requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                    }}
+                />}
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={styles.container}
+                style={styles.tatContainer}
             >
 
 
@@ -366,7 +374,7 @@ export default function Clients({ navigation }) {
                     duration={1000}
                     style={styles.header}
                 >
-                    <Text allowFontScaling={false} style={styles.headerTitle}>My Patients</Text>
+                    <Text allowFontScaling={false} style={styles.headerTitle}>{i18n.t('myPatients')}</Text>
 
                     <TouchableOpacity
                         onPress={() => {
@@ -385,13 +393,7 @@ export default function Clients({ navigation }) {
                         />
                     </TouchableOpacity>
                 </Animatable.View>
-                {user.package === "free" && <BannerAd
-                    unitId={adUnitId1}
-                    size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                    requestOptions={{
-                        requestNonPersonalizedAdsOnly: !isTrackingPermission,
-                    }}
-                />}
+                
 
                 {/*  {user.formLink ?
                     <View style={{ flexDirection: "row", justifyContent: "space-around", alignItems: "center" }}>
@@ -456,7 +458,7 @@ export default function Clients({ navigation }) {
                             <TextInput
                                 allowFontScaling={false}
                                 style={styles.searchInput}
-                                placeholder="Search clients..."
+                                placeholder={i18n.t('searchClients')}
                                 value={search}
                                 onChangeText={setSearch}
                                 autoFocus
@@ -521,7 +523,7 @@ export default function Clients({ navigation }) {
                                         onPress={handleAddClient}
                                     >
                                         <MaterialIcons name="person-add" size={24} color="white" />
-                                        <Text allowFontScaling={false} style={styles.addButtonText}>Add New Patient</Text>
+                                        <Text allowFontScaling={false} style={styles.addButtonText}>{i18n.t('addNewPatient')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.addButton, { width: "15%" }]}
@@ -560,12 +562,12 @@ export default function Clients({ navigation }) {
                                                                 style={styles.deleteSwipe}
                                                                 onPress={() => {
                                                                     Alert.alert(
-                                                                        'Delete Client',
-                                                                        'Are you sure you want to delete this client?',
+                                                                        i18n.t('deleteClient'),
+                                                                        i18n.t('deleteClientConfirm'),
                                                                         [
-                                                                            { text: 'Cancel', style: 'cancel' },
+                                                                            { text: i18n.t('cancel'), style: 'cancel' },
                                                                             {
-                                                                                text: 'Delete',
+                                                                                text: i18n.t('delete'),
                                                                                 onPress: () => handleDeleteClient(item._id),
                                                                                 style: 'destructive'
                                                                             },
@@ -603,7 +605,7 @@ export default function Clients({ navigation }) {
                                                                     {item.birthday ? new Date(item.birthday).toLocaleDateString() : ''}
                                                                 </Text>
                                                             </View>
-                                                            <MaterialIcons name="chevron-right" size={24} color="#666" />
+                                                            <MaterialIcons name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} size={24} color="#666" />
                                                         </TouchableOpacity>
                                                     </Swipeable>
                                                 </Animatable.View>
@@ -678,7 +680,7 @@ export default function Clients({ navigation }) {
                                             <MaterialIcons name="close" size={24} color="#666" />
                                             {/* <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text> */}
                                         </TouchableOpacity>
-                                        <Text allowFontScaling={false} style={styles.modalTitle}>Add New Patient</Text>
+                                        <Text allowFontScaling={false} style={styles.modalTitle}>{i18n.t('addNewPatient')}</Text>
                                         <TouchableOpacity
                                             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
                                             onPress={async () => {
@@ -691,7 +693,7 @@ export default function Clients({ navigation }) {
                                             {isSaving ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text allowFontScaling={false} style={styles.saveButtonText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.saveButtonText}>{i18n.t('save')}</Text>
                                             )}
                                         </TouchableOpacity>
                                     </Animated.View>
@@ -708,12 +710,12 @@ export default function Clients({ navigation }) {
                                     <ScrollView style={styles.modalScroll} keyboardShouldPersistTaps={"handled"}>
 
                                         <View style={styles.inputGroup}>
-                                            <Text allowFontScaling={false} style={styles.inputLabel}>Patient name</Text>
+                                            <Text allowFontScaling={false} style={styles.inputLabel}>{i18n.t('patientName')}</Text>
                                             <TextInput
                                                 allowFontScaling={false}
                                                 ref={nameRef}
                                                 style={[styles.input, errors.name && styles.errorInput]}
-                                                placeholder="Name"
+                                                placeholder={i18n.t('patientName')}
                                                 value={newClient.name}
                                                 onChangeText={(text) => setNewClient({ ...newClient, name: text })}
                                                 placeholderTextColor="#999"
@@ -729,11 +731,11 @@ export default function Clients({ navigation }) {
                                         </View>
 
                                         <View style={styles.inputGroup}>
-                                            <Text allowFontScaling={false} style={styles.inputLabel}>Patient last name</Text>
+                                            <Text allowFontScaling={false} style={styles.inputLabel}>{i18n.t('patientLastName')}</Text>
                                             <TextInput
                                                 allowFontScaling={false}
                                                 style={[styles.input, errors.lastName && styles.errorInput]}
-                                                placeholder="Last Name"
+                                                placeholder={i18n.t('patientLastName')}
                                                 value={newClient.lastName}
                                                 onChangeText={(text) => setNewClient({ ...newClient, lastName: text })}
                                                 placeholderTextColor="#999"
@@ -748,7 +750,7 @@ export default function Clients({ navigation }) {
                                             )}
                                         </View>
                                         <View style={styles.inputGroup}>
-                                            <Text allowFontScaling={false} style={styles.inputLabel}>Client gender</Text>
+                                            <Text allowFontScaling={false} style={styles.inputLabel}>{i18n.t('clientGender')}</Text>
                                             <View style={styles.genderContainer}>
                                                 <TouchableOpacity
                                                     onPress={() => {
@@ -768,7 +770,7 @@ export default function Clients({ navigation }) {
                                                     <Text allowFontScaling={false} style={[
                                                         styles.genderText,
                                                         gender === "male" && styles.genderTextActive
-                                                    ]}>Male</Text>
+                                                    ]}>{i18n.t('male')}</Text>
                                                 </TouchableOpacity>
 
                                                 <TouchableOpacity
@@ -789,7 +791,7 @@ export default function Clients({ navigation }) {
                                                     <Text allowFontScaling={false} style={[
                                                         styles.genderText,
                                                         gender === "female" && styles.genderTextActive
-                                                    ]}>Female</Text>
+                                                    ]}>{i18n.t('female')}</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
@@ -825,6 +827,10 @@ export default function Clients({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+       backgroundColor: '#1F609A',
+    },
+    tatContainer: {
+        flex: 1,
         backgroundColor: '#F5F6FA',
     },
     header: {
@@ -856,7 +862,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     searchInputIcon: {
-        marginRight: 10,
+        marginEnd: 10,
     },
     searchInput: {
         flex: 1,
@@ -881,7 +887,7 @@ const styles = StyleSheet.create({
     addButtonText: {
         color: 'white',
         fontWeight: 'bold',
-        marginLeft: 10,
+        marginStart: 10,
         fontSize: 16,
     },
     clientItem: {
@@ -905,7 +911,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F5F6FA',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginEnd: 15,
     },
     clientInfo: {
         flex: 1,
@@ -1028,7 +1034,7 @@ const styles = StyleSheet.create({
     emptyStateButtonText: {
         color: 'white',
         fontWeight: 'bold',
-        marginLeft: 10,
+        marginStart: 10,
         fontSize: 16,
     },
     searchView: {
@@ -1047,8 +1053,8 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 16,
-        marginLeft: 10,
-        marginRight: 10,
+        marginStart: 10,
+        marginEnd: 10,
         color: '#2D3436',
     },
     searchResultItem: {
@@ -1080,7 +1086,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 4,
-        marginLeft: 10,
+        marginStart: 10,
     },
     buttonContainer: {
         flexDirection: 'row',
@@ -1176,7 +1182,7 @@ const styles = StyleSheet.create({
     },
     copyButtonText: {
         color: 'white',
-        marginLeft: 5,
+        marginStart: 5,
         fontWeight: 'bold',
     },
     orText: {
@@ -1197,11 +1203,11 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
-        marginLeft: 10, // Space between icon and text
+        marginStart: 10, // Space between icon and text
     },
     newClientItem: {
-        borderLeftWidth: 4,
-        borderLeftColor: '#4CAF50',
+        borderStartWidth: 4,
+        borderStartColor: '#4CAF50',
     },
     nameContainer: {
         flexDirection: 'row',

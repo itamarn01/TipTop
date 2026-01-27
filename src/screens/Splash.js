@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Button, StyleSheet, Animated, StatusBar } from 'react-native';
+import Constants from 'expo-constants';
+import { View, Text, Button, StyleSheet, Animated, StatusBar, Modal, TouchableOpacity, Linking, Platform } from 'react-native';
 import { Api } from '../Api';
 import { setAuth, clearAuth } from '../redux/slices/authSlice';
 import { Provider, useDispatch } from 'react-redux';
@@ -7,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { checkTrackingStatus, requestTrackingPermission } from 'react-native-tracking-transparency';
 import LottieView from 'lottie-react-native';
+import mobileAds from 'react-native-google-mobile-ads'; 
+import i18n from '../i18n';
 
 import { setTrackingPermission, clearTrackingPermission } from '../redux/slices/trackingSlice';
 export default function Splash({ navigation }) {
@@ -16,8 +19,12 @@ export default function Splash({ navigation }) {
     const [trackingPermissionProcessEnd, setTrackingPermissionProcessEnd] =
         useState(false);
     const [animationEnded, setAnimationEnded] = useState(false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [updateStatus, setUpdateStatus] = useState(null); // 'mustUpdate', 'recommendToUpdate'
+
     const animatedValues = Array(25).fill().map(() => new Animated.Value(0));
     const dispatch = useDispatch();
+
     useEffect(() => {
         if (!trackingPermissionProcessEnd) {
             console.log("tracking process doesn't finish");
@@ -123,41 +130,77 @@ export default function Splash({ navigation }) {
         }
     }
 
+    const checkForUpdate = async () => {
+        try {
+            const currentVersion = Constants.expoConfig.version;
+            console.log("currentVersion", currentVersion);
+            const response = await axios.post(`${Api}/checkUpdate`, { currentVersion });
+            const { updateStatus } = response.data;
+            return updateStatus;
+        } catch (error) {
+            console.error('Error checking for update:', error);
+            return 'noUpdate'; // Proceed if check fails
+        }
+    };
+
+    const handleUpdate = () => {
+        const url = Platform.OS === 'ios' 
+            ? 'https://apps.apple.com/il/app/gigtune-%D7%92%D7%99%D7%92%D7%98%D7%99%D7%95%D7%9F/id1659825204?l=he'
+            : 'https://play.google.com/store/apps/details?id=com.webixnow.gigtune&pcampaignid=web_share';
+        
+        Linking.openURL(url);
+    };
+
+    const proceedToApp = async () => {
+        const token = await AsyncStorage.getItem('userToken');
+        console.log("tokennnn:", token)
+        if (token) {
+            const user = await fetchUserDetails(token);
+            if (user) {
+                dispatch(setAuth({ token: token, user: user }));
+                console.log("user.name", user.name)
+                setLoading(false)
+                setAnimationEnded(false)
+                navigation.navigate("Main")
+            } else {
+                 setLoading(false); setAnimationEnded(false); navigation.navigate("SignIn");
+            }
+        } else { setLoading(false); setAnimationEnded(false); navigation.navigate("SignIn"); }
+    };
+
+    async function prepare() {
+        try {
+            console.log("check if anumationended")
+            if (animationEnded) {
+                const status = await checkForUpdate();
+                console.log("Update status:", status);
+
+                if (status === 'mustUpdate' || status === 'recommendToUpdate' || status === 'updateAvailable') {
+                    setUpdateStatus(status);
+                    setShowUpdateModal(true);
+                    return;
+                }
+
+                await proceedToApp();
+            }
+        } catch (e) {
+            console.warn(e);
+            await proceedToApp(); // Fail safe
+        }
+    }
+
+
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', async () => {
             const timer = setTimeout(() => {
                 setAnimationEnded(true);
             }, 2000);
 
-            // Cleanup subscription on unmount
-            return () => {
-                clearTimeout(timer); // Clear the timer when the component unmounts or focus changes
-            };
+            return () => clearTimeout(timer);
         });
 
-        // Cleanup the navigation listener on unmount
         return () => unsubscribe();
     }, [navigation]);
-
-    async function prepare() {
-        try {
-            console.log("check if anumationended")
-            if (animationEnded) {
-                const token = await AsyncStorage.getItem('userToken');
-                console.log("tokennnn:", token)
-                if (token) {
-                    const user = await fetchUserDetails(token);
-                    dispatch(setAuth({ token: token, user: user }));
-                    console.log("user.name", user.name)
-                    setLoading(false)
-                    setAnimationEnded(false)
-                    navigation.navigate("Main")
-                } else { setLoading(false); setAnimationEnded(false); navigation.navigate("SignIn"); }
-            }
-        } catch (e) {
-            console.warn(e);
-        }
-    }
 
     useEffect(() => {
         // const unsubscribe = navigation.addListener('focus', async () => {
@@ -165,6 +208,7 @@ export default function Splash({ navigation }) {
         // });
         /*  return () => unsubscribe(); */
     }, [animationEnded]);
+
 
     /*  const onLayoutRootView = useCallback(async () => {
          if (appIsReady) {
@@ -193,7 +237,43 @@ export default function Splash({ navigation }) {
             />
             {/* <View style={styles.dotContainer}>{renderDots()}</View> */}
 
+            <Modal
+                transparent={true}
+                visible={showUpdateModal}
+                animationType="fade"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>
+                            {updateStatus === 'mustUpdate' ? 'Update Required' : 'Update Available'}
+                        </Text>
+                        <Text style={styles.modalText}>
+                            {updateStatus === 'mustUpdate' 
+                                ? 'A new version of TipTop is available. Please update to continue using the app.'
+                                : 'A new version of TipTop is available. Would you like to update now?'}
+                        </Text>
+                        
+                        <TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
+                            <Text style={styles.updateButtonText}>Update Now</Text>
+                        </TouchableOpacity>
+
+                        {(updateStatus === 'recommendToUpdate' || updateStatus === 'updateAvailable') && (
+                            <TouchableOpacity 
+                                style={styles.skipButton} 
+                                onPress={() => {
+                                    setShowUpdateModal(false);
+                                    proceedToApp();
+                                }}
+                            >
+                                <Text style={styles.skipButtonText}>Skip for now</Text>
+                            </TouchableOpacity>
+                        )}
+
+                    </View>
+                </View>
+            </Modal>
         </View>
+
     );
 }
 const styles = StyleSheet.create({
@@ -221,5 +301,58 @@ const styles = StyleSheet.create({
     animation: {
         width: 200,
         height: 200,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 20,
+        width: '100%',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#333',
+    },
+    modalText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 20,
+        color: '#666',
+        lineHeight: 22,
+    },
+    updateButton: {
+        backgroundColor: '#4A90E2',
+        paddingHorizontal: 30,
+        paddingVertical: 12,
+        borderRadius: 25,
+        marginBottom: 10,
+        width: '100%',
+        alignItems: 'center',
+    },
+    updateButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    skipButton: {
+        paddingVertical: 10,
+    },
+    skipButtonText: {
+        color: '#999',
+        fontSize: 16,
     },
 });

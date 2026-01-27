@@ -24,6 +24,7 @@ import LottieView from 'lottie-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
+import i18n from "../../i18n";
 import {
     GoogleOneTapSignIn,
     statusCodes,
@@ -136,11 +137,11 @@ export default function SignIn({ navigation }) {
     const validateInputs = () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            Alert.alert('Invalid Email', 'Please enter a valid email address.');
+            Alert.alert(i18n.t('invalidEmail'), i18n.t('invalidEmailMessage'));
             return false;
         }
         if (password.length < 6) {
-            Alert.alert('Invalid Password', 'Password must be at least 6 characters long.');
+            Alert.alert(i18n.t('invalidPassword'), i18n.t('invalidPasswordMessage'));
             return false;
         }
         return true;
@@ -163,11 +164,11 @@ export default function SignIn({ navigation }) {
                 dispatch(setAuth({ token: data.token, user: data.user }));
                 goToHome()
             } else {
-                Alert.alert('Login Failed', data.message || 'Please check your credentials and try again.');
+                Alert.alert(i18n.t('loginFailed'), data.message || i18n.t('checkCredentials'));
             }
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'An error occurred during login. Please try again.');
+            Alert.alert(i18n.t('error'), i18n.t('loginError'));
         }
     };
     const handleAppleLogin = async () => {
@@ -216,7 +217,7 @@ export default function SignIn({ navigation }) {
 
     const handleForgotPassword = async () => {
         if (!resetEmail) {
-            Alert.alert('Error', 'Please enter your email address');
+            Alert.alert(i18n.t('error'), i18n.t('emailRequired'));
             return false;
         }
 
@@ -231,21 +232,21 @@ export default function SignIn({ navigation }) {
             const data = await response.json();
 
             if (response.ok) {
-                Alert.alert('Success', 'Verification code sent to your email');
+                Alert.alert(i18n.t('success'), i18n.t('verificationSent'));
                 return true;
             } else {
                 Alert.alert('Error', data.message);
                 return false;
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to send verification code');
+            Alert.alert(i18n.t('error'), i18n.t('failedToSendCode'));
             return false;
         }
     };
 
     const handleVerifyCode = async () => {
         if (!verificationCode) {
-            Alert.alert('Error', 'Please enter verification code');
+            Alert.alert(i18n.t('error'), i18n.t('enterCodeValidation'));
             return false;
         }
 
@@ -269,14 +270,14 @@ export default function SignIn({ navigation }) {
                 return false;
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to verify code');
+            Alert.alert(i18n.t('error'), i18n.t('failedToVerify'));
             return false;
         }
     };
 
     const handleResetPassword = async () => {
         if (!newPassword) {
-            Alert.alert('Error', 'Please enter new password');
+            Alert.alert(i18n.t('error'), i18n.t('enterNewPassword'));
             return false;
         }
 
@@ -295,14 +296,14 @@ export default function SignIn({ navigation }) {
             const data = await response.json();
 
             if (response.ok) {
-                Alert.alert('Success', 'Password reset successful');
+                Alert.alert(i18n.t('success'), i18n.t('resetPasswordSuccess'));
                 return true;
             } else {
                 Alert.alert('Error', data.message);
                 return false;
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to reset password');
+            Alert.alert(i18n.t('error'), i18n.t('failedToReset'));
             return false;
         }
     };
@@ -340,8 +341,8 @@ export default function SignIn({ navigation }) {
                                 loop
                                 style={styles.animation}
                             />
-                            <Text allowFontScaling={false} style={styles.title}>Tip Top</Text>
-                            <Text allowFontScaling={false} style={styles.subtitle}>Sign in to continue</Text>
+                            <Text allowFontScaling={false} style={styles.title}>{i18n.t('signInTitle')}</Text>
+                            <Text allowFontScaling={false} style={styles.subtitle}>{i18n.t('signInSubtitle')}</Text>
                         </View>
 
                         <View style={styles.formContainer}>
@@ -350,7 +351,7 @@ export default function SignIn({ navigation }) {
                                 <TextInput
                                     allowFontScaling={false}
                                     style={styles.input}
-                                    placeholder="Email"
+                                    placeholder={i18n.t('emailPlaceholder')}
                                     value={email}
                                     onChangeText={setEmail}
                                     keyboardType="email-address"
@@ -367,7 +368,7 @@ export default function SignIn({ navigation }) {
                                 <TextInput
                                     allowFontScaling={false}
                                     style={styles.input}
-                                    placeholder="Password"
+                                    placeholder={i18n.t('passwordPlaceholder')}
                                     value={password}
                                     onChangeText={setPassword}
                                     secureTextEntry={!showPassword}
@@ -390,7 +391,7 @@ export default function SignIn({ navigation }) {
                                 style={styles.forgotPasswordButton}
                                 onPress={() => setShowVerificationModal(true)}
                             >
-                                <Text allowFontScaling={false} style={styles.forgotPasswordText}>Forgot Password?</Text>
+                                <Text allowFontScaling={false} style={styles.forgotPasswordText}>{i18n.t('forgotPassword')}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -405,13 +406,13 @@ export default function SignIn({ navigation }) {
                                         style={styles.loadingAnimation}
                                     />
                                 ) : (
-                                    <Text allowFontScaling={false} style={styles.loginButtonText}>Sign In</Text>
+                                    <Text allowFontScaling={false} style={styles.loginButtonText}>{i18n.t('signInButton')}</Text>
                                 )}
                             </TouchableOpacity>
 
                             <View style={styles.divider}>
                                 <View style={styles.dividerLine} />
-                                <Text allowFontScaling={false} style={styles.dividerText}>OR</Text>
+                                <Text allowFontScaling={false} style={styles.dividerText}>{i18n.t('orDivider')}</Text>
                                 <View style={styles.dividerLine} />
                             </View>
 
@@ -463,9 +464,9 @@ export default function SignIn({ navigation }) {
                          /> */}
 
                             <View style={styles.signupContainer}>
-                                <Text allowFontScaling={false} style={styles.signupText}>Don't have an account? </Text>
+                                <Text allowFontScaling={false} style={styles.signupText}>{i18n.t('dontHaveAccount')}</Text>
                                 <TouchableOpacity onPress={goToSignUp}>
-                                    <Text allowFontScaling={false} style={styles.signupButton}>Sign Up</Text>
+                                    <Text allowFontScaling={false} style={styles.signupButton}>{i18n.t('signUpButton')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -476,16 +477,16 @@ export default function SignIn({ navigation }) {
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
                             <Text allowFontScaling={false} style={styles.modalTitle}>
-                                {resetStep === 1 && "Reset Password"}
-                                {resetStep === 2 && "Enter Verification Code"}
-                                {resetStep === 3 && "Set New Password"}
+                                {resetStep === 1 && i18n.t('resetPassword')}
+                                {resetStep === 2 && i18n.t('enterVerificationCode')}
+                                {resetStep === 3 && i18n.t('setNewPassword')}
                             </Text>
 
                             {resetStep === 1 && (
                                 <>
                                     <TextInput
                                         style={styles.modalInput}
-                                        placeholder="Email"
+                                        placeholder={i18n.t('emailLabel')}
                                         value={resetEmail}
                                         onChangeText={setResetEmail}
                                         keyboardType="email-address"
@@ -501,7 +502,7 @@ export default function SignIn({ navigation }) {
                                             }
                                         }}
                                     >
-                                        <Text allowFontScaling={false} style={styles.modalButtonText}>Send Code</Text>
+                                        <Text allowFontScaling={false} style={styles.modalButtonText}>{i18n.t('sendCode')}</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -510,7 +511,7 @@ export default function SignIn({ navigation }) {
                                 <>
                                     <TextInput
                                         style={styles.modalInput}
-                                        placeholder="Enter 6-digit code"
+                                        placeholder={i18n.t('enterCodePlaceholder')}
                                         value={verificationCode}
                                         onChangeText={setVerificationCode}
                                         keyboardType="numeric"
@@ -525,11 +526,11 @@ export default function SignIn({ navigation }) {
                                             }
                                         }}
                                     >
-                                        <Text allowFontScaling={false} style={styles.modalButtonText}>Verify Code</Text>
+                                        <Text allowFontScaling={false} style={styles.modalButtonText}>{i18n.t('verifyCode')}</Text>
                                     </TouchableOpacity>
                                     {countdown > 0 ? (
                                         <Text allowFontScaling={false} style={styles.countdownText}>
-                                            Resend code in {countdown}s
+                                            {i18n.t('resendCodeParam', { countdown })}
                                         </Text>
                                     ) : (
                                         <TouchableOpacity
@@ -538,7 +539,7 @@ export default function SignIn({ navigation }) {
                                                 if (success) setCountdown(50);
                                             }}
                                         >
-                                            <Text allowFontScaling={false} style={styles.resendText}>Resend Code</Text>
+                                            <Text allowFontScaling={false} style={styles.resendText}>{i18n.t('resendCode')}</Text>
                                         </TouchableOpacity>
                                     )}
                                 </>
@@ -549,7 +550,7 @@ export default function SignIn({ navigation }) {
                                     <View style={styles.inputContainer}>
                                         <TextInput
                                             style={[styles.modalInput, { flex: 1 }]}
-                                            placeholder="New Password"
+                                            placeholder={i18n.t('newPasswordPlaceholder')}
                                             value={newPassword}
                                             onChangeText={setNewPassword}
                                             secureTextEntry={!showNewPassword}
@@ -575,7 +576,7 @@ export default function SignIn({ navigation }) {
                                             }
                                         }}
                                     >
-                                        <Text allowFontScaling={false} style={styles.modalButtonText}>Reset Password</Text>
+                                        <Text allowFontScaling={false} style={styles.modalButtonText}>{i18n.t('resetPassword')}</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -590,7 +591,7 @@ export default function SignIn({ navigation }) {
                                     setShowNewPassword(false);
                                 }}
                             >
-                                <Text allowFontScaling={false} style={styles.modalCloseText}>Cancel</Text>
+                                <Text allowFontScaling={false} style={styles.modalCloseText}>{i18n.t('cancel')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -656,7 +657,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         height: 50,
-        marginLeft: 10,
+        marginStart: 10,
         color: '#333',
         fontSize: 16,
     },

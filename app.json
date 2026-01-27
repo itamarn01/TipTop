@@ -15,7 +15,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.gigtunetry.TipTop",
@@ -24,10 +25,12 @@
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#014495"
       },
-      "permissions": ["android.permission.RECORD_AUDIO"],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "package": "com.gigtunetry.TipTop",
       "versionCode": 1,
       "runtimeVersion": "1.0.0"
@@ -36,7 +39,9 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      ["@react-native-google-signin/google-signin"],
+      [
+        "@react-native-google-signin/google-signin"
+      ],
       [
         "expo-document-picker",
         {
@@ -78,7 +83,9 @@
           "iosAppId": "ca-app-pub-8754599705550429~7718527397"
         }
       ],
-      ["expo-apple-authentication"],
+      [
+        "expo-apple-authentication"
+      ],
       "expo-localization",
       "expo-font",
       "react-native-compressor"

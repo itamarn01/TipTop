@@ -17,6 +17,10 @@ import { Image as ImageCompressor } from "react-native-compressor";
 import * as Animatable from 'react-native-animatable';
 import { MaterialIcons } from '@expo/vector-icons';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import i18n from "../i18n";
+import { setLanguage } from '../redux/slices/settingsSlice';
+import * as Updates from "expo-updates";
+import { I18nManager } from "react-native";
 import {
     BannerAd,
     BannerAdSize,
@@ -75,6 +79,26 @@ export default function Profile({ navigation }) {
     const [newEmail, setNewEmail] = useState(user.email);
     const [verificationCode, setVerificationCode] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
+    const selectedLanguage = useSelector((state) => state.settings?.language || 'en');
+
+    const changeLanguage = async (lang) => {
+        try {
+            if (lang === i18n.locale) return;
+
+            i18n.locale = lang;
+            dispatch(setLanguage(lang));
+            await AsyncStorage.setItem('userLanguage', lang);
+
+            const isRTL = lang === 'he';
+            if (I18nManager.isRTL !== isRTL) {
+                I18nManager.allowRTL(isRTL);
+                I18nManager.forceRTL(isRTL);
+                await Updates.reloadAsync();
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
 
     async function fetchUserDetails() {
@@ -371,7 +395,7 @@ export default function Profile({ navigation }) {
                     <TouchableOpacity style={styles.settingOption} onPress={() => setNameModalVisible(true)}>
                         <MaterialIcons name="person" size={24} color="#333" />
                         <Text allowFontScaling={false} style={styles.settingText}>{user.name}</Text>
-                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                     </TouchableOpacity>
                 </Animatable.View>
 
@@ -379,7 +403,7 @@ export default function Profile({ navigation }) {
                     <TouchableOpacity style={styles.settingOption} onPress={() => { setNewEmail(user.email); setEmailModalVisible(true) }}>
                         <MaterialIcons name="email" size={24} color="#333" />
                         <Text allowFontScaling={false} style={styles.settingText}>{user.email}</Text>
-                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                     </TouchableOpacity>
                 </Animatable.View>
 
@@ -387,7 +411,26 @@ export default function Profile({ navigation }) {
                     <TouchableOpacity style={styles.settingOption} onPress={() => setPhoneModalVisible(true)}>
                         <MaterialIcons name="phone" size={24} color={user.phone ? "#333" : "rgba(0,0,0,0.3)"} />
                         <Text allowFontScaling={false} style={[styles.settingText, { color: user.phone ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.phone ? user.phone : "Add Phone"}</Text>
-                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
+                    </TouchableOpacity>
+                </Animatable.View>
+                
+                 <Animatable.View animation="fadeIn" duration={300} delay={150}>
+                    <TouchableOpacity style={styles.settingOption} onPress={() => { 
+                         Alert.alert(
+                            i18n.t('changeLanguage'),
+                            '',
+                            [
+                                { text: i18n.t('english'), onPress: () => changeLanguage('en') },
+                                { text: i18n.t('hebrew'), onPress: () => changeLanguage('he') },
+                                { text: 'Cancel', style: 'cancel' }
+                            ]
+                        );
+                    }}>
+                        <MaterialIcons name="language" size={24} color="#333" />
+                        {/* <Text allowFontScaling={false} style={styles.settingText}>{i18n.t('settings')}</Text> */}
+                        <Text allowFontScaling={false} style={{ marginStart: 'auto', color: '#666', marginEnd: 10 }}>{i18n.locale === 'he' ? i18n.t('hebrew') : i18n.t('english')}</Text>
+                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" />
                     </TouchableOpacity>
                 </Animatable.View>
 
@@ -395,7 +438,7 @@ export default function Profile({ navigation }) {
                     <TouchableOpacity style={styles.settingOption} onPress={logOutPressed}>
                         <MaterialIcons name="logout" size={24} color="#333" />
                         <Text allowFontScaling={false} style={styles.settingText}>Logout</Text>
-                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                     </TouchableOpacity>
                 </Animatable.View>
             </View>

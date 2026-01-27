@@ -66,6 +66,7 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import * as DocumentPicker from "expo-document-picker";
+import i18n from "../i18n";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -133,9 +134,9 @@ const DeleteConfirmationModal = ({
                             <View style={styles.deleteIconContainer}>
                                 <MaterialIcons name="delete-outline" size={40} color="#FF4444" />
                             </View>
-                            <Text allowFontScaling={false} style={styles.deleteModalTitle}>Delete Treatment</Text>
+                            <Text allowFontScaling={false} style={styles.deleteModalTitle}>{i18n.t('deleteTreatment')}</Text>
                             <Text allowFontScaling={false} style={styles.deleteModalText}>
-                                Are you sure you want to delete this treatment? This action cannot be undone.
+                                {i18n.t('deleteTreatmentConfirm')}
                             </Text>
                         </View>
                         <View style={styles.deleteModalActions}>
@@ -143,13 +144,13 @@ const DeleteConfirmationModal = ({
                                 style={styles.cancelButton}
                                 onPress={onClose}
                             >
-                                <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
+                                <Text allowFontScaling={false} style={styles.cancelButtonText}>{i18n.t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.confirmDeleteButton}
                                 onPress={onDelete}
                             >
-                                <Text allowFontScaling={false} style={styles.confirmDeleteText}>Delete</Text>
+                                <Text allowFontScaling={false} style={styles.confirmDeleteText}>{i18n.t('delete')}</Text>
                             </TouchableOpacity>
                         </View>
                     </Animatable.View>
@@ -183,46 +184,79 @@ const ClientEditModal = ({ visible, onClose, onSave, editingStat, editValue, set
                     style={{ flex: 1 }}
                 >
                     <View style={styles.modalOverlay}>
-                        <View style={styles.editModalContainer}>
-                            <View style={styles.editModalHeader}>
-                                <MaterialIcons name="edit" size={24} color="#014495" />
-                                <Text allowFontScaling={false} style={styles.editModalTitle}>
-                                    Edit {getFieldDisplayName(editingStat)}
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={onClose}
-                                    style={styles.editModalCloseButton}
-                                >
-                                    <MaterialIcons name="close" size={24} color="#666" />
-                                </TouchableOpacity>
-                            </View>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.editModalContainer}>
+                                <View style={styles.editModalHeader}>
+                                    <MaterialIcons name="edit" size={24} color="#014495" />
+                                    <Text allowFontScaling={false} style={styles.editModalTitle}>
+                                        {i18n.t('edit')} {getFieldDisplayName(editingStat)}
+                                    </Text>
+                                    <TouchableOpacity
+                                        onPress={onClose}
+                                        style={styles.editModalCloseButton}
+                                    >
+                                        <MaterialIcons name="close" size={24} color="#666" />
+                                    </TouchableOpacity>
+                                </View>
 
-                            <View style={styles.editModalContent}>
-                                <TextInput
-                                    ref={editInputRef}
-                                    style={styles.editModalInput}
-                                    value={editValue}
-                                    onChangeText={setEditValue}
-                                    keyboardType={editingStat === 'Price' || editingStat === 'Meetings' ? 'numeric' : 'default'}
-                                    placeholder={`Enter ${editingStat?.toString().toLowerCase() || ''}`}
-                                />
-                            </View>
+                                <View style={styles.editModalContent}>
+                                    {editingStat === 'Insurance' || editingStat === 'קופ"ח' ? (
+                                        <View style={styles.pickerContainer}>
+                                            <Picker
+                                                selectedValue={editValue}
+                                                onValueChange={(itemValue) => setEditValue(itemValue)}
+                                                style={styles.picker}
+                                            >
+                                                <Picker.Item label={i18n.t('selectOption')} value="" color="#999" />
+                                                <Picker.Item label="כללית" value="כללית" />
+                                                <Picker.Item label="מכבי" value="מכבי" />
+                                                <Picker.Item label="מאוחדת" value="מאוחדת" />
+                                                <Picker.Item label="לאומית" value="לאומית" />
+                                                <Picker.Item label={i18n.t('other')} value="אחר" />
+                                            </Picker>
+                                        </View>
+                                    ) : editingStat === 'Meetings' || editingStat === 'מפגשים' ? (
+                                        <View style={styles.pickerContainer}>
+                                            <Picker
+                                                selectedValue={editValue}
+                                                onValueChange={(itemValue) => setEditValue(itemValue)}
+                                                style={styles.picker}
+                                            >
+                                                {Array.from({ length: 300 }, (_, i) => i + 1).map((number) => (
+                                                    <Picker.Item key={number} label={number.toString()} value={number.toString()} />
+                                                ))}
+                                            </Picker>
+                                        </View>
+                                    ) : (
+                                        <TextInput
+                                            ref={editInputRef}
+                                            style={styles.editModalInput}
+                                            value={editValue}
+                                            onChangeText={setEditValue}
+                                            keyboardType={editingStat === 'Price' || editingStat === 'Meetings' ? 'numeric' : 'default'}
+                                            placeholder={`Enter ${editingStat?.toString().toLowerCase() || ''}`}
+                                        />
+                                    )}
+                                </View>
 
-                            <View style={styles.editModalFooter}>
-                                <TouchableOpacity
-                                    style={styles.editModalCancelButton}
-                                    onPress={onClose}
-                                >
-                                    <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.editModalSaveButton}
-                                    onPress={onSave}
-                                >
-                                    <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
-                                </TouchableOpacity>
+
+                                <View style={styles.editModalFooter}>
+                                    <TouchableOpacity
+                                        style={styles.editModalCancelButton}
+                                        onPress={onClose}
+                                    >
+                                        <Text allowFontScaling={false} style={styles.editModalCancelText}>{i18n.t('cancel')}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.editModalSaveButton}
+                                        onPress={onSave}
+                                    >
+                                        <Text allowFontScaling={false} style={styles.editModalSaveText}>{i18n.t('save')}</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
+                        </TouchableWithoutFeedback>
+
                     </View>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
@@ -267,7 +301,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                             <View style={styles.editModalHeader}>
                                 <MaterialIcons name="edit" size={24} color="#014495" />
                                 <Text allowFontScaling={false} style={styles.editModalTitle}>
-                                    Edit {editingStat?.field?.replace(/([A-Z])/g, ' $1').trim() || ''}
+                                    {i18n.t('editField')} {editingStat?.field ? i18n.t(editingStat.field) : ''}
                                 </Text>
                                 <TouchableOpacity
                                     onPress={onClose}
@@ -290,7 +324,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                     multiline={isLongTextField}
                                     numberOfLines={isLongTextField ? 6 : 1}
                                     textAlignVertical={isLongTextField ? "top" : "center"}
-                                    placeholder={`Enter ${editingStat?.field?.toLowerCase() || ''}`}
+                                    placeholder={`${i18n.t('enterFieldPlaceholder')} ${editingStat?.field ? i18n.t(editingStat.field).toLowerCase() : ''}`}
                                 />
                             </ScrollView>
 
@@ -299,7 +333,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                     style={styles.editModalCancelButton}
                                     onPress={onClose}
                                 >
-                                    <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
+                                    <Text allowFontScaling={false} style={styles.editModalCancelText}>{i18n.t('cancel')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.editModalSaveButton}
@@ -309,7 +343,7 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
                                     {isSaving ? (
                                         <ActivityIndicator color="white" size="small" /> // Show ActivityIndicator while saving
                                     ) : (
-                                        <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
+                                        <Text allowFontScaling={false} style={styles.editModalSaveText}>{i18n.t('save')}</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -323,28 +357,28 @@ const TreatmentEditModal = ({ visible, onClose, onSave, editingStat, editValue, 
 
 // Add these constants at the top of the file
 const PAYMENT_STATUSES = {
-    PENDING: { label: 'Pending', icon: 'schedule', color: '#FF9800' },
-    PAID: { label: 'Paid', icon: 'check-circle', color: '#4CAF50' },
-    PARTIALLY_PAID: { label: 'Partially Paid', icon: 'remove-circle-outline', color: '#2196F3' },
-    REFUNDED: { label: 'Refunded', icon: 'replay', color: '#9C27B0' },
-    CANCELLED: { label: 'Cancelled', icon: 'cancel', color: '#F44336' }
+    PENDING: { label: 'pending', icon: 'schedule', color: '#FF9800' },
+    PAID: { label: 'paid', icon: 'check-circle', color: '#4CAF50' },
+    PARTIALLY_PAID: { label: 'partiallyPaid', icon: 'remove-circle-outline', color: '#2196F3' },
+    REFUNDED: { label: 'refunded', icon: 'replay', color: '#9C27B0' },
+    CANCELLED: { label: 'cancelled', icon: 'cancel', color: '#F44336' }
 };
 
 const PAYMENT_METHODS = {
-    CASH: { label: 'Cash', icon: 'attach-money' },
-    CREDIT_CARD: { label: 'Credit Card', icon: 'credit-card' },
-    DEBIT_CARD: { label: 'Debit Card', icon: 'credit-card' },
-    BANK_TRANSFER: { label: 'Bank Transfer', icon: 'account-balance' },
-    INSURANCE: { label: 'Insurance', icon: 'health-and-safety' },
-    OTHER: { label: 'Other', icon: 'more-horiz' }
+    CASH: { label: 'cash', icon: 'attach-money' },
+    CREDIT_CARD: { label: 'creditCard', icon: 'credit-card' },
+    DEBIT_CARD: { label: 'debitCard', icon: 'credit-card' },
+    BANK_TRANSFER: { label: 'bankTransfer', icon: 'account-balance' },
+    INSURANCE: { label: 'insurance', icon: 'health-and-safety' },
+    OTHER: { label: 'other', icon: 'more-horiz' }
 };
 
 const TREATMENT_STATUSES = {
-    PENDING: { label: 'Pending', icon: 'schedule', color: '#FF9800' },
-    COMPLETED: { label: 'Completed', icon: 'check-circle', color: '#4CAF50' },
-    CANCELED: { label: 'Cancelled', icon: 'cancel', color: '#F44336' },
-    NO_SHOW: { label: 'Refunded', icon: 'cancel', color: '#9C27B0' },
-    SCHEDULED: { label: 'Scheduled', icon: 'schedule', color: '#FF9800' },
+    PENDING: { label: 'pending', icon: 'schedule', color: '#FF9800' },
+    COMPLETED: { label: 'completed', icon: 'check-circle', color: '#4CAF50' },
+    CANCELED: { label: 'canceled', icon: 'cancel', color: '#F44336' },
+    NO_SHOW: { label: 'noShow', icon: 'cancel', color: '#9C27B0' },
+    SCHEDULED: { label: 'scheduled', icon: 'schedule', color: '#FF9800' },
 };
 // Add these new modal components
 const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
@@ -363,7 +397,7 @@ const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
                 >
                     <View style={styles.paymentModalHeader}>
                         <MaterialIcons name="payments" size={24} color="#014495" />
-                        <Text allowFontScaling={false} style={styles.paymentModalTitle}>Payment Status</Text>
+                        <Text allowFontScaling={false} style={styles.paymentModalTitle}>{i18n.t('paymentStatus')}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
                             <MaterialIcons name="close" size={24} color="#666" />
                         </TouchableOpacity>
@@ -383,7 +417,7 @@ const PaymentStatusModal = ({ visible, onClose, onSelect, currentStatus }) => (
                                     styles.paymentOptionText,
                                     currentStatus === status && styles.paymentOptionTextActive
                                 ]}>
-                                    {label}
+                                    {i18n.t(label)}
                                 </Text>
                                 {currentStatus === status && (
                                     <MaterialIcons name="check" size={24} color="#014495" />
@@ -419,7 +453,7 @@ const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOther
                     >
                         <View style={styles.paymentModalHeader}>
                             <MaterialIcons name="payment" size={24} color="#014495" />
-                            <Text allowFontScaling={false} style={styles.paymentModalTitle}>Payment Method</Text>
+                            <Text allowFontScaling={false} style={styles.paymentModalTitle}>{i18n.t('paymentMethod')}</Text>
                             <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
                                 <MaterialIcons name="close" size={24} color="#666" />
                             </TouchableOpacity>
@@ -439,7 +473,7 @@ const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOther
                                         styles.paymentOptionText,
                                         currentMethod === method && styles.paymentOptionTextActive
                                     ]}>
-                                        {label}
+                                        {i18n.t(label)}
                                     </Text>
                                     {currentMethod === method && (
                                         <MaterialIcons name="check" size={24} color="#014495" />
@@ -452,7 +486,7 @@ const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOther
                                     style={styles.otherMethodInput}
                                 >
                                     <TextInput
-                                        placeholder="Specify payment method"
+                                        placeholder={i18n.t('specifyPaymentMethod')}
                                         value={otherMethod}
                                         onChangeText={(text) => {
                                             setOtherMethod(text);
@@ -467,6 +501,119 @@ const PaymentMethodModal = ({ visible, onClose, onSelect, currentMethod, onOther
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
         </Modal>
+    );
+};
+
+const ClientDescription = ({ clientDetails, setClientDetails }) => {
+    const [descModalVisible, setDescModalVisible] = useState(false);
+    const [description, setDescription] = useState(clientDetails.description || '');
+    const [isSaving, setIsSaving] = useState(false);
+    const descriptionInputRef = useRef(null)
+
+    useEffect(() => {
+        if (clientDetails) {
+            setDescription(clientDetails.description || '');
+        }
+    }, [clientDetails]);
+
+    const handleSaveDescription = async () => {
+        setIsSaving(true);
+        try {
+            const response = await axios.patch(`${Api}/clients/${clientDetails._id}/updateField`, {
+                field: 'description',
+                value: description
+            });
+
+            // Update the client details in the parent component
+            setClientDetails(response.data);
+            setDescModalVisible(false);
+        } catch (error) {
+            console.error('Error saving description:', error);
+            Alert.alert('Error', 'Failed to save description');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Animatable.View
+            animation="fadeInUp"
+            delay={800}
+            style={styles.descriptionContainer}
+        >
+            <View style={styles.descriptionHeader}>
+                <MaterialIcons name="description" size={24} color="#014495" />
+                <Text allowFontScaling={false} style={styles.descriptionTitle}>{i18n.t('description')}</Text>
+                <TouchableOpacity
+                    onPress={() => {
+                        setDescModalVisible(true)
+                        setTimeout(() => {
+                            descriptionInputRef.current?.focus();
+                        }, 100);
+                    }}
+                    style={styles.editDescriptionButton}
+                >
+                    <MaterialIcons name="edit" size={20} color="#014495" />
+                </TouchableOpacity>
+            </View>
+            <Text allowFontScaling={false} style={styles.descriptionText}>
+                {clientDetails.description || i18n.t('noDescription')}
+            </Text>
+
+            <Modal
+                visible={descModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setDescModalVisible(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={styles.descriptionModalContainer}
+                    keyboardVerticalOffset={100} // Adjust this value as needed
+                >
+                    <View style={styles.descriptionModalContent}>
+                        <View style={styles.descriptionModalHeader}>
+                            <Text allowFontScaling={false} style={styles.descriptionModalTitle}>{i18n.t('editDescription')}</Text>
+                            <TouchableOpacity
+                                onPress={() => setDescModalVisible(false)}
+                                style={styles.descriptionModalClose}
+                            >
+                                <MaterialIcons name="close" size={24} color="#666" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <TextInput
+                            ref={descriptionInputRef}
+                            style={styles.descriptionInput}
+                            multiline
+                            numberOfLines={6}
+                            value={description}
+                            onChangeText={setDescription}
+                            placeholder={i18n.t('enterDescription')}
+                            textAlignVertical="top"
+                        />
+
+                        <TouchableOpacity
+                            style={[
+                                styles.saveDescriptionButton,
+                                isSaving && styles.saveButtonDisabled
+                            ]}
+                            onPress={() => {
+                                handleSaveDescription();
+                                Keyboard.dismiss(); // Dismiss the keyboard when saving
+                            }}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="white" size="small" />
+                            ) : (
+                                <Text allowFontScaling={false} style={styles.saveDescriptionText}>{i18n.t('saveDescription')}</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+        </Animatable.View>
     );
 };
 
@@ -1285,26 +1432,20 @@ export default function Treatments({ navigation }) {
 
     const handleStatPress = (statLabel) => {
         // Don't show edit modal for Age stat
-        if (statLabel === 'Age') return;
+        if (statLabel === i18n.t('age')) return;
 
         let currentValue = '';
-        switch (statLabel) {
-            case 'Price':
-                currentValue = clientDetails.clientPrice || '';
-                break;
-            case 'Insurance':
-                currentValue = clientDetails.insuranceInfo || '';
-                break;
-            case 'Meetings':
-                currentValue = clientDetails.numberOfMeetings?.toString() || '';
-                break;
+        if (statLabel === i18n.t('price')) {
+             currentValue = clientDetails.clientPrice || '';
+        } else if (statLabel === i18n.t('statsInsurance')) {
+             currentValue = clientDetails.insuranceInfo || '';
+        } else if (statLabel === i18n.t('meetings')) {
+             currentValue = clientDetails.numberOfMeetings?.toString() || '';
         }
 
         setEditingStat(statLabel);
         setEditValue(currentValue);
         setClientEditModalVisible(true);
-
-
     };
 
     const handleSaveStatEdit = async () => {
@@ -1313,17 +1454,13 @@ export default function Treatments({ navigation }) {
             let value = editValue;
 
             // Map the editingStat to the correct field name
-            switch (editingStat) {
-                case 'Price':
-                    field = 'clientPrice';
-                    break;
-                case 'Insurance':
-                    field = 'insuranceInfo';
-                    break;
-                case 'Meetings':
-                    field = 'numberOfMeetings';
-                    value = parseInt(editValue) || 0;
-                    break;
+            if (editingStat === i18n.t('price')) {
+                 field = 'clientPrice';
+            } else if (editingStat === i18n.t('statsInsurance')) {
+                 field = 'insuranceInfo';
+            } else if (editingStat === i18n.t('meetings')) {
+                 field = 'numberOfMeetings';
+                 value = parseInt(editValue) || 0;
             }
 
             const response = await axios.patch(`${Api}/clients/${clientId}/updateField`, {
@@ -1339,113 +1476,7 @@ export default function Treatments({ navigation }) {
         }
     };
 
-    const ClientDescription = ({ clientDetails }) => {
-        const [descModalVisible, setDescModalVisible] = useState(false);
-        const [description, setDescription] = useState(clientDetails.description || '');
-        const [isSaving, setIsSaving] = useState(false);
-        const descriptionInputRef = useRef(null)
 
-
-        const handleSaveDescription = async () => {
-            setIsSaving(true);
-            try {
-                const response = await axios.patch(`${Api}/clients/${clientDetails._id}/updateField`, {
-                    field: 'description',
-                    value: description
-                });
-
-                // Update the client details in the parent component
-                setClientDetails(response.data);
-                setDescModalVisible(false);
-            } catch (error) {
-                console.error('Error saving description:', error);
-                Alert.alert('Error', 'Failed to save description');
-            } finally {
-                setIsSaving(false);
-            }
-        };
-
-        return (
-            <Animatable.View
-                animation="fadeInUp"
-                delay={800}
-                style={styles.descriptionContainer}
-            >
-                <View style={styles.descriptionHeader}>
-                    <MaterialIcons name="description" size={24} color="#014495" />
-                    <Text allowFontScaling={false} style={styles.descriptionTitle}>Description</Text>
-                    <TouchableOpacity
-                        onPress={() => {
-                            setDescModalVisible(true)
-                            setTimeout(() => {
-                                descriptionInputRef.current?.focus();
-                            }, 100);
-                        }}
-                        style={styles.editDescriptionButton}
-                    >
-                        <MaterialIcons name="edit" size={20} color="#014495" />
-                    </TouchableOpacity>
-                </View>
-                <Text allowFontScaling={false} style={styles.descriptionText}>
-                    {clientDetails.description || "No description available"}
-                </Text>
-
-                <Modal
-                    visible={descModalVisible}
-                    transparent={true}
-                    animationType="slide"
-                    onRequestClose={() => setDescModalVisible(false)}
-                >
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === "ios" ? "padding" : "height"}
-                        style={styles.descriptionModalContainer}
-                        keyboardVerticalOffset={100} // Adjust this value as needed
-                    >
-                        <View style={styles.descriptionModalContent}>
-                            <View style={styles.descriptionModalHeader}>
-                                <Text allowFontScaling={false} style={styles.descriptionModalTitle}>Edit Descriptionn</Text>
-                                <TouchableOpacity
-                                    onPress={() => setDescModalVisible(false)}
-                                    style={styles.descriptionModalClose}
-                                >
-                                    <MaterialIcons name="close" size={24} color="#666" />
-                                </TouchableOpacity>
-                            </View>
-
-                            <TextInput
-                                ref={descriptionInputRef}
-                                style={styles.descriptionInput}
-                                multiline
-                                numberOfLines={6}
-                                value={description}
-                                onChangeText={setDescription}
-                                placeholder="Enter description..."
-                                textAlignVertical="top"
-                            />
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.saveDescriptionButton,
-                                    isSaving && styles.saveButtonDisabled
-                                ]}
-                                onPress={() => {
-                                    handleSaveDescription();
-                                    Keyboard.dismiss(); // Dismiss the keyboard when saving
-                                }}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? (
-                                    <ActivityIndicator color="white" size="small" />
-                                ) : (
-                                    <Text allowFontScaling={false} style={styles.saveDescriptionText}>Save Description</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </KeyboardAvoidingView>
-                </Modal>
-            </Animatable.View>
-        );
-    };
 
 
     const handleSaveAge = async () => {
@@ -1606,9 +1637,9 @@ export default function Treatments({ navigation }) {
         const totalPending = pendingTreatments.reduce((sum, t) => sum + (parseFloat(t) || 0), 0) - totalPaid;
         const [paymentModalVisible, setPaymentModalVisible] = useState(false);
         const [paymentAmount, setPaymentAmount] = useState('');
-        const [paymentMethod, setPaymentMethod] = useState('Cash');
+        const [paymentMethod, setPaymentMethod] = useState('cash');
         const [paymentStage, setPaymentStage] = useState(1); // 1: Amount, 2: Method, 3: Confirmation
-        const paymentMethods = ['Cash', 'Bank Transfer', 'Paybox', 'Bit', 'Credit Card', 'Google Pay', 'Apple Pay', 'V-Check', 'Bitcoin', 'Ethereum', 'Payoneer', 'Debit Card', 'PayPal'];
+        const paymentMethods = ['cash', 'bankTransfer', 'paybox', 'bit', 'creditCard', 'googlePay', 'applePay', 'vCheck', 'bitcoin', 'ethereum', 'payoneer', 'debitCard', 'paypal'];
         const amountInputRef = useRef(null);
 
         const handleDeletePayment = async (paymentId) => {
@@ -1722,7 +1753,7 @@ export default function Treatments({ navigation }) {
                         </View>
                         <View style={styles.headerRightSection}>
                             <Text allowFontScaling={false} style={styles.paymentAmounts}>
-                                ${parseFloat(item.amount || 0).toFixed(2)}
+                                {i18n.t('currencySymbol')}{parseFloat(item.amount || 0).toFixed(2)}
                             </Text>
                             {/* Remove the static delete button */}
                         </View>
@@ -1731,15 +1762,33 @@ export default function Treatments({ navigation }) {
                         <View style={styles.paymentMethodBadge}>
                             <MaterialIcons
                                 name={
-                                    item.paymentMethod === 'cash' ? 'payments' :
-                                        item.paymentMethod === 'credit' ? 'credit-card' :
+                                    (item.paymentMethod === 'cash' || item.paymentMethod === 'Cash') ? 'payments' :
+                                        (item.paymentMethod === 'creditCard' || item.paymentMethod === 'Credit Card') ? 'credit-card' :
                                             'account-balance'
                                 }
                                 size={18}
                                 color="#014495"
                             />
                             <Text allowFontScaling={false} style={styles.paymentMethodText}>
-                                {item.paymentMethod?.charAt(0).toUpperCase() + item.paymentMethod?.slice(1)}
+                                {(() => {
+                                    const method = item.paymentMethod;
+                                    const mapping = {
+                                        'Cash': 'cash',
+                                        'Bank Transfer': 'bankTransfer',
+                                        'Paybox': 'paybox',
+                                        'Bit': 'bit',
+                                        'Credit Card': 'creditCard',
+                                        'Google Pay': 'googlePay',
+                                        'Apple Pay': 'applePay',
+                                        'V-Check': 'vCheck',
+                                        'Bitcoin': 'bitcoin',
+                                        'Ethereum': 'ethereum',
+                                        'Payoneer': 'payoneer',
+                                        'Debit Card': 'debitCard',
+                                        'PayPal': 'paypal'
+                                    };
+                                    return i18n.t(mapping[method] || method);
+                                })()}
                             </Text>
                         </View>
                     </View>
@@ -1755,13 +1804,13 @@ export default function Treatments({ navigation }) {
                 >
                     <View style={styles.summaryCard}>
                         <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
-                        <Text allowFontScaling={false} style={styles.summaryAmount}>${totalPaid.toFixed(2)}</Text>
-                        <Text allowFontScaling={false} style={styles.summaryLabel}>Total Paid</Text>
+                        <Text allowFontScaling={false} style={styles.summaryAmount}>{i18n.t('currencySymbol')}{totalPaid.toFixed(2)}</Text>
+                        <Text allowFontScaling={false} style={styles.summaryLabel}>{i18n.t('totalPaid')}</Text>
                     </View>
                     <View style={styles.summaryCard}>
                         <MaterialIcons name="schedule" size={24} color="#FF9800" />
-                        <Text allowFontScaling={false} style={styles.summaryAmount}>${totalPending.toFixed(2)}</Text>
-                        <Text allowFontScaling={false} style={styles.summaryLabel}>Pending</Text>
+                        <Text allowFontScaling={false} style={styles.summaryAmount}>{i18n.t('currencySymbol')}{totalPending.toFixed(2)}</Text>
+                        <Text allowFontScaling={false} style={styles.summaryLabel}>{i18n.t('pendingPayment')}</Text>
                     </View>
                 </Animatable.View>
 
@@ -1774,20 +1823,39 @@ export default function Treatments({ navigation }) {
                     contentContainerStyle={styles.paymentsList}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={() => (
-                        <View style={styles.emptyState}>
-                            <MaterialIcons name="account-balance-wallet" size={60} color="#014495" />
-                            <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Payments Yet</Text>
-                            {/* <Text allowFontScaling={false}  style={styles.emptyStateText}>
-                                Payments will appear here once treatments are added
-                            </Text> */}
-                        </View>
+                        <Animatable.View 
+                            animation="fadeInUp" 
+                            duration={800}
+                            style={styles.emptyState}
+                        >
+                            <LinearGradient
+                                colors={['#F0F4FF', '#FFFFFF']}
+                                style={styles.emptyGradient}
+                            >
+                                <Animatable.View 
+                                    animation="bounceIn" 
+                                    delay={300}
+                                    style={styles.emptyIconContainer}
+                                >
+                                    <MaterialIcons name="account-balance-wallet" size={80} color="#014495" />
+                                </Animatable.View>
+                                <Animatable.Text 
+                                    animation="fadeIn" 
+                                    delay={500}
+                                    allowFontScaling={false} 
+                                    style={styles.emptyStateTitle}
+                                >
+                                    {i18n.t('noPaymentsYet')}
+                                </Animatable.Text>
+                            </LinearGradient>
+                        </Animatable.View>
                     )}
                 />
                 <TouchableOpacity
                     style={styles.addButton}
                     onPress={() => {
                         setPaymentAmount('');
-                        setPaymentMethod('Cash');
+                        setPaymentMethod('cash');
                         setPaymentStage(1);
                         setPaymentModalVisible(true);
                     }}
@@ -1799,7 +1867,7 @@ export default function Treatments({ navigation }) {
                         end={{ x: 1, y: 0 }}
                     >
                         <MaterialIcons name="add" size={24} color="white" />
-                        <Text allowFontScaling={false} style={styles.addButtonText}>Add Payment</Text>
+                        <Text allowFontScaling={false} style={styles.addButtonText}>{i18n.t('addPayment')}</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 <Modal
@@ -1819,7 +1887,7 @@ export default function Treatments({ navigation }) {
                             {paymentStage === 1 && (
                                 <>
                                     <View style={styles.modalHeader}>
-                                        <Text allowFontScaling={false} style={styles.modalTitle}>Enter Amount</Text>
+                                        <Text allowFontScaling={false} style={styles.modalTitle}>{i18n.t('enterAmount')}</Text>
                                         <TouchableOpacity
                                             onPress={() => setPaymentModalVisible(false)}
                                             style={styles.modalCloseButton}
@@ -1831,7 +1899,7 @@ export default function Treatments({ navigation }) {
                                     <TextInput
                                         ref={amountInputRef}
                                         style={styles.inputPayment}
-                                        placeholder="Amount"
+                                        placeholder={i18n.t('enterPrice')}
                                         keyboardType="numeric"
                                         value={paymentAmount}
                                         onChangeText={setPaymentAmount}
@@ -1841,7 +1909,7 @@ export default function Treatments({ navigation }) {
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setPaymentModalVisible(false)}
                                         >
-                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>{i18n.t('cancel')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveButton}
@@ -1849,7 +1917,7 @@ export default function Treatments({ navigation }) {
                                             disabled={!paymentAmount}
                                         >
 
-                                            <Text allowFontScaling={false} style={styles.saveButtonText}>Next</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonText}>{i18n.t('next')}</Text>
 
                                         </TouchableOpacity>
                                     </View>
@@ -1860,7 +1928,7 @@ export default function Treatments({ navigation }) {
                                 <>
                                     <View style={styles.modalHeader}>
                                         <Text allowFontScaling={false}
-                                            style={styles.modalTitle}>Select Payment Method</Text>
+                                            style={styles.modalTitle}>{i18n.t('selectPaymentMethod')}</Text>
                                         <TouchableOpacity
                                             onPress={() => setPaymentModalVisible(false)}
                                             style={styles.modalCloseButton}
@@ -1874,7 +1942,7 @@ export default function Treatments({ navigation }) {
                                         onValueChange={(itemValue) => setPaymentMethod(itemValue)}
                                     >
                                         {paymentMethods.map((method) => (
-                                            <Picker.Item key={method} label={method} value={method} />
+                                            <Picker.Item key={method} label={i18n.t(method)} value={method} />
                                         ))}
                                     </Picker>
                                     <View style={styles.modalFooter}>
@@ -1882,7 +1950,7 @@ export default function Treatments({ navigation }) {
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setPaymentModalVisible(false)}
                                         >
-                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>{i18n.t('cancel')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveButton}
@@ -1890,7 +1958,7 @@ export default function Treatments({ navigation }) {
                                             disabled={!paymentAmount}
                                         >
 
-                                            <Text allowFontScaling={false} style={styles.saveButtonText}>Next</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonText}>{i18n.t('next')}</Text>
 
                                         </TouchableOpacity>
                                     </View>
@@ -1900,7 +1968,7 @@ export default function Treatments({ navigation }) {
                             {paymentStage === 3 && (
                                 <>
                                     <View style={styles.modalHeader}>
-                                        <Text allowFontScaling={false} style={styles.modalTitle}>Confirm Payment</Text>
+                                        <Text allowFontScaling={false} style={styles.modalTitle}>{i18n.t('confirmPayment')}</Text>
                                         <TouchableOpacity
                                             onPress={() => setPaymentModalVisible(false)}
                                             style={styles.modalCloseButton}
@@ -1909,14 +1977,14 @@ export default function Treatments({ navigation }) {
                                         </TouchableOpacity>
                                     </View>
                                     {/* <Text allowFontScaling={false}  style={styles.modalPaymentHeader}>Confirm Payment</Text> */}
-                                    <Text allowFontScaling={false} style={styles.paymentText}>Amount: ${paymentAmount}</Text>
-                                    <Text allowFontScaling={false} style={styles.paymentText}>Method: {paymentMethod}</Text>
+                                    <Text allowFontScaling={false} style={styles.paymentText}>{i18n.t('price')}: {i18n.t('currencySymbol')}{paymentAmount}</Text>
+                                    <Text allowFontScaling={false} style={styles.paymentText}>{i18n.t('paymentMethod')}: {paymentMethod}</Text>
                                     <View style={styles.modalFooter}>
                                         <TouchableOpacity
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setPaymentModalVisible(false)}
                                         >
-                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>{i18n.t('cancel')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.saveButton}
@@ -1924,7 +1992,7 @@ export default function Treatments({ navigation }) {
                                             disabled={!paymentAmount}
                                         >
 
-                                            <Text allowFontScaling={false} style={styles.saveButtonText}>Confirm</Text>
+                                            <Text allowFontScaling={false} style={styles.saveButtonText}>{i18n.t('confirm')}</Text>
 
                                         </TouchableOpacity>
                                     </View>
@@ -2089,13 +2157,13 @@ export default function Treatments({ navigation }) {
                                         /* idInputRef.current?.focus(); */
                                     }}
                                 >
-                                    <Text allowFontScaling={false} style={styles.idNumberLabel}>ID Number:</Text>
+                                    <Text allowFontScaling={false} style={styles.idNumberLabel}>{i18n.t('idNumberLabel')}:</Text>
                                     <View style={styles.idNumberValueContainer}>
                                         <Text allowFontScaling={false} style={[
                                             styles.idNumberValue,
                                             !clientDetails.idNumber && styles.idNumberPlaceholder
                                         ]}>
-                                            {clientDetails.idNumber || "Add ID Number"}
+                                            {clientDetails.idNumber || i18n.t('addIdNumber')}
                                         </Text>
                                         <View style={styles.editIdIndicator}>
                                             <MaterialIcons name="edit" size={16} color="#014495" />
@@ -2220,7 +2288,7 @@ export default function Treatments({ navigation }) {
                                                     >
                                                         <MaterialIcons name="close" size={24} color="#666" />
                                                     </TouchableOpacity>
-                                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>Edit ID Number</Text>
+                                                    <Text allowFontScaling={false} style={styles.modalIdTitle}>{i18n.t('editIdNumber')}</Text>
                                                     <TouchableOpacity
                                                         style={[
                                                             styles.saveIdButton,
@@ -2232,18 +2300,18 @@ export default function Treatments({ navigation }) {
                                                         {isIdSaving ? (
                                                             <ActivityIndicator color="white" size="small" />
                                                         ) : (
-                                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>Save</Text>
+                                                            <Text allowFontScaling={false} style={styles.saveButtonIdText}>{i18n.t('save')}</Text>
                                                         )}
                                                     </TouchableOpacity>
                                                 </View>
 
                                                 <View style={styles.modalIdBody}>
                                                     <View style={styles.inputIdContainer}>
-                                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>ID Number</Text>
+                                                        <Text allowFontScaling={false} style={styles.inputIdLabel}>{i18n.t('idNumberLabel')}</Text>
                                                         <TextInput
                                                             ref={idInputRef}
                                                             style={styles.inputId}
-                                                            placeholder="Enter ID Number"
+                                                            placeholder={i18n.t('enterIdNumberPlaceholder')}
                                                             value={idNumber}
                                                             onChangeText={setIdNumber}
                                                             keyboardType="numeric"
@@ -2255,7 +2323,7 @@ export default function Treatments({ navigation }) {
                                                                 animation="shake"
                                                                 style={styles.errorIdText}
                                                             >
-                                                                ID number cannot be empty
+                                                                {i18n.t('idNumberEmpty')}
                                                             </Animatable.Text>
                                                         )}
                                                     </View>
@@ -2269,27 +2337,27 @@ export default function Treatments({ navigation }) {
                             <View style={styles.statsContainer}>
                                 {[
                                     {
-                                        label: 'Age',
+                                        label: i18n.t('age'),
                                         value: calculateAge(clientDetails.birthday),
                                         icon: 'cake',
                                         // isEditable: true
                                     },
                                     {
-                                        label: 'Price',
+                                        label: i18n.t('price'),
                                         value: clientDetails.clientPrice ?
                                             Math.min(Number(clientDetails.clientPrice), 99999).toString() :
                                             '-',
                                         icon: 'attach-money'
                                     },
                                     {
-                                        label: 'Insurance',
+                                        label: i18n.t('statsInsurance'),
                                         value: clientDetails.insuranceInfo ?
                                             clientDetails.insuranceInfo.slice(0, 20) :
                                             '-',
                                         icon: 'health-and-safety'
                                     },
                                     {
-                                        label: 'Meetings',
+                                        label: i18n.t('meetings'),
                                         value: clientDetails.numberOfMeetings ?
                                             Math.min(Number(clientDetails.numberOfMeetings), 9999).toString() :
                                             '-',
@@ -2298,8 +2366,8 @@ export default function Treatments({ navigation }) {
                                 ].map((stat, index) => (
                                     <TouchableOpacity
                                         key={stat.label}
-                                        onPress={() => stat.label === 'Age' ? setShowAgeDatePicker(true) : handleStatPress(stat.label)}
-                                        style={[styles.statItemWrapper, { flex: stat.label === 'Insurance' ? 1.2 : 1 }]}
+                                        onPress={() => stat.label === i18n.t('age') ? setShowAgeDatePicker(true) : handleStatPress(stat.label)}
+                                        style={[styles.statItemWrapper, { flex: stat.label === i18n.t('statsInsurance') ? 1.2 : 1 }]}
                                     >
                                         <Animatable.View
                                             animation="fadeInUp"
@@ -2313,7 +2381,7 @@ export default function Treatments({ navigation }) {
                                             <Text
                                                 style={[
                                                     styles.statValue,
-                                                    (stat.label === 'Insurance' || stat.label === 'Meetings') && styles.insuranceValue
+                                                    (stat.label === i18n.t('statsInsurance') || stat.label === i18n.t('meetings')) && styles.insuranceValue
                                                 ]}
                                                 numberOfLines={1}
                                             >
@@ -2330,7 +2398,7 @@ export default function Treatments({ navigation }) {
                                 ))}
                             </View>
                         </Animatable.View>
-                        <ClientDescription clientDetails={clientDetails} />
+                        <ClientDescription clientDetails={clientDetails} setClientDetails={setClientDetails} />
                         <ParentsSection clientDetails={clientDetails} refreshClient={fetchClientData} />
                         {user.package === "free" && <BannerAd
                             //    ref={bannerRef}
@@ -2709,12 +2777,12 @@ export default function Treatments({ navigation }) {
                                                         style={styles.editableField}
                                                         onPress={() => handleEditField(item._id, 'treatmentSummary')}
                                                     >
-                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Treatment Summary</Text>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>{i18n.t('treatmentSummary')}</Text>
                                                         <Text allowFontScaling={false} style={[
                                                             styles.fieldValue,
                                                             { textAlign: /^[\u0590-\u05FF]/.test(item.treatmentSummary) ? 'right' : 'left' }
                                                         ]}>
-                                                            {item.treatmentSummary || 'Add summary...'}
+                                                            {item.treatmentSummary || i18n.t('addSummaryPlaceholder')}
                                                         </Text>
                                                     </TouchableOpacity>
 
@@ -2723,12 +2791,12 @@ export default function Treatments({ navigation }) {
                                                         style={styles.editableField}
                                                         onPress={() => handleEditField(item._id, 'whatNext')}
                                                     >
-                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Next Steps</Text>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>{i18n.t('whatNext')}</Text>
                                                         <Text allowFontScaling={false} style={[
                                                             styles.fieldValue,
                                                             { textAlign: /^[\u0590-\u05FF]/.test(item.whatNext) ? 'right' : 'left' }
                                                         ]}>
-                                                            {item.whatNext || 'Add next steps...'}
+                                                            {item.whatNext || i18n.t('addNextStepsPlaceholder')}
                                                         </Text>
                                                     </TouchableOpacity>
 
@@ -2737,17 +2805,17 @@ export default function Treatments({ navigation }) {
                                                         style={styles.editableField}
                                                         onPress={() => handleEditField(item._id, 'homework')}
                                                     >
-                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Homework</Text>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>{i18n.t('homework')}</Text>
                                                         <Text allowFontScaling={false} style={[
                                                             styles.fieldValue,
                                                             { textAlign: /^[\u0590-\u05FF]/.test(item.homework) ? 'right' : 'left' }
                                                         ]}>
-                                                            {item.homework || 'Add homework...'}
+                                                            {item.homework || i18n.t('addHomeworkPlaceholder')}
                                                         </Text>
                                                     </TouchableOpacity>
 
                                                     <View style={styles.paymentSection}>
-                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>Payment status</Text>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>{i18n.t('paymentStatus')}</Text>
                                                         <View
                                                             style={[styles.paymentStatus, {
                                                                 backgroundColor: PAYMENT_STATUSES[treatmentPaid[index]]?.color + '20' || '#FFF3E0'
@@ -2770,14 +2838,14 @@ export default function Treatments({ navigation }) {
                                                             <View style={styles.treatmentPrice}>
                                                                 {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
                                                                 <Text allowFontScaling={false} style={styles.priceText}>
-                                                                    {item.treatmentPrice === 0 ? 'Add price ' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
+                                                                    {item.treatmentPrice === 0 ? i18n.t('addPriceLabel') : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
                                                                 </Text>
                                                             </View>
                                                         </TouchableOpacity>
                                                     </View>
 
                                                     <View style={styles.paymentSection}>
-                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>treatment status</Text>
+                                                        <Text allowFontScaling={false} style={styles.fieldLabel}>{i18n.t('treatmentStatus')}</Text>
                                                         <View
                                                             style={[styles.paymentStatus, {
                                                                 backgroundColor: TREATMENT_STATUSES[item.status]?.color + '20' || '#FFF3E0'
@@ -2800,7 +2868,7 @@ export default function Treatments({ navigation }) {
                                                             <View style={styles.treatmentPrice}>
                                                                 {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
                                                                 <Text allowFontScaling={false} style={styles.priceText}>
-                                                                    Change Status
+                                                                    {i18n.t('changeStatus')}
                                                                 </Text>
                                                             </View>
                                                         </TouchableOpacity>
@@ -2814,13 +2882,40 @@ export default function Treatments({ navigation }) {
                                     contentContainerStyle={styles.treatmentsList}
                                     showsVerticalScrollIndicator={false}
                                     ListEmptyComponent={() => (
-                                        <View style={styles.emptyState}>
-                                            <MaterialIcons name="medical-services" size={60} color="#014495" />
-                                            <Text allowFontScaling={false} style={styles.emptyStateTitle}>No Treatments Yet</Text>
-                                            <Text allowFontScaling={false} style={styles.emptyStateText}>
-                                                Add your first treatment to start tracking progress
-                                            </Text>
-                                        </View>
+                                        <Animatable.View 
+                                            animation="fadeInUp" 
+                                            duration={800}
+                                            style={styles.emptyState}
+                                        >
+                                            <LinearGradient
+                                                colors={['#F0F4FF', '#FFFFFF']}
+                                                style={styles.emptyGradient}
+                                            >
+                                                <Animatable.View 
+                                                    animation="bounceIn" 
+                                                    delay={300}
+                                                    style={styles.emptyIconContainer}
+                                                >
+                                                    <MaterialIcons name="medical-services" size={80} color="#014495" />
+                                                </Animatable.View>
+                                                <Animatable.Text 
+                                                    animation="fadeIn" 
+                                                    delay={500}
+                                                    allowFontScaling={false} 
+                                                    style={styles.emptyStateTitle}
+                                                >
+                                                    {i18n.t('noTreatmentsYet')}
+                                                </Animatable.Text>
+                                                <Animatable.Text 
+                                                    animation="fadeIn" 
+                                                    delay={700}
+                                                    allowFontScaling={false} 
+                                                    style={styles.emptyStateText}
+                                                >
+                                                    {i18n.t('addFirstTreatmentText')}
+                                                </Animatable.Text>
+                                            </LinearGradient>
+                                        </Animatable.View>
                                     )}
                                 />
                                 <TouchableOpacity
@@ -2835,7 +2930,7 @@ export default function Treatments({ navigation }) {
                                         end={{ x: 1, y: 0 }}
                                     >
                                         <MaterialIcons name="add" size={24} color="white" />
-                                        <Text allowFontScaling={false} style={styles.addButtonText}>Add Treatment</Text>
+                                        <Text allowFontScaling={false} style={styles.addButtonText}>{i18n.t('addTreatment')}</Text>
                                     </LinearGradient>
                                 </TouchableOpacity>
                             </>
@@ -2850,13 +2945,40 @@ export default function Treatments({ navigation }) {
                 <View key='4' style={styles.page}>
 
                     {files.length === 0 && (
-                        <View style={styles.emptyFilesState}>
-                            <MaterialCommunityIcons name="file-document-edit" size={60} color="#014495" />
-                            <Text allowFontScaling={false} style={styles.emptyFilesStateTitle}>No Files Yet</Text>
-                            <Text allowFontScaling={false} style={styles.emptyFilesStateText}>
-                                You haven't uploaded any files yet. Start by taking a photo or choosing from your library.
-                            </Text>
-                        </View>
+                        <Animatable.View 
+                            animation="fadeInUp" 
+                            duration={800}
+                            style={styles.emptyFilesState}
+                        >
+                            <LinearGradient
+                                colors={['#F0F4FF', '#FFFFFF']}
+                                style={styles.emptyFilesGradient}
+                            >
+                                <Animatable.View 
+                                    animation="bounceIn" 
+                                    delay={300}
+                                    style={styles.emptyFilesIconContainer}
+                                >
+                                    <MaterialCommunityIcons name="file-document-edit" size={80} color="#014495" />
+                                </Animatable.View>
+                                <Animatable.Text 
+                                    animation="fadeIn" 
+                                    delay={500}
+                                    allowFontScaling={false} 
+                                    style={styles.emptyFilesStateTitle}
+                                >
+                                    {i18n.t('noFilesYet')}
+                                </Animatable.Text>
+                                <Animatable.Text 
+                                    animation="fadeIn" 
+                                    delay={700}
+                                    allowFontScaling={false} 
+                                    style={styles.emptyFilesStateText}
+                                >
+                                    {i18n.t('noFilesUploadedText')}
+                                </Animatable.Text>
+                            </LinearGradient>
+                        </Animatable.View>
                     )}
 
                     {/* <TouchableOpacity
@@ -2887,7 +3009,7 @@ export default function Treatments({ navigation }) {
                                 style={styles.modalFilePickerContainer}
                             >
                                 <View style={styles.modalFilePickerHeader}>
-                                    <Text allowFontScaling={false} style={styles.modalFilePickerTitle}>Select an Option</Text>
+                                    <Text allowFontScaling={false} style={styles.modalFilePickerTitle}>{i18n.t('selectOption')}</Text>
                                     <TouchableOpacity onPress={() => setModalFilePickerVisible(false)} style={styles.modalFilePickerCloseButton}>
                                         <MaterialIcons name="close" size={24} color="#666" />
                                     </TouchableOpacity>
@@ -2895,15 +3017,15 @@ export default function Treatments({ navigation }) {
                                 <ScrollView style={styles.modalContent}>
                                     <TouchableOpacity style={styles.optionFilePickerButton} onPress={takePhoto}>
                                         <MaterialIcons name="camera-alt" size={24} color="#014495" />
-                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>Take Photo</Text>
+                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>{i18n.t('takePhoto')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.optionFilePickerButton} onPress={pickImage}>
                                         <MaterialIcons name="photo-library" size={24} color="#014495" />
-                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>Choose from Library</Text>
+                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>{i18n.t('chooseFromLibrary')}</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={styles.optionFilePickerButton} onPress={pickFile}>
                                         <MaterialIcons name="folder" size={24} color="#014495" />
-                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>Choose from Files</Text>
+                                        <Text allowFontScaling={false} style={styles.optionFilePickerText}>{i18n.t('chooseFromFiles')}</Text>
                                     </TouchableOpacity>
                                 </ScrollView>
                             </Animatable.View>
@@ -2989,15 +3111,15 @@ export default function Treatments({ navigation }) {
                                             </View>
                                             <TouchableOpacity onPress={() => {
                                                 Alert.alert(
-                                                    "Delete File",
-                                                    "Are you sure you want to delete this file?",
+                                                    i18n.t('deleteFileTitle'),
+                                                    i18n.t('deleteFileConfirm'),
                                                     [
                                                         {
-                                                            text: "Cancel",
+                                                            text: i18n.t('cancel'),
                                                             style: "cancel"
                                                         },
                                                         {
-                                                            text: "Delete",
+                                                            text: i18n.t('delete'),
                                                             style: "destructive",
                                                             onPress: () => deleteFile(index)
                                                         }
@@ -3029,13 +3151,13 @@ export default function Treatments({ navigation }) {
                                         <TouchableOpacity style={{ flexDirection: "row", width: windowWidth / 4 }} onPress={() => setModalFileVisible(false)}>
                                             <AntDesign name="left" size={24} color="white" />
 
-                                            <Text allowFontScaling={false} style={{ color: "white", fontSize: 18 }}>Back</Text>
+                                            <Text allowFontScaling={false} style={{ color: "white", fontSize: 18 }}>{i18n.t('back')}</Text>
 
                                         </TouchableOpacity>
                                         {selectedFile ? (
                                             <Text allowFontScaling={false} style={{ fontWeight: 'bold', color: "white" }}>{selectedFile.url.split('/').pop()}</Text>
                                         ) : (
-                                            <Text allowFontScaling={false} style={{ color: 'white' }}>File doesn't exist</Text>
+                                            <Text allowFontScaling={false} style={{ color: 'white' }}>{i18n.t('fileNotExist')}</Text>
                                         )}
                                         <View style={{ width: windowWidth / 4 }}></View>
                                     </View>
@@ -3059,7 +3181,7 @@ export default function Treatments({ navigation }) {
                             end={{ x: 1, y: 0 }}
                         >
                             <MaterialIcons name="add" size={24} color="white" />
-                            <Text allowFontScaling={false} style={styles.addButtonText}>Add File</Text>
+                            <Text allowFontScaling={false} style={styles.addButtonText}>{i18n.t('addFile')}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
@@ -3121,7 +3243,7 @@ export default function Treatments({ navigation }) {
                                 >
                                     <View style={styles.editModalHeader}>
                                         <MaterialIcons name="cake" size={24} color="#014495" />
-                                        <Text allowFontScaling={false} style={styles.editModalTitle}>Edit Birthday</Text>
+                                        <Text allowFontScaling={false} style={styles.editModalTitle}>{i18n.t('editBirthday')}</Text>
                                         <TouchableOpacity
                                             onPress={() => setShowAgeDatePicker(false)}
                                             style={styles.editModalCloseButton}
@@ -3177,7 +3299,7 @@ export default function Treatments({ navigation }) {
                                             style={styles.editModalCancelButton}
                                             onPress={() => setShowAgeDatePicker(false)}
                                         >
-                                            <Text allowFontScaling={false} style={styles.editModalCancelText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.editModalCancelText}>{i18n.t('cancel')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.editModalSaveButton, isSavingAge && styles.modalSaveButtonDisabled]}
@@ -3187,7 +3309,7 @@ export default function Treatments({ navigation }) {
                                             {isSavingAge ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text allowFontScaling={false} style={styles.editModalSaveText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.editModalSaveText}>{i18n.t('save')}</Text>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -3257,7 +3379,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                             style={styles.modalContainer}
                         >
                             <View style={styles.modalHeader}>
-                                <Text allowFontScaling={false} style={styles.modalTitle}>Add Treatment</Text>
+                                <Text allowFontScaling={false} style={styles.modalTitle}>{i18n.t('addTreatmentTitle')}</Text>
                                 <TouchableOpacity
                                     onPress={() => { setTreatmentStage(0); onClose(); }}
                                     style={styles.modalCloseButton}
@@ -3267,11 +3389,11 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                             </View>
                             {treatmentStage === 0 && clientDetails.clientPrice === 0 ? (
                                 <View>
-                                    <Text allowFontScaling={false} style={styles.clientPricePrompt}>{"Treatment Price:"}</Text>
+                                    <Text allowFontScaling={false} style={styles.clientPricePrompt}>{i18n.t('treatmentPriceLabel')}</Text>
                                     <View style={styles.editModalContent}>
                                         <TextInput
                                             style={styles.editModalInput}
-                                            placeholder="Enter new price"
+                                            placeholder={i18n.t('enterNewPricePlaceholder')}
                                             keyboardType="numeric"
                                             value={clientPrice.toString()}
                                             onChangeText={setClientPrice}
@@ -3282,7 +3404,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => setTreatmentStage(1)}
                                         >
-                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Skip</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>{i18n.t('skip')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
@@ -3306,7 +3428,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             {isSaving ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text allowFontScaling={false} style={styles.saveButtonText}>Next</Text>
+                                                <Text allowFontScaling={false} style={styles.saveButtonText}>{i18n.t('next')}</Text>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -3318,8 +3440,8 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
 
 
                                         <View style={styles.dateTimeContainer}>
-                                            <View style={[styles.datePickerButton, { flex: 1, marginRight: 10 }]}>
-                                                <Text allowFontScaling={false} style={styles.pickerTitle}>Select Date</Text>
+                                            <View style={styles.datePickerButton}>
+                                                <Text allowFontScaling={false} style={styles.pickerTitle}>{i18n.t('selectDate')}</Text>
                                                 {Platform.OS === 'ios' ? (
                                                     <DateTimePicker
                                                         value={treatment.treatmentDate}
@@ -3363,9 +3485,11 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                                     </>
                                                 )}
                                             </View>
+                                            
+                                            <View style={{ height: 10 }} />
 
-                                            <View style={[styles.datePickerButton, { flex: 1 }]}>
-                                                <Text allowFontScaling={false} style={styles.pickerTitle}>Select Time</Text>
+                                            <View style={styles.datePickerButton}>
+                                                <Text allowFontScaling={false} style={styles.pickerTitle}>{i18n.t('selectTime')}</Text>
                                                 {Platform.OS === 'ios' ? (
                                                     <DateTimePicker
                                                         value={treatment.treatmentTime}
@@ -3415,13 +3539,13 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                         {treatments.length < clientDetails.numberOfMeetings - 1 && <View style={styles.repeatContainer}>
                                             <Text allowFontScaling={false} style={styles.repeatLabel}>
                                                 <MaterialIcons name="repeat" size={20} color="#014495" />
-                                                <Text allowFontScaling={false} style={styles.repeatLabelText}> Repeat</Text>
+                                                <Text allowFontScaling={false} style={styles.repeatLabelText}> {i18n.t('repeatLabel')}</Text>
                                             </Text>
 
                                             <View style={styles.repeatOptions}>
                                                 {[
-                                                    { label: 'Every week', value: 'weekly' },
-                                                    { label: 'Never', value: 'never' },
+                                                    { label: i18n.t('everyWeek'), value: 'weekly' },
+                                                    { label: i18n.t('never'), value: 'never' },
 
                                                     /* { label: 'Every 2 weeks', value: 'biweekly' } */
                                                 ].map((option) => (
@@ -3466,7 +3590,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             style={styles.cancelButtonTreatment}
                                             onPress={() => { setTreatmentStage(0); onClose(); }}
                                         >
-                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>Cancel</Text>
+                                            <Text allowFontScaling={false} style={styles.cancelButtonText}>{i18n.t('cancel')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
@@ -3476,7 +3600,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
                                             {isSaving ? (
                                                 <ActivityIndicator color="white" size="small" />
                                             ) : (
-                                                <Text allowFontScaling={false} style={styles.saveButtonText}>Save</Text>
+                                                <Text allowFontScaling={false} style={styles.saveButtonText}>{i18n.t('save')}</Text>
                                             )}
                                         </TouchableOpacity>
                                     </View>
@@ -3491,7 +3615,7 @@ const AddTreatmentModal = ({ visible, onClose, onSave, treatment, treatments, cl
 
 const TabBar = ({ activeTab, handlePageChange, animatedIndicatorStyle }) => (
     <View style={styles.tabBarContainer}>
-        {['Profile', 'Treatments', 'Payments', 'Files'].map((tab, index) => (
+        {[i18n.t('tabProfile'), i18n.t('treatments'), i18n.t('payments'), i18n.t('files')].map((tab, index) => (
             <TouchableOpacity
                 key={tab}
                 style={styles.tab}
@@ -3767,15 +3891,15 @@ const styles = StyleSheet.create({
     treatmentTime: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginLeft: 4,
+        marginStart: 4,
     },
     dateText: {
-        marginLeft: 8,
+        marginStart: 8,
         fontSize: 16,
         color: '#333',
     },
     timeText: {
-        marginLeft: 8,
+        marginStart: 8,
         fontSize: 14,
         color: '#666',
     },
@@ -3804,7 +3928,7 @@ const styles = StyleSheet.create({
         width: "auto"
     },
     statusText: {
-        marginLeft: 4,
+        marginStart: 4,
         fontSize: 12,
         fontWeight: '500',
     },
@@ -3914,7 +4038,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     paymentDateText: {
-        marginLeft: 8,
+        marginStart: 8,
         fontSize: 16,
         color: '#333',
     },
@@ -3922,7 +4046,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#014495',
-        marginLeft: 8,
+        marginStart: 8,
     },
     paymentDetails: {
         padding: 15,
@@ -3944,7 +4068,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     paymentStatusText: {
-        marginLeft: 4,
+        marginStart: 4,
         fontSize: 12,
         fontWeight: '500',
     },
@@ -3965,6 +4089,10 @@ const styles = StyleSheet.create({
     modalContainer: {
         backgroundColor: 'white',
         width: windowWidth * 0.9,
+        justifyContent: 'center',
+        // paddingLeft: 20,
+       // paddingRight: 10,
+        // alignItems: 'center',
         // height: windowHeight * 0.8,
         borderRadius: 15,
         elevation: 2,
@@ -4018,7 +4146,7 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     modalContent: {
-        padding: 20,
+        // padding: 20,
     },
     modalIdContent: {
         backgroundColor: 'white',
@@ -4030,6 +4158,9 @@ const styles = StyleSheet.create({
     },
     dateTimeContainer: {
         flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 10,
     },
     /*  dateTimeContainer: {
          flexDirection: 'row',
@@ -4059,7 +4190,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     datePickerText: {
-        marginLeft: 8,
+        marginStart: 8,
         fontSize: 16,
         color: '#333',
     },
@@ -4159,7 +4290,7 @@ const styles = StyleSheet.create({
     editIndicator: {
         position: 'absolute',
         top: 8,
-        right: 8,
+        end: 8,
         backgroundColor: '#E0E7FF',
         borderRadius: 12,
         padding: 4,
@@ -4167,7 +4298,7 @@ const styles = StyleSheet.create({
     editIdIndicator: {
         position: 'absolute',
         // top: 5,
-        right: 8,
+        end: 8,
         backgroundColor: '#E0E7FF',
         borderRadius: 12,
         padding: 4,
@@ -4185,6 +4316,7 @@ const styles = StyleSheet.create({
     },
     editModalHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
@@ -4195,7 +4327,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '600',
         color: '#014495',
-        marginLeft: 12,
+        marginStart: 12,
     },
     editModalCloseButton: {
         padding: 8,
@@ -4203,7 +4335,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0F4F8',
     },
     editModalContent: {
-        padding: 20,
+        margin: 20,
         maxHeight: windowHeight * 0.4, // Limit content height
     },
     editModalLabel: {
@@ -4232,7 +4364,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 12,
         backgroundColor: '#F0F4F8',
-        marginRight: 12,
+        marginEnd: 12,
     },
     editModalCancelText: {
         fontSize: 16,
@@ -4400,7 +4532,7 @@ const styles = StyleSheet.create({
     addButton: {
         position: 'absolute',
         bottom: 24,
-        right: 24,
+        end: 24,
         borderRadius: 30,
         overflow: 'hidden',
         elevation: 5,
@@ -4423,7 +4555,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
-        marginLeft: 8,
+        marginStart: 8,
         letterSpacing: 0.5,
     },
     editableField: {
@@ -4609,7 +4741,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '600',
         color: '#014495',
-        marginLeft: 12,
+        marginStart: 12,
     },
     paymentModalContent: {
         padding: 15,
@@ -4632,7 +4764,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: '#333',
-        marginLeft: 12,
+        marginStart: 12,
     },
     paymentOptionTextActive: {
         color: '#014495',
@@ -4829,7 +4961,7 @@ const styles = StyleSheet.create({
         // marginTop: 10,
     },
     priceText: {
-        marginLeft: 5,
+        marginStart: 5,
         fontSize: 16,
         fontWeight: '600',
         color: '#014495',
@@ -4988,7 +5120,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#014495',
         fontWeight: '500',
-        marginLeft: 4,
+        marginStart: 4,
     },
     repeatOptions: {
         flexDirection: 'row',
@@ -5013,7 +5145,7 @@ const styles = StyleSheet.create({
         borderColor: '#014495',
     },
     repeatOptionText: {
-        marginLeft: 6,
+        marginStart: 6,
         color: '#014495',
         fontSize: 14,
         fontWeight: '500',
@@ -5041,7 +5173,7 @@ const styles = StyleSheet.create({
     },
     idNumberButton: {
         flex: 1,
-        marginLeft: 12,
+        marginStart: 12,
     },
     idNumberLabel: {
         fontSize: 12,
@@ -5187,6 +5319,106 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
+    // Empty Treatments State Styles
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 60,
+    },
+    emptyGradient: {
+        width: '100%',
+        alignItems: 'center',
+        paddingVertical: 50,
+        paddingHorizontal: 30,
+        borderRadius: 20,
+        shadowColor: '#014495',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    emptyIconContainer: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 25,
+        shadowColor: '#014495',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    emptyStateTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#014495',
+        marginBottom: 12,
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    emptyStateText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 24,
+        maxWidth: 280,
+        opacity: 0.9,
+    },
 
+    // Empty Files State Styles
+    emptyFilesState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 60,
+    },
+    emptyFilesGradient: {
+        width: '100%',
+        alignItems: 'center',
+        paddingVertical: 50,
+        paddingHorizontal: 30,
+        borderRadius: 20,
+        shadowColor: '#014495',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    emptyFilesIconContainer: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 25,
+        shadowColor: '#014495',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    emptyFilesStateTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#014495',
+        marginBottom: 12,
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    emptyFilesStateText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 24,
+        maxWidth: 280,
+        opacity: 0.9,
+    },
 
 });

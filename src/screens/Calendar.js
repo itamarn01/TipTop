@@ -31,6 +31,7 @@ import {
     AdsConsentStatus,
     useForeground,
 } from "react-native-google-mobile-ads";
+import i18n from "../i18n";
 
 const iosAdmobBanner1 = "ca-app-pub-8754599705550429~7718527397";
 const androidAdmobBanner1 = "ca-app-pub-8754599705550429~4996995283";
@@ -195,7 +196,7 @@ export default function Calendar({ navigation }) {
                 </Text>
 
                 <View style={styles.priceContainer}>
-                    <Text allowFontScaling={false} style={styles.price}>${item.treatmentPrice}</Text>
+                    <Text allowFontScaling={false} style={styles.price}>{i18n.t('currencySymbol')}{item.treatmentPrice}</Text>
                 </View>
             </TouchableOpacity>
         </Animatable.View>
@@ -260,7 +261,7 @@ export default function Calendar({ navigation }) {
                     ListEmptyComponent={() => (
                         <View style={styles.emptyContainer}>
                             <Text allowFontScaling={false} style={styles.emptyText}>
-                                No treatments found for {selected ? 'this date' : 'this month'}
+                                {selected ? i18n.t('noTreatmentsFoundDate') : i18n.t('noTreatmentsFoundMonth')}
                             </Text>
                         </View>
                     )}
