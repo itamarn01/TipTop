@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { MaterialIcons } from '@expo/vector-icons';
+import i18n from '../i18n';
 
 export default function CalendarStats({ stats }) {
     return (
@@ -9,13 +10,13 @@ export default function CalendarStats({ stats }) {
             <View style={styles.statCard}>
                 <MaterialIcons name="event" size={24} color="#014495" />
                 <Text allowFontScaling={false} style={styles.statNumber}>{stats.totalTreatments}</Text>
-                <Text allowFontScaling={false} style={styles.statLabel}>Treatments</Text>
+                <Text allowFontScaling={false} style={styles.statLabel}>{i18n.t('treatments')}</Text>
             </View>
 
             <View style={styles.statCard}>
-                <MaterialIcons name="attach-money" size={24} color="#014495" />
-                <Text allowFontScaling={false} style={styles.statNumber}>${stats.totalRevenue}</Text>
-                <Text allowFontScaling={false} style={styles.statLabel}>Revenue</Text>
+                <MaterialIcons name="payments" size={24} color="#014495" />
+                <Text allowFontScaling={false} style={styles.statNumber}>{i18n.t('currencySymbol')}{stats.totalRevenue}</Text>
+                <Text allowFontScaling={false} style={styles.statLabel}>{i18n.t('payments')}</Text>
             </View>
 
             <View style={styles.statCard}>

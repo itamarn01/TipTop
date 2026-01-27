@@ -18,6 +18,9 @@ import { setAuth, clearAuth } from './src/redux/slices/authSlice';
 import RootNavigator from './src/navigation/rootNavigator';
 SplashScreen.preventAutoHideAsync();
 
+import i18n from "./src/i18n";
+import { setLanguage } from "./src/redux/slices/settingsSlice";
+
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [userToken, setUserToken] = useState(null);
@@ -37,10 +40,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    I18nManager.forceRTL(false);
-    I18nManager.allowRTL(false);
-  }, [])
   const maxBackgroundDuration = 90000;
   const handleAppStateChange = (nextAppState) => {
     if (
@@ -77,6 +76,24 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Load language preference
+        const savedLanguage = await AsyncStorage.getItem('userLanguage');
+        if (savedLanguage) {
+          i18n.locale = savedLanguage;
+          store.dispatch(setLanguage(savedLanguage));
+        } else {
+             // Device language is already set in i18n/index.js, just sync to store
+             store.dispatch(setLanguage(i18n.locale));
+        }
+        
+        // Handle RTL
+        const isRTL = i18n.locale === 'he';
+        if (I18nManager.isRTL !== isRTL) {
+            I18nManager.allowRTL(isRTL);
+            I18nManager.forceRTL(isRTL);
+            await Updates.reloadAsync();
+        }
+
         await Font.loadAsync({
           'Rubik-italic': require('./assets/fonts/Rubik-Italic-VariableFont_wght.ttf'),
           'Rubik': require('./assets/fonts/Rubik-VariableFont_wght.ttf'),

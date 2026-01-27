@@ -4,9 +4,19 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
+import i18n from "../i18n";
 
-const paymentStatusOptions = ['Pending', 'Paid', 'Cancelled'];
-const paymentMethodOptions = ['Cash', 'Credit Card', 'Bank Transfer', 'Insurance'];
+const paymentStatusOptions = [
+    { value: 'Pending', label: 'pending' },
+    { value: 'Paid', label: 'paid' },
+    { value: 'Cancelled', label: 'cancelled' }
+];
+const paymentMethodOptions = [
+    { value: 'Cash', label: 'cash' },
+    { value: 'Credit Card', label: 'creditCard' },
+    { value: 'Bank Transfer', label: 'bankTransfer' },
+    { value: 'Insurance', label: 'insurance' }
+];
 
 const TreatmentForm = ({ route, navigation }) => {
     const { treatment, isEditing } = route.params || {};
@@ -24,7 +34,7 @@ const TreatmentForm = ({ route, navigation }) => {
 
     const validateInputs = () => {
         if (!clientId || !treatmentPrice || !sessionNumber || !treatmentSummary || !paymentStatus || !paymentMethod) {
-            Alert.alert("Validation Error", "Please fill in all required fields.");
+            Alert.alert(i18n.t('validationError'), i18n.t('fillRequired'));
             return false;
         }
         return true;
@@ -49,14 +59,14 @@ const TreatmentForm = ({ route, navigation }) => {
         try {
             if (isEditing) {
                 await axios.put(`http://your-server-url/treatments/${treatment._id}`, payload);
-                Alert.alert("Success", "Treatment updated successfully");
+                Alert.alert(i18n.t('success'), i18n.t('treatmentUpdated'));
             } else {
                 await axios.post('http://your-server-url/treatments', payload);
-                Alert.alert("Success", "Treatment added successfully");
+                Alert.alert(i18n.t('success'), i18n.t('treatmentAdded'));
             }
             navigation.goBack();
         } catch (error) {
-            Alert.alert("Error", "There was an issue saving the treatment.");
+            Alert.alert(i18n.t('error'), i18n.t('issueSaving'));
         }
     };
 
@@ -65,37 +75,37 @@ const TreatmentForm = ({ route, navigation }) => {
             <View style={styles.header}>
                 <MaterialIcons name="medical-services" size={40} color="#4A90E2" />
                 <Text allowFontScaling={false} style={styles.headerText}>
-                    {isEditing ? "Update Treatment" : "New Treatment"}
+                    {isEditing ? i18n.t('updateTreatment') : i18n.t('newTreatment')}
                 </Text>
             </View>
 
             <View style={styles.formContainer}>
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Client ID</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('clientId')}</Text>
                     <TextInput
                         value={clientId}
                         onChangeText={setClientId}
-                        placeholder="Enter Client ID"
+                        placeholder={i18n.t('enterClientId')}
                         style={styles.input}
                         placeholderTextColor="#A0A0A0"
                     />
                 </View>
 
                 <View style={styles.row}>
-                    <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-                        <Text allowFontScaling={false} style={styles.label}>Price</Text>
+                    <View style={[styles.inputGroup, { flex: 1, marginEnd: 10 }]}>
+                        <Text allowFontScaling={false} style={styles.label}>{i18n.t('price')}</Text>
                         <TextInput
                             value={treatmentPrice}
                             onChangeText={setTreatmentPrice}
                             keyboardType="numeric"
-                            placeholder="$0.00"
+                            placeholder={`${i18n.t('currencySymbol')}0.00`}
                             style={styles.input}
                             placeholderTextColor="#A0A0A0"
                         />
                     </View>
 
                     <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text allowFontScaling={false} style={styles.label}>Session #</Text>
+                        <Text allowFontScaling={false} style={styles.label}>{i18n.t('sessionNumber')}</Text>
                         <TextInput
                             value={sessionNumber}
                             onChangeText={setSessionNumber}
@@ -108,7 +118,7 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Treatment Date</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('treatmentDate')}</Text>
                     <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         style={styles.dateButton}
@@ -131,11 +141,11 @@ const TreatmentForm = ({ route, navigation }) => {
                 )}
 
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Treatment Summary</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('treatmentSummary')}</Text>
                     <TextInput
                         value={treatmentSummary}
                         onChangeText={setTreatmentSummary}
-                        placeholder="Describe the treatment..."
+                        placeholder={i18n.t('describeTreatment')}
                         style={styles.textArea}
                         multiline
                         placeholderTextColor="#A0A0A0"
@@ -143,11 +153,11 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Homework</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('homework')}</Text>
                     <TextInput
                         value={homework}
                         onChangeText={setHomework}
-                        placeholder="Assign homework..."
+                        placeholder={i18n.t('assignHomework')}
                         style={styles.textArea}
                         multiline
                         placeholderTextColor="#A0A0A0"
@@ -155,11 +165,11 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Next Steps</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('whatNext')}</Text>
                     <TextInput
                         value={whatNext}
                         onChangeText={setWhatNext}
-                        placeholder="Plan next steps..."
+                        placeholder={i18n.t('planNextSteps')}
                         style={styles.textArea}
                         multiline
                         placeholderTextColor="#A0A0A0"
@@ -167,30 +177,30 @@ const TreatmentForm = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Payment Status</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('paymentStatus')}</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
                             selectedValue={paymentStatus}
                             onValueChange={setPaymentStatus}
                             style={styles.picker}
                         >
-                            {paymentStatusOptions.map((status) => (
-                                <Picker.Item key={status} label={status} value={status} />
+                            {paymentStatusOptions.map((option) => (
+                                <Picker.Item key={option.value} label={i18n.t(option.label)} value={option.value} />
                             ))}
                         </Picker>
                     </View>
                 </View>
 
                 <View style={styles.inputGroup}>
-                    <Text allowFontScaling={false} style={styles.label}>Payment Method</Text>
+                    <Text allowFontScaling={false} style={styles.label}>{i18n.t('paymentMethod')}</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
                             selectedValue={paymentMethod}
                             onValueChange={setPaymentMethod}
                             style={styles.picker}
                         >
-                            {paymentMethodOptions.map((method) => (
-                                <Picker.Item key={method} label={method} value={method} />
+                            {paymentMethodOptions.map((option) => (
+                                <Picker.Item key={option.value} label={i18n.t(option.label)} value={option.value} />
                             ))}
                         </Picker>
                     </View>
@@ -201,7 +211,7 @@ const TreatmentForm = ({ route, navigation }) => {
                     onPress={handleSubmit}
                 >
                     <Text allowFontScaling={false} style={styles.submitButtonText}>
-                        {isEditing ? "Update Treatment" : "Add Treatment"}
+                        {isEditing ? i18n.t('updateTreatment') : i18n.t('addTreatment')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -275,7 +285,7 @@ const styles = StyleSheet.create({
     dateText: {
         fontSize: 16,
         color: '#333',
-        marginLeft: 10,
+        marginStart: 10,
     },
     pickerContainer: {
         backgroundColor: '#fff',

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, Button, Dimensions, Linking, InputAccessoryView, Platform, ActivityIndicator, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, Modal, RefreshControl } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, Button, Dimensions, Linking, InputAccessoryView, Platform, ActivityIndicator, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, Modal, RefreshControl, I18nManager } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ import { Image as ImageCompressor } from "react-native-compressor";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from "../i18n";
 
 
 const windowWidth = Dimensions.get("window").width;
@@ -122,10 +123,11 @@ const ClientForm = ({ route, navigation }) => {
             setLink(response.data.link);
             dispatch(setAuth({ user: response.data.user }));
             setUser(response.data.user)
-            Alert.alert("Success", "Form link generated successfully.");
+            fetchUserDetails()
+            Alert.alert(i18n.t('success'), i18n.t('linkGenerated'));
         } catch (error) {
             console.error("Error generating form link:", error);
-            Alert.alert("Error", "Could not generate form link.");
+            Alert.alert(i18n.t('error'), i18n.t('couldNotGenerateLink'));
         }
     };
 
@@ -218,7 +220,7 @@ const ClientForm = ({ route, navigation }) => {
         } catch (error) {
             setDeleteLoading(false);
             console.error(error);
-            Alert.alert('Error', error.response?.data?.message || 'Failed to delete profile image');
+            Alert.alert(i18n.t('error'), error.response?.data?.message || 'Failed to delete profile image');
         }
     };
 
@@ -301,7 +303,7 @@ const ClientForm = ({ route, navigation }) => {
                                 >
                                     <MaterialIcons name="close" size={24} color="#666" />
                                 </TouchableOpacity>
-                                <Text allowFontScaling={false} style={styles.modalIdTitle}>{`Edit ${modalTitle === "clinicName" ? "Clinic Name" : modalTitle === "clinicAddress" ? "Clinic Address" : modalTitle === "welcomeMessage" ? "Welcome Message" : modalTitle === "thankYouMessage" ? "thank You Message" : modalTitle}`}</Text>
+                                <Text allowFontScaling={false} style={styles.modalIdTitle}>{i18n.t('edit')} {i18n.t(modalTitle)}</Text>
                                 <TouchableOpacity
                                     style={[
                                         styles.saveIdButton,
@@ -313,14 +315,14 @@ const ClientForm = ({ route, navigation }) => {
                                     {isSaving ? (
                                         <ActivityIndicator color="white" size="small" />
                                     ) : (
-                                        <Text allowFontScaling={false} style={styles.saveButtonIdText}>Save</Text>
+                                        <Text allowFontScaling={false} style={styles.saveButtonIdText}>{i18n.t('save')}</Text>
                                     )}
                                 </TouchableOpacity>
                             </View>
 
                             <View style={styles.modalIdBody}>
                                 <View style={styles.inputIdContainer}>
-                                    <Text allowFontScaling={false} style={styles.inputIdLabel}>{modalTitle === "clinicName" ? "Clinic Name" : modalTitle === "clinicAddress" ? "Clinic Address" : modalTitle === "welcomeMessage" ? "Welcome Message" : modalTitle === "thankYouMessage" ? "thank You Message" : modalTitle}</Text>
+                                    <Text allowFontScaling={false} style={styles.inputIdLabel}>{i18n.t(modalTitle)}</Text>
                                     {modalTitle === "experience" ? (
                                         Platform.OS === 'ios' ? (
                                             <Picker
@@ -357,7 +359,7 @@ const ClientForm = ({ route, navigation }) => {
                                             allowFontScaling={false}
                                             ref={inputRef}
                                             style={modalTitle === "welcomeMessage" || modalTitle === "thankYouMessage" ? [styles.inputId, styles.textAreaLong] : styles.inputId}
-                                            placeholder={`Enter your ${modalTitle === "clinicName" ? "Clinic Name" : modalTitle === "clinicAddress" ? "Clinic Address" : modalTitle === "welcomeMessage" ? "Welcome Message" : modalTitle === "thankYouMessage" ? "thank You Message" : modalTitle}`} // Fixed placeholder
+                                            placeholder={i18n.t('add' + modalTitle.charAt(0).toUpperCase() + modalTitle.slice(1))}
                                             value={modalField}
                                             onChangeText={setModalField}
                                             keyboardType={modalTitle === "phone" ? "phone-pad" : "default"}
@@ -371,7 +373,7 @@ const ClientForm = ({ route, navigation }) => {
                                             animation="shake"
                                             style={styles.errorIdText}
                                         >
-                                            {`Invalid ${modalTitle} number`}
+                                            {i18n.t('invalidPhone')}
                                         </Animatable.Text>
                                     )}
                                 </View>
@@ -381,10 +383,13 @@ const ClientForm = ({ route, navigation }) => {
                     {/*  </TouchableWithoutFeedback> */}
                 </KeyboardAvoidingView>
             </Modal>
+            <Text allowFontScaling={false} style={styles.explanationText}>
+                {i18n.t('sendLinkExplanation')}
+            </Text>
             <View style={{ flexDirection: "row", alignSelf: "center", alignItems: "center", width: "90%", paddingVertical: 15, /* backgroundColor: "#f0f0f0", */ borderRadius: 5 }}>
                 <Ionicons name="earth-outline" size={24} color="black" />
                 <Text allowFontScaling={false} style={{ marginHorizontal: 10, fontSize: 16, color: "#333", fontWeight: "500", /* textAlign: "center" */ }}>
-                    This form is public and available to anyone with the link
+                    {i18n.t('publicFormNote')}
                 </Text>
             </View>
             {
@@ -419,7 +424,7 @@ const ClientForm = ({ route, navigation }) => {
                                     onPress={() => Linking.openURL(user.formLink)}
                                 >
                                     <MaterialIcons name="open-in-browser" size={24} color="white" />
-                                    <Text allowFontScaling={false} style={styles.copyButtonText}>Preview</Text>
+                                    <Text allowFontScaling={false} style={styles.copyButtonText}>{i18n.t('preview')}</Text>
                                 </TouchableOpacity>
                             </Animatable.View>
                             <Animatable.View animation="bounceIn" duration={1000}>
@@ -432,7 +437,7 @@ const ClientForm = ({ route, navigation }) => {
                                     }}
                                 >
                                     <MaterialIcons name="share" size={24} color="white" />
-                                    <Text allowFontScaling={false} style={styles.copyButtonText}>Share Link</Text>
+                                    <Text allowFontScaling={false} style={styles.copyButtonText}>{i18n.t('shareLink')}</Text>
                                 </TouchableOpacity>
                             </Animatable.View>
                             {/* <Animatable.View animation="bounceIn" duration={1000}>
@@ -448,7 +453,7 @@ const ClientForm = ({ route, navigation }) => {
                         </View>
 
                         <View style={styles.tabBarContainer}>
-                            {['Edit form', 'Preview'].map((tab, index) => (
+                            {[i18n.t('editForm'), i18n.t('preview')].map((tab, index) => (
                                 <TouchableOpacity
                                     key={tab}
                                     style={styles.tab}
@@ -501,7 +506,7 @@ const ClientForm = ({ route, navigation }) => {
                                                 onPress={generateLink}
                                             >
                                                 <MaterialIcons name="share" size={24} color="white" />
-                                                <Text allowFontScaling={false} style={styles.copyButtonText}>Generate New Link</Text>
+                                                <Text allowFontScaling={false} style={styles.copyButtonText}>{i18n.t('generateNewLink')}</Text>
                                             </TouchableOpacity>
                                         </Animatable.View>
                                         <KeyboardAvoidingView
@@ -525,7 +530,7 @@ const ClientForm = ({ route, navigation }) => {
                                                                 onPress={handleDeleteLogoImage}
                                                             >
                                                                 {/*  <MaterialIcons name="delete" size={24} color="#fff" /> */}
-                                                                <Text allowFontScaling={false} style={styles.buttonDeleteImageText}>Delete logo Image</Text>
+                                                                <Text allowFontScaling={false} style={styles.buttonDeleteImageText}>{i18n.t('deleteLogo')}</Text>
                                                             </TouchableOpacity>
                                                         )}
                                                     </>
@@ -538,7 +543,7 @@ const ClientForm = ({ route, navigation }) => {
                                                 {/*  {message && <Text allowFontScaling={false}  style={styles.message}>{message}</Text>} */}
                                                 <TouchableOpacity style={styles.button} onPress={pickImage}>
                                                     {/* <MaterialIcons name="photo" size={24} color='#014495' /> */}
-                                                    <Text allowFontScaling={false} style={styles.buttonText}>Edit logo</Text>
+                                                    <Text allowFontScaling={false} style={styles.buttonText}>{i18n.t('editLogo')}</Text>
                                                 </TouchableOpacity>
 
                                             </Animatable.View>
@@ -547,64 +552,64 @@ const ClientForm = ({ route, navigation }) => {
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("phone", user.phone) }}>
                                                         <MaterialIcons name="phone" size={24} color={user.phone ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.phone ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.phone ? user.phone : "Add Phone"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.phone ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.phone ? user.phone : i18n.t('addPhone')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
 
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("specialization", user.specialization) }}>
                                                         <Ionicons name="briefcase-outline" size={24} color={user.specialization ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.specialization ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.specialization ? user.specialization : "Add Specialization"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.specialization ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.specialization ? user.specialization : i18n.t('addSpecialization')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
 
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("experience", user.experience) }}>
                                                         <Ionicons name="time-outline" size={24} color={user.experience ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.experience ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.experience ? user.experience : "Add Experience"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.experience ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.experience ? user.experience : i18n.t('addExperience')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
 
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("clinicName", user.clinicName) }}>
                                                         <Ionicons name="home-outline" size={24} color={user.clinicName ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.clinicName ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.clinicName ? user.clinicName : "Add Clinic Name"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.clinicName ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.clinicName ? user.clinicName : i18n.t('addClinicName')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
 
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("clinicAddress", user.clinicAddress) }}>
                                                         <Ionicons name="location-outline" size={24} color={user.clinicAddress ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.clinicAddress ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.clinicAddress ? user.clinicAddress : "Add Clinic Address"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} style={[styles.settingText, { color: user.clinicAddress ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.clinicAddress ? user.clinicAddress : i18n.t('addClinicAddress')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
                                             </View>
 
                                             {/*  <View style={{ backgroundColor: "rgba(0,0,0,0.1)", height: 2, marginBottom: 20, width: windowWidth * 0.9, alignSelf: "center" }} /> */}
-                                            <Text allowFontScaling={false} style={styles.longInputTitle}>Welcome Message</Text>
+                                            <Text allowFontScaling={false} style={styles.longInputTitle}>{i18n.t('welcomeMessage')}</Text>
                                             <View style={styles.settingsContainer}>
 
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("welcomeMessage", user.welcomeMessage) }}>
                                                         <Ionicons name="chatbubble-outline" size={24} color={user.welcomeMessage ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} numberOfLines={2} style={[styles.settingText, { color: user.welcomeMessage ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.welcomeMessage ? user.welcomeMessage : "Add Welcome Message"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} numberOfLines={2} style={[styles.settingText, { color: user.welcomeMessage ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.welcomeMessage ? user.welcomeMessage : i18n.t('addWelcomeMessage')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
                                             </View>
-                                            <Text allowFontScaling={false} style={styles.longInputTitle}>Thank You Message</Text>
+                                            <Text allowFontScaling={false} style={styles.longInputTitle}>{i18n.t('thankYouMessage')}</Text>
                                             <View style={styles.settingsContainer}>
 
                                                 <Animatable.View animation="fadeIn" duration={300}>
                                                     <TouchableOpacity style={styles.settingOption} onPress={() => { showDynamicModal("thankYouMessage", user.thankYouMessage) }}>
                                                         <Ionicons name="chatbubble-outline" size={24} color={user.thankYouMessage ? "#333" : "rgba(0,0,0,0.3)"} />
-                                                        <Text allowFontScaling={false} numberOfLines={2} style={[styles.settingText, { color: user.thankYouMessage ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.thankYouMessage ? user.thankYouMessage : "Add Thank You Message"}</Text>
-                                                        <AntDesign name="right" size={24} color="#333" style={{ marginLeft: 'auto' }} />
+                                                        <Text allowFontScaling={false} numberOfLines={2} style={[styles.settingText, { color: user.thankYouMessage ? '#333' : "rgba(0,0,0,0.3)" }]}>{user.thankYouMessage ? user.thankYouMessage : i18n.t('addThankYouMessage')}</Text>
+                                                        <AntDesign name={I18nManager.isRTL ? "left" : "right"} size={24} color="#333" style={{ marginStart: 'auto' }} />
                                                     </TouchableOpacity>
                                                 </Animatable.View>
                                             </View>
@@ -692,7 +697,7 @@ const ClientForm = ({ route, navigation }) => {
                         >
                             <MaterialIcons name="add-link" size={24} color="white" />
                             <Text allowFontScaling={false} style={styles.generateButtonText}>
-                                Generate Form Link
+                                {i18n.t('generateFormLink')}
                             </Text>
                         </TouchableOpacity>
                     </Animatable.View>
@@ -723,6 +728,15 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginTop: 10,
+    },
+    explanationText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#014495',
+        marginBottom: 10,
+        textAlign: 'center',
+        marginTop: 10,
+        paddingHorizontal: 10
     },
     formContainer: {
         padding: 20,
