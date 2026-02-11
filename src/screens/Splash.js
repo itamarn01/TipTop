@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Constants from 'expo-constants';
-import { View, Text, Button, StyleSheet, Animated, StatusBar, Modal, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, Text, Button, StyleSheet, Animated, Modal, TouchableOpacity, Linking, Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Api } from '../Api';
 import { setAuth, clearAuth } from '../redux/slices/authSlice';
 import { Provider, useDispatch } from 'react-redux';
@@ -224,7 +225,7 @@ export default function Splash({ navigation }) {
 
 
         <View style={styles.container}>
-            <StatusBar backgroundColor="#2471A3" barStyle="dark-content" />
+            <StatusBar style="light" backgroundColor="#2471A3" translucent={true} />
             <View>
 
             </View>
