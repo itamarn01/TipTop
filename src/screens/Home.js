@@ -134,7 +134,13 @@ export default function Home({ navigation }) {
             flex: 1,
             backgroundColor: COLORS.background,
         }}>
-            {user.package === "free" && <BannerAd
+           
+
+            <ScrollView 
+                style={styles.scrollView} 
+                contentContainerStyle={styles.container}
+            >
+                 {user.package === "free" && <BannerAd
                 //    ref={bannerRef}
                 unitId={adUnitId1}
                 size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
@@ -143,11 +149,6 @@ export default function Home({ navigation }) {
                     // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
                 }}
             />}
-
-            <ScrollView 
-                style={styles.scrollView} 
-                contentContainerStyle={styles.container}
-            >
                 <Animatable.View
                     animation="fadeIn"
                     duration={1500}

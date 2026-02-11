@@ -904,7 +904,7 @@ export default function Treatments({ navigation }) {
                 result.push("PAID");
                 paymentSum -= treatmentPriceArr[i];
             } else if (paymentSum > 0 && paymentSum < treatmentPriceArr[i]) {
-                result.push("PARTIALLY PAID");
+                result.push("PARTIALLY_PAID");
                 break;
             } else {
                 result.push("PENDING");
@@ -2087,7 +2087,7 @@ export default function Treatments({ navigation }) {
                     onPress={() => navigation.navigate("Clients")}
                     style={styles.backButton}
                 >
-                    <MaterialIcons name="arrow-back" size={24} color="#014495" />
+                    <MaterialIcons name={I18nManager.isRTL ? "arrow-forward" : "arrow-back"} size={24} color="#014495" />
                 </TouchableOpacity>
                 <Text allowFontScaling={false} style={styles.headerTitle}>{clientDetails.name} {clientDetails.lastName}</Text>
                 <View style={{ width: 40 }} />
@@ -2419,12 +2419,20 @@ export default function Treatments({ navigation }) {
                             renderSkeletonLoading()
                         ) : (
                             <>
-                                <Text allowFontScaling={false} style={styles.treatmentsCount}>
-                                    <Text allowFontScaling={false} style={styles.currentTreatments}>{treatments.length}</Text>
-                                    <Text allowFontScaling={false} style={styles.treatmentsSeparator}>/</Text>
-                                    <Text allowFontScaling={false} style={styles.totalTreatments}>{clientDetails.numberOfMeetings}</Text>
-                                    <Text allowFontScaling={false} style={styles.treatmentsLabel}> treatments</Text>
-                                </Text>
+                                <View style={styles.treatmentsHeaderSection}>
+                                    <View style={styles.treatmentsCountInfo}>
+                                        <MaterialIcons name="assignment" size={22} color="#014495" style={{ [I18nManager.isRTL ? 'marginLeft' : 'marginRight']: 10 }} />
+                                        <Text allowFontScaling={false} style={styles.treatmentsTitleText}>
+                                            {i18n.t('treatments')}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.treatmentsBadge}>
+                                        <Text allowFontScaling={false} style={styles.treatmentsBadgeText}>
+                                            <Text style={styles.currentCountText}>{treatments.length}</Text>
+                                            <Text style={styles.totalCountText}> / {clientDetails.numberOfMeetings || 0}</Text>
+                                        </Text>
+                                    </View>
+                                </View>
                                 <FlatList
                                     keyboardShouldPersistTaps="handled"
                                     data={treatments}
@@ -2551,7 +2559,7 @@ export default function Treatments({ navigation }) {
                                                                         <View style={styles.editModalHeader}>
                                                                             <MaterialIcons name="edit" size={24} color="#014495" />
                                                                             <Text allowFontScalin={false} style={styles.editModalTitle}>
-                                                                                Edit Status
+                                                                                {i18n.t('editStatus')}
                                                                             </Text>
                                                                             <TouchableOpacity
                                                                                 onPress={() => setEditStatusModalVisible(false)}
@@ -2565,25 +2573,25 @@ export default function Treatments({ navigation }) {
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("PENDING"); updateTreatmentStatus("PENDING") }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="schedule" size={30} color="#FFA500" />
-                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>Pending</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>{i18n.t('pending')}</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("COMPLETED"); updateTreatmentStatus("COMPLETED") }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="check-circle" size={30} color="#4CAF50" />
-                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>Completed</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>{i18n.t('completed')}</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("CANCELED"); updateTreatmentStatus("CANCELED"); }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="cancel" size={30} color="#FF4444" />
-                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>Canceled</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>{i18n.t('canceled')}</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                             <Animatable.View animation="fadeIn" duration={300}>
                                                                                 <TouchableOpacity onPress={() => { setStatus("NO_SHOW"); updateTreatmentStatus("NO_SHOW"); }} style={{ flexDirection: "row", alignItems: "center", padding: 15 }}>
                                                                                     <MaterialIcons name="remove-circle" size={30} color="#FFA500" />
-                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>No Show</Text>
+                                                                                    <Text allowFontScaling={false} style={{ marginLeft: 10, fontSize: 18 }}>{i18n.t('noShow')}</Text>
                                                                                 </TouchableOpacity>
                                                                             </Animatable.View>
                                                                         </View>
@@ -2827,7 +2835,7 @@ export default function Treatments({ navigation }) {
                                                                 color={PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800'}
                                                             />
                                                             <Text allowFontScaling={false} style={[styles.statusText, { color: PAYMENT_STATUSES[treatmentPaid[index]]?.color || '#FF9800' }]}>
-                                                                {treatmentPaid[index]}
+                                                                {PAYMENT_STATUSES[treatmentPaid[index]] ? i18n.t(PAYMENT_STATUSES[treatmentPaid[index]].label) : treatmentPaid[index]}
                                                             </Text>
                                                             {/* <Text>{treatmentPaid[index]}</Text> */}
                                                         </View>
@@ -2838,7 +2846,7 @@ export default function Treatments({ navigation }) {
                                                             <View style={styles.treatmentPrice}>
                                                                 {/*  <MaterialIcons name="attach-money" size={20} color="#014495" /> */}
                                                                 <Text allowFontScaling={false} style={styles.priceText}>
-                                                                    {item.treatmentPrice === 0 ? i18n.t('addPriceLabel') : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.treatmentPrice)}
+                                                                    {item.treatmentPrice === 0 ? i18n.t('addPriceLabel') : new Intl.NumberFormat(i18n.locale === 'he' ? 'he-IL' : 'en-US', { style: 'currency', currency: i18n.locale === 'he' ? 'ILS' : 'USD' }).format(item.treatmentPrice)}
                                                                 </Text>
                                                             </View>
                                                         </TouchableOpacity>
@@ -2857,7 +2865,7 @@ export default function Treatments({ navigation }) {
                                                                 color={TREATMENT_STATUSES[item.status]?.color || '#FF9800'}
                                                             />
                                                             <Text allowFontScaling={false} style={[styles.statusText, { color: TREATMENT_STATUSES[item.status]?.color || '#FF9800' }]}>
-                                                                {item.status}
+                                                                {item.status === 'NO_SHOW' ? i18n.t('noShow') : i18n.t(item.status ? item.status.toLowerCase() : 'pending')}
                                                             </Text>
                                                             {/* <Text>{treatmentPaid[index]}</Text> */}
                                                         </View>
@@ -5076,25 +5084,53 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
     },
-    treatmentsLabel: {
-        color: '#666',
-        fontSize: 14,
+    treatmentsHeaderSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
+        marginHorizontal: 16,
+        marginTop: 16,
+        marginBottom: 8,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E1E8F0',
+        shadowColor: '#014495',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
     },
-    treatmentsCount: {
-        fontSize: 16,
+    treatmentsCountInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    treatmentsTitleText: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#1A1A1A',
+        letterSpacing: 0.3,
+    },
+    treatmentsBadge: {
+        backgroundColor: 'rgba(1, 68, 149, 0.08)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(1, 68, 149, 0.1)',
+    },
+    treatmentsBadgeText: {
+        fontSize: 15,
+        fontWeight: 'bold',
         fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
     },
-    currentTreatments: {
+    currentCountText: {
         color: '#014495',
-        fontWeight: '600',
     },
-    treatmentsSeparator: {
+    totalCountText: {
         color: '#666',
-        marginHorizontal: 2,
-    },
-    totalTreatments: {
-        color: '#014495',
-        fontWeight: '600',
     },
     repeatContainer: {
         marginTop: 20,
